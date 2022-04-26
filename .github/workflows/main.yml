@@ -1,0 +1,98 @@
+name: Continuous Delivery
+on: push
+jobs:
+  tests:
+    runs-on: ${{matrix.sys.os}}
+    strategy:
+      matrix:
+        sys:
+          - { os: macos-latest, shell: bash }
+          - { os: ubuntu-latest, shell: bash }
+          - { os: windows-latest, shell: powershell }
+    defaults:
+      run:
+        shell: ${{matrix.sys.shell}}
+    steps:
+      - name: 🛎 Checkout
+        uses: actions/checkout@v2
+
+      - name: 🔧 Install java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11.0.7'
+
+      - name: 🔧 Install clojure
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: '1.10.3.943'
+
+      - name: 🗝 maven cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2
+            ~/.gitlibs
+            ~/.deps.clj
+          key: ${{ runner.os }}-maven-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: 🧪 Run tests
+        run: clojure -X:test
+
+  notebooks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎 Checkout
+        uses: actions/checkout@v2
+
+      - name: 🔧 Install java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11.0.7'
+
+      - name: 🔧 Install clojure
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: '1.10.3.943'
+
+      - name: 🗝 maven cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2
+            ~/.gitlibs
+          key: ${{ runner.os }}-maven-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: 🗝 Clerk Cache
+        uses: actions/cache@v2
+        with:
+          path: .clerk
+          key: ${{ runner.os }}-clerk-cache
+
+      - name: 🔐 Google Auth
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.GCLOUD_SERVICE_KEY }}
+
+      - name: 🔧 Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0.3.0
+
+      - name: 🏗 Build Clerk Notebooks
+        run: clojure -J-Dclojure.main.report=stderr -X:nextjournal/clerk :git/sha '"${{ github.sha }}"' :git/url '"https://github.com/nextjournal/markdown"' :browse false
+
+      - name: 📠 Copy static build to bucket under SHA
+        run: |
+          gsutil cp -r public/build gs://nextjournal-snapshots/markdown/build/${{ github.sha }}
+
+      - name: ✅ Add success status to report with link to snapshot
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: 'Static App'
+          description: 'Ready'
+          state: 'success'
+          sha: ${{github.event.pull_request.head.sha || github.sha}}
+          target_url: https://snapshots.nextjournal.com/markdown/build/${{ github.sha }}

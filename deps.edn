@@ -1,0 +1,23 @@
+{:paths ["src" "resources"]
+ :deps {applied-science/js-interop {:mvn/version "0.2.6"}
+        lambdaisland/uri {:mvn/version "1.10.79"}
+        org.clojure/data.json {:mvn/version "0.2.6"}
+        org.graalvm.js/js {:mvn/version "21.3.0"}
+        org.graalvm.js/js-scriptengine {:mvn/version "21.3.0"}}
+
+ :aliases
+ {:nextjournal/clerk
+  {:extra-paths ["notebooks"]
+   :extra-deps {io.github.nextjournal/clerk {:mvn/version "0.7.418"}}
+   :exec-fn nextjournal.clerk/build-static-app!
+   :exec-args {:paths ["notebooks/benchmarks.clj"
+                       "notebooks/parsing_extensibility.clj"]}}
+
+  :test
+  {:extra-paths ["test"]
+   :exec-fn test-runner/run}
+
+  :build
+  {:ns-default build
+   :deps {io.github.clojure/tools.build {:git/tag "v0.6.1" :git/sha "515b334"}
+          io.github.slipset/deps-deploy {:git/sha "b4359c5d67ca002d9ed0c4b41b710d7e5a82e3bf"}}}}}

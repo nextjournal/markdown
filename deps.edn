@@ -12,7 +12,7 @@
    :exec-fn nextjournal.clerk/build-static-app!
    :exec-args {:paths ["README.md"
                        "notebooks/parsing_extensibility.clj"
-                       "notebooks/readme.clj"]}}
+                       "notebooks/benchmarks.clj"]}}
 
   :test
   {:extra-paths ["test"]

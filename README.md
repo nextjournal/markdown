@@ -1,4 +1,5 @@
-# nextjournal markdown
+# nextjournal markdown 
+[![Notebooks](https://img.shields.io/static/v1?logo=plex&logoColor=rgb(155,187,157)&label=clerk&message=notebook&color=rgb(155,187,157))](https://nextjournal.github.io/markdown)
 
 A semi-extensible cross-platform clojure/script parser for Markdown suitable for multi-format conversions.
 

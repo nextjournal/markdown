@@ -10,7 +10,7 @@
   {:extra-paths ["notebooks"]
    :extra-deps {io.github.nextjournal/clerk {:mvn/version "0.7.418"}}
    :exec-fn nextjournal.clerk/build-static-app!
-   :exec-args {:paths ["notebooks/benchmarks.clj"
+   :exec-args {:paths ["README.md"
                        "notebooks/parsing_extensibility.clj"
                        "notebooks/readme.clj"]}}
 

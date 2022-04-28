@@ -8,7 +8,6 @@
     "markdown-it-toc-done-right": "^4.2.0"
   },
   "devDependencies": {
-    "esbuild": "^0.12.28",
-    "shadow-cljs": "^2.15.5"
+    "esbuild": "^0.12.28"
   }
 }

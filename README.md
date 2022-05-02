@@ -1,8 +1,13 @@
 # nextjournal markdown 
 [![Notebooks](https://img.shields.io/static/v1?logo=plex&logoColor=rgb(155,187,157)&label=clerk&message=notebook&color=rgb(155,187,157))](https://nextjournal.github.io/markdown)
 
+A cross-platform clojure library for Markdown parsing and transformation.
 
-A semi-extensible cross-platform clojure/script parser for Markdown suitable for multi-format conversions.
+## Features
+
+1. Cross-Platform: our parser folds a collection of tokens emitted by the js library [markdown-it](https://github.com/markdown-it/markdown-it), that is we're reaching the JVM by means of [Graal's Polyglot Engine](), while getting clojurescript for free.
+2. A focus on data: parsing yields an AST (à la [Pandoc](https://pandoc.org/using-the-pandoc-api.html#pandocs-architecture)) of clojure nested data representing a structured document.
+3. Hiccup conversion: a set of convenience functions for transforming parsed data into markup. We do allow to configure the tranformation of each markdown node.
 
 ## Usage
 
@@ -30,7 +35,7 @@ Transform the data
 (def hiccup (md.transform/->hiccup data))
 ```
 
-Check the clerk notebooks to see it in action.
+Check the [clerk notebook](https://nextjournal.github.io/markdown) to see this in action.
 
 ```clojure
 (nextjournal.clerk/html hiccup)
@@ -48,6 +53,6 @@ Check the clerk notebooks to see it in action.
   data))
 ```
 
-## Extended Parsing
+## Custom Parsing
 
 ...

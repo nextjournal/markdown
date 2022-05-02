@@ -56,6 +56,12 @@ jobs:
         with:
           cli: '1.10.3.943'
 
+      - name: 🔧 Install Pandoc (needed in notebooks)
+        run: |
+          curl -LO https://github.com/jgm/pandoc/releases/download/2.18/pandoc-2.18-1-amd64.deb
+          ls -lah
+          sudo dpkg -i pandoc-2.18-1-amd64.deb
+
       - name: 🗝 maven cache
         uses: actions/cache@v2
         with:
@@ -81,7 +87,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v0.3.0
 
       - name: 🏗 Build Clerk Notebooks
-        run: clojure -J-Dclojure.main.report=stderr -X:nextjournal/clerk :git/sha '"${{ github.sha }}"' :git/url '"https://github.com/nextjournal/markdown"' :browse false
+        run: clojure -J-Dclojure.main.report=stderr -X:nextjournal/clerk :git/sha '"${{ github.sha }}"' :git/url '"https://github.com/nextjournal/markdown"' :browse? false
 
       - name: 📠 Copy static build to bucket under SHA
         run: |

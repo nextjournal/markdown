@@ -5,9 +5,9 @@ A cross-platform clojure library for Markdown parsing and transformation.
 
 ## Features
 
-1. Cross-Platform: our parser folds a collection of tokens emitted by the js library [markdown-it](https://github.com/markdown-it/markdown-it), that is we're reaching the JVM by means of [Graal's Polyglot Engine](), while getting clojurescript for free.
+1. Cross-Platform: our parser folds tokens emitted by the js library [markdown-it](https://github.com/markdown-it/markdown-it). We're reaching for the JVM by means of [Graal's Polyglot Engine](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context) while targeting clojurescript is for free.
 2. A focus on data: parsing yields an AST (à la [Pandoc](https://pandoc.org/using-the-pandoc-api.html#pandocs-architecture)) of clojure nested data representing a structured document.
-3. Hiccup conversion: a set of convenience functions for transforming parsed data into markup. We do allow to configure the tranformation of each markdown node.
+3. Hiccup conversion: a set of convenience functions for transforming parsed data into markup. We also allow to configure the tranformation of each markdown node.
 
 ## Usage
 

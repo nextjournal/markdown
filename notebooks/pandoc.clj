@@ -17,6 +17,7 @@
 ;; of a structured document as intermediate format.
 ;;
 ;; ## 📤 Export
+;;
 ;; this is a list of supported output formats as of Pandoc v2.18 (API version 1.22.2):
 ^{::clerk/visibility :hide}
 (clerk/html
@@ -25,7 +26,7 @@
         (map (partial vector :li))
         (str/split-lines (:out (shell/sh "pandoc" "--list-output-formats"))))])
 
-;; Let's define a map of tranform functions indexed by (a subset of) our markdown types
+;; Let's define a map of transform functions indexed by (a subset of) our markdown types
 ^{::clerk/visibility :hide}
 (declare md->pandoc)
 (def md-type->transform
@@ -76,7 +77,7 @@ $$F(t) = \\int_{t_0}^t \\phi(x)dx$$
 
 this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
 
-;; once we've turned it into pandoc json AST
+;; once we've turned it into Pandoc's JSON format
 (def pandoc-data (-> markdown-text md/parse md->pandoc))
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
@@ -96,7 +97,8 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
           :in (json/write-str pandoc-data))
 
 ;; ## 📥 Import
-;; Import works same same, this is a list of supported input formats:
+;;
+;; Import works same same. This is a list of supported input formats:
 ^{::clerk/visibility :hide}
 (clerk/html
  [:div {:style {:height "200px" :width "85%"}}
@@ -153,10 +155,11 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
       (xf node)
       (throw (ex-info (str "Not Implemented '" t "'.") node)))))
 
-;; Let us test the machinery above against a **Microsoft Word** file, turning it into markdown and natively rendering it with Clerk
 (defn pandoc<- [input from]
   (-> (shell/sh "pandoc" "-f" from "-t" "json" :in input)
       :out (json/read-str :key-fn keyword)))
+
+;; Let us test the machinery above against a **Microsoft Word** file, turning it into markdown and natively rendering it with Clerk
 
 (v/html
  [:div.shadow-xl.p-8
@@ -174,7 +177,7 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
        pandoc->md
        v/with-md-viewer)]])
 
-;; We might want to test our functions are invertible.
+;; We also might want to test that our functions are invertible:
 (v/html
  [:div
   [:div.shadow-xl.p-8
@@ -187,7 +190,8 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
        pandoc->md
        v/with-md-viewer)]])
 
-;; this brief experiment all for the moment. I guess pandoc format makes it an interesting format for Clerk to reach out to and from foreign formats.
+;; this brief experiment shows how Pandoc AST makes for an interesting format for Clerk to potentially
+;; interact with formats other than markdown and clojure.
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
 (comment

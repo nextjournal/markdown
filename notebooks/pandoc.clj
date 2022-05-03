@@ -29,6 +29,7 @@
    :heading (fn [{:keys [content heading-level]}] {:t "Header" :c [heading-level ["id" [] []] (map ->pandoc content)]})
    :paragraph (fn [{:keys [content]}] {:t "Para" :c (map ->pandoc content)})
    :code (fn [{:as node :keys [language]}] {:t "CodeBlock" :c [["" [language "code"] []] (md.transform/->text node)]})
+   :block-formula (fn [{:keys [text]}] {:t "Para" :c [{:t "Math" :c [{:t "DisplayMath"} text]}]})
 
    :em (fn [{:keys [content]}] {:t "Emph" :c (map ->pandoc content)})
    :strong (fn [{:keys [content]}] {:t "Strong" :c (map ->pandoc content)})
@@ -43,7 +44,7 @@
   ([ctx {:as node :keys [type]}]
    (if-some [xf (get ctx type)]
      (xf node)
-     (throw (ex-info (str "Not implemented: '" type ".") {:node node})))))
+     (throw (ex-info (str "Not implemented: '" type ".") node)))))
 
 ;; and a conversion function.
 (defn pandoc-convert [format pandoc-data]
@@ -64,7 +65,11 @@
 1 + 1
 ```
 
-this _is_ ~~an~~ **awesome** [example](https://some/path)!")
+With a block formula:
+
+$$F(t) = \\int_{t_0}^t \\phi(x)dx$$
+
+this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
 
 ;; once we've turned it into pandoc json AST
 (def pandoc-data (-> markdown-text md/parse ->pandoc))
@@ -78,14 +83,17 @@ this _is_ ~~an~~ **awesome** [example](https://some/path)!")
 ;; or **reStructuredText**
 (verbatim (pandoc-convert "rst" pandoc-data))
 
-;; or even to a **Jupyter notebook**
+;; or even to a **Jupyter notebook**.
 (verbatim (pandoc-convert "ipynb" pandoc-data))
+
+;; If you're in that exotic party mode, you can also go for a pdf
+(shell/sh "pandoc" "--pdf-engine=tectonic" "-f" "json" "-t" "pdf" "-o" "notebooks/demo.pdf"
+          :in (json/write-str pandoc-data))
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
 (comment
-  (clerk/serve! {:port 8888})
+ (clerk/serve! {:port 8888})
 
-  (json/read-str
-   (:out
-    (shell/sh "pandoc" "-f" "markdown" "-t" "json" :in markdown-text)))
-  )
+ (json/read-str
+  (:out
+   (shell/sh "pandoc" "-f" "markdown" "-t" "json" :in markdown-text))))

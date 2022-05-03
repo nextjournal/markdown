@@ -56,11 +56,16 @@ jobs:
         with:
           cli: '1.10.3.943'
 
-      - name: 🔧 Install Pandoc (needed in notebooks)
+      - name: 🔧 Install Pandoc
         run: |
           curl -LO https://github.com/jgm/pandoc/releases/download/2.18/pandoc-2.18-1-amd64.deb
           ls -lah
           sudo dpkg -i pandoc-2.18-1-amd64.deb
+
+      - name: 🔧 Setup LaTeX
+        uses: wtfjoke/setup-tectonic@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🗝 maven cache
         uses: actions/cache@v2
@@ -92,6 +97,12 @@ jobs:
       - name: 📠 Copy static build to bucket under SHA
         run: |
           gsutil cp -r public/build gs://nextjournal-snapshots/markdown/build/${{ github.sha }}
+
+      - name: 📤 Upload Pdf demo notebook
+        uses: actions/upload-artifact@v2
+        with:
+          name: demo
+          path: notebooks/demo.pdf
 
       - name: ✅ Add success status to report with link to snapshot
         uses: Sibz/github-status-action@v1

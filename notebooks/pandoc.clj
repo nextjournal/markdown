@@ -11,10 +11,14 @@
             [nextjournal.markdown.parser :as md.parser]
             [nextjournal.markdown.transform :as md.transform]))
 
+;; From the [docs](https://pandoc.org/MANUAL.html#description):
+;;
+;; > Pandoc has a modular design: it consists of a set of readers, which parse text in a given format and produce a native representation of the document (an abstract syntax tree or AST), and a set of writers, which convert this native representation into a target format. Thus, adding an input or output format requires only adding a reader or writer. Users can also run custom pandoc filters to modify the intermediate AST.
+;;
 ;; By transforming our markdown data format to and from [Pandoc](https://pandoc.org)'s internal
 ;; [AST](https://hackage.haskell.org/package/pandoc-types-1.22.2/docs/Text-Pandoc-Definition.html), we can achieve conversions
-;; from and to potentially all of their supported formats. In both directions we're using Pandoc [JSON format-neutral representation](https://pandoc.org/filters.html)
-;; of a structured document as intermediate format.
+;; from and to potentially all of their supported formats. In both directions we're using Pandoc [JSON representation](https://pandoc.org/filters.html)
+;; as intermediate format.
 ;;
 ;; ## 📤 Export
 ;;
@@ -108,10 +112,14 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
 
 (declare pandoc->md)
 (defn node+content [type pd-node] {:type type :content (keep pandoc->md (:c pd-node))})
+
 (def pandoc-type->transform
   {:Space (constantly {:type :text :text " "})
    :Str (fn [node] {:type :text :text (:c node)})
    :Para (partial node+content :paragraph)
+   :Plain (partial node+content :paragraph)
+   ;; ⬆ Pandoc distinguishes a plain-text container in e.g. list items
+   ;; which is not a paragraph (we should do the same)
    :Header (fn [node]
              (let [[level _meta content] (:c node)]
                {:type :heading
@@ -121,17 +129,23 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
    :Emph (partial node+content :em)
    :Strong (partial node+content :strong)
    :Strikeout (partial node+content :strikethrough)
-   :Underline (partial node+content :em) ;; missing on markdown
+   :Underline (partial node+content :em)                    ;; missing on markdown
    :Link (fn [node]
            (let [[_meta content [href _]] (:c node)]
              {:type :link
               :attrs {:href href}
               :content (keep pandoc->md content)}))
 
-   :BulletList (fn [node] {:type :bullet-list :content (keep pandoc->md (flatten (:c node)))})
-   :OrderedList (fn [node] {:type :numbered-list :content (keep pandoc->md (flatten (second (:c node))))})
-   :Plain (partial node+content :list-item)
-
+   :BulletList (fn [node]
+                 {:type :bullet-list
+                  :content (map (fn [li]
+                                  {:type :list-item
+                                   :content (keep pandoc->md li)}) (:c node))})
+   :OrderedList (fn [node]
+                  {:type :numbered-list
+                   :content (map (fn [li]
+                                   {:type :list-item
+                                    :content (keep pandoc->md li)}) (second (:c node)))})
 
    :Math (fn [node] (let [[_meta latex] (:c node)] (md.parser/block-formula latex)))
    :Code (fn [node]
@@ -142,7 +156,7 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
                   {:type :code
                    :content [(md.parser/text-node code)]}))
    :SoftBreak (constantly {:type :softbreak})
-   :RawBlock (constantly nil) ;; ignore
+   :RawBlock (constantly nil)
    :RawInline (fn [{:keys [c]}]
                 (cond
                   (and (vector? c) (= "latex" (first c)))
@@ -155,8 +169,8 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
       (xf node)
       (throw (ex-info (str "Not Implemented '" t "'.") node)))))
 
-(defn pandoc<- [input from]
-  (-> (shell/sh "pandoc" "-f" from "-t" "json" :in input)
+(defn pandoc<- [input format]
+  (-> (shell/sh "pandoc" "-f" format "-t" "json" :in input)
       :out (json/read-str :key-fn keyword)))
 
 ;; Let us test the machinery above against a **Microsoft Word** file, turning it into markdown and natively rendering it with Clerk

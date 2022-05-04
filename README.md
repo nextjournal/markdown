@@ -13,8 +13,7 @@ A cross-platform clojure library for Markdown parsing and transformation.
 ## Usage
 
 ```clojure
-(require '[nextjournal.clerk :as clerk]
-         '[nextjournal.markdown :as md]
+(require '[nextjournal.markdown :as md]
          '[nextjournal.markdown.transform :as md.transform])
 ```
 
@@ -40,14 +39,14 @@ This library is one of the building blocks of [Clerk](https://github.com/nextjou
 As such, markdown data natively renders well in a notebook
 
 ```clojure
-^{::clerk/viewer {:transform-fn nextjournal.clerk.viewer/with-md-viewer}}
+^{:nextjournal.clerk/viewer {:transform-fn nextjournal.clerk.viewer/with-md-viewer}}
 data
 ```
 
 The transformation of each single markdown node can be specified like this
 
 ```clojure
-^{::clerk/viewer :html}
+^{:nextjournal.clerk/viewer :html}
 (md.transform/->hiccup
  (assoc md.transform/default-hiccup-renderers
         :text (fn [_ctx node] [:span {:style {:color "teal"}} (:text node)])

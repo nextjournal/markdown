@@ -1,5 +1,5 @@
 # nextjournal markdown 
-[![Notebooks](https://img.shields.io/static/v1?logo=plex&logoColor=rgb(155,187,157)&label=clerk&message=notebook&color=rgb(155,187,157))](https://snapshots.nextjournal.com/markdown/build/7f5c1e24aeb3842235bc6175aa55dbd9a96d25d1/index.html#/notebooks/README.md)
+[![Notebooks](https://img.shields.io/static/v1?logo=plex&logoColor=rgb(155,187,157)&label=clerk&message=notebook&color=rgb(155,187,157))](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/README.md)
 
 A cross-platform clojure library for Markdown parsing and transformation.
 
@@ -34,7 +34,7 @@ and just incidentally, helps you transform markdown data to hiccup.
 (md.transform/->hiccup data)
 ```
 
-We've built hiccup transformation in for convenience but nothing prevents you from targeting more formats: [Pandoc is definitely our source of inspiration here](https://snapshots.nextjournal.com/markdown/build/7f5c1e24aeb3842235bc6175aa55dbd9a96d25d1/index.html#/notebooks/pandoc.clj).
+We've built hiccup transformation in for convenience but nothing prevents you from targeting more formats: [Pandoc is definitely our source of inspiration here](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/notebooks/pandoc.clj).
 
 This library is one of the building blocks of [Clerk](https://github.com/nextjournal/clerk) where it is used for handling the textual parts in notebooks.
 As such, markdown data natively renders well in a notebook
@@ -50,13 +50,13 @@ The transformation of each single markdown node can be specified like this
 ^{::clerk/viewer :html}
 (md.transform/->hiccup
  (assoc md.transform/default-hiccup-renderers
-   :text (fn [_ctx node] [:span {:style {:color "teal"}} (:text node)])
-   :paragraph (partial md.transform/into-markup [:p {:style {:margin-top "-1.6rem"}}])
-   :ruler (constantly [:hr {:style {:border "2px dashed teal"}}]))
+        :text (fn [_ctx node] [:span {:style {:color "teal"}} (:text node)])
+        :paragraph (partial md.transform/into-markup [:p {:style {:margin-top "-1.6rem"}}])
+        :ruler (constantly [:hr {:style {:border "2px dashed teal"}}]))
  data)
 ```
 
 ## Customizing Parsing
 
-In [this notebook](https://snapshots.nextjournal.com/markdown/build/7f5c1e24aeb3842235bc6175aa55dbd9a96d25d1/index.html#/notebooks/parsing_extensibility.clj) 
+In [this notebook](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/notebooks/parsing_extensibility.clj) 
 we show how to extend parsing of text nodes.

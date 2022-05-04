@@ -1,17 +1,24 @@
+;; # 🧩 Parsing
+;;
+;; Deals with transforming a sequence of tokens obtained by [markdown-it] into a nested AST composed of nested _nodes_.
+;;
+;; A _node_ is a clojure map and has no closed specification at the moment. We do follow a few conventions for its keys:
+;;
+;; - `:type` a keyword (:heading, :paragraph, :text, :code etc.) present on all nodes.
+;;
+;; When a node contains other child nodes, then it will have a
+;;
+;; - `:content` a collection of nodes representing nested content
+;;
+;; when a node is a textual leaf (as in a `:text` or `:formula` nodes) it carries a
+;; - `:text` key with a string value
+;;
+;; Other keys might include e.g.
+;;
+;; - `:info` specific of fenced code blocks
+;; - `:heading-level` specific of `:heading` nodes
+;; - `:attrs` attributes as passed by markdown-it tokens (e.g `{:style "some style info"}`)
 (ns nextjournal.markdown.parser
-  "Deals with transforming a collection of markdown-it tokens obtained from parsing markdown text into an AST composed
-  of nested clojure structures.
-
-  See `parse` function.
-
-  A \"Node\" has the following keys:
-  - type: a Node's type as keyword (:heading, :paragraph, :text, :code etc.)
-  - info: (optional) fenced code info
-  - content: (optional) a collection of Nodes representing nested content
-  - text: (optional) content of text nodes, a collection of Nodes
-  - heading-level: (on `:heading` nodes)
-  - attrs: attributes as passed by markdownit tokens (e.g {:attrs {:style \"some style info\"}})
-  "
   (:require [clojure.string :as str]
             [nextjournal.markdown.transform :as md.transform]
             #?@(:cljs [[applied-science.js-interop :as j]
@@ -37,29 +44,33 @@
 ;; helpers
 (defn inc-last [path] (update path (dec (count path)) inc))
 (defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second #?(:clj read-string :cljs reader/read-string))))
-(defn parse-fence-info
-  "Ingests nextjournal, GFM, Pandoc and RMarkdown fenced code block info, returns a map
 
-   Nextjournal
-   ```python id=2e3541da-0735-4b7f-a12f-4fb1bfcb6138
-     ...
-   ```
+;; `parse-fence-info` ingests nextjournal, GFM, Pandoc and RMarkdown fenced code block info (any text following the leading 3 backticks) and returns a map
+;;
+;; _nextjournal_ / _GFM_
+;;
+;;    ```python id=2e3541da-0735-4b7f-a12f-4fb1bfcb6138
+;;    python code
+;;    ```
+;;
+;; _Pandoc_
+;;
+;;    ```{#pandoc-id .languge .extra-class key=Val}
+;;    code in language
+;;    ```
+;;
+;; _Rmd_
+;;
+;;    ```{r cars, echo=FALSE}
+;;    R code
+;;    ```
+;;
+;; See also:
+;; - https://github.github.com/gfm/#info-string
+;; - https://pandoc.org/MANUAL.html#fenced-code-blocks
+;; - https://rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf"
 
-   Pandoc
-   ```{#pandoc-id .languge .extra-class key=Val}
-     ...
-   ```
-
-   Rmd
-   ```{r cars, echo=FALSE}
-     ...
-   ```
-
-   See also:
-   - https://github.github.com/gfm/#info-string
-   - https://pandoc.org/MANUAL.html#fenced-code-blocks
-   - https://rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf"
-  [info-str]
+(defn parse-fence-info [info-str]
   (try
     (when (string? info-str)
       (let [tokens (-> info-str

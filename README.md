@@ -25,12 +25,35 @@ This library does essentially one thing:
 * something ~~unusual~~ **familiar**
 ---
 "))
+;; =>
+;; {:type :doc
+;;  :toc {:type :toc :children [...]}
+;;  :title "👋🏻 Hello Markdown"
+;;  :content [{:type :heading 
+;;             :content [{:type :text :text "👋🏻 Hello Markdown"}] :heading-level 3}
+;;            {:type :bullet-list
+;;             :content [{:type :list-item
+;;                        :content [{:type :paragraph
+;;                                   :content [{:type :text :text "this "}
+;;                                             {:type :em :content [{:type :text :text "looks"}]}]}]}
+;;                       {:type :list-item
+;;                        :content [{:type :paragraph
+;;                                   :content [{:type :text :text "something "}
+;;                                             {:type :strikethrough, :content [{:type :text :text "unusual"}]}
+;;                                             {:type :text :text " "}
+;;                                             {:type :strong, :content [{:type :text :text "familiar"}]}]}]}]}
+;;            {:type :ruler}]}
 ```
 
 and just incidentally, helps you transform markdown data to hiccup.
 
 ```clojure
 (md.transform/->hiccup data)
+;; =>
+;; [:div
+;;  [:h3 {:id "%F0%9F%91%8B%F0%9F%8F%BB%20Hello%20Markdown"} "👋🏻 Hello Markdown"]
+;;  [:ul [:li [:p "this " [:em "looks"]]] [:li [:p "something " [:s "unusual"] " " [:strong "familiar"]]]]
+;;  [:hr]]
 ```
 
 We've built hiccup transformation in for convenience but nothing prevents you from targeting more formats: [Pandoc is definitely our source of inspiration here](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/notebooks/pandoc.clj).

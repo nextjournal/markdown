@@ -13,7 +13,6 @@ MD.use(mdToc)
 let sidenotes = require("markdown-it-sidenote")
 MD.use(sidenotes)
 
-// TODO: move to its own requirable (local) package or file
 function todoListPlugin(md, opts) {
   const startsWithTodoSequence = (text) => {
     return text.startsWith("[ ] ") || text.startsWith("[x] ")

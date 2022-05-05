@@ -5,10 +5,13 @@ A cross-platform clojure library for Markdown parsing and transformation.
 
 ## Features
 
-- _Cross Platform_: our parser folds tokens emitted by the js library [markdown-it](https://github.com/markdown-it/markdown-it). We're reaching out to the JVM by means of [Graal's Polyglot Engine](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context) while targeting clojurescript is for free.
-- _Focus on data_: parsing yields an AST (à la [Pandoc](https://pandoc.org/using-the-pandoc-api.html#pandocs-architecture)) of clojure nested data representing a structured document.
-- _Configurable Hiccup conversion_: a set of convenience functions for transforming parsed data into markup, allowing to configure the tranformation of each markdown node.
-- _Extensibility_: a tiny layer for [parsing custom expressions](https://snapshots.nextjournal.com/markdown/build/7f5c1e24aeb3842235bc6175aa55dbd9a96d25d1/index.html#/notebooks/parsing_extensibility.clj) at the level of text leaf nodes.
+- _Focus on data_: parsing yields an AST ([à la Pandoc](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/notebooks/pandoc.clj)) of clojure nested data representing a structured document.
+- _Cross Platform_: our parser folds tokens emitted by the js library [markdown-it](https://github.com/markdown-it/markdown-it). We're reaching out to the JVM by means of [Graal's Polyglot Engine](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context) while targeting clojurescript is for free. By using a [common codebase](https://github.com/nextjournal/markdown/blob/ae2a2f0b6d7bdc6231f5d088ee559178b55c97f4/src/js/markdown.js) we can gurantee™️ that parsing server- or client-side leads to the same ressults.
+- _Configurable Hiccup conversion_: a set of convenience functions for transforming parsed data into hiccup, allowing to change the representation of each markdown node.
+
+## Flavour
+
+We adhere to the [CommonMark Spec](https://spec.commonmark.org/0.30/) with in addition all the extensions of [Github flavoured Markdown](https://github.github.com/gfm/#what-is-github-flavored-markdown-). We additionally parse $\LaTeX$ formulas delimited by a single dollar sign `$` for inline mode or by a double dollar sign `$$` for display mode.
 
 ## Usage
 
@@ -56,10 +59,9 @@ and just incidentally, helps you transform markdown data to hiccup.
 ;;  [:hr]]
 ```
 
-We've built hiccup transformation in for convenience but nothing prevents you from targeting more formats: [Pandoc is definitely our source of inspiration here](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/notebooks/pandoc.clj).
+We've built hiccup transformation in for convenience but it's easy to target [more formats](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/notebooks/pandoc.clj).
 
-This library is one of the building blocks of [Clerk](https://github.com/nextjournal/clerk) where it is used for handling the textual parts in notebooks.
-As such, markdown data natively renders well in a notebook
+This library is one of the building blocks of [Clerk](https://github.com/nextjournal/clerk) where it is used for handling _literate_ fragments. As such, markdown data is natively rendered in notebooks 
 
 ```clojure
 ^{:nextjournal.clerk/viewer {:transform-fn nextjournal.clerk.viewer/with-md-viewer}}
@@ -78,7 +80,6 @@ The transformation of each single markdown node can be specified like this
  data)
 ```
 
-## Customizing Parsing
+## Extensibility
 
-In [this notebook](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/notebooks/parsing_extensibility.clj) 
-we show how to extend parsing of text nodes.
+We added a tiny layer for [parsing custom expressions](https://snapshots.nextjournal.com/markdown/build/7f5c1e24aeb3842235bc6175aa55dbd9a96d25d1/index.html#/notebooks/parsing_extensibility.clj) at the level of text leaf nodes on top of the base tokenization from markdown-it.

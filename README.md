@@ -16,8 +16,9 @@ We adhere to the [CommonMark Spec](https://spec.commonmark.org/0.30/) with in ad
 ## Usage
 
 ```clojure
-(require '[nextjournal.markdown :as md]
-         '[nextjournal.markdown.transform :as md.transform])
+(ns hello-markdown
+  (:require [nextjournal.markdown :as md]
+            [nextjournal.markdown.transform :as md.transform]))
 ```
 
 This library does essentially one thing:

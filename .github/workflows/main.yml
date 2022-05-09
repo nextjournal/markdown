@@ -115,6 +115,12 @@ jobs:
         run: |
           gsutil cp -r public/build gs://nextjournal-snapshots/markdown/build/${{ github.sha }}
 
+      - name: 📠 Copy static build to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.6
+        with:
+          branch: gh-pages     # The branch the action should deploy to.
+          folder: public/build # The folder the action should deploy.
+
       - name: 📤 Upload Pdf demo notebook
         uses: actions/upload-artifact@v2
         with:

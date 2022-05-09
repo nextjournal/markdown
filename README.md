@@ -1,5 +1,5 @@
 # nextjournal markdown 
-[![Notebooks](https://img.shields.io/static/v1?logo=plex&logoColor=rgb(155,187,157)&label=clerk&message=notebook&color=rgb(155,187,157))](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/README.md)
+[![Notebooks](https://img.shields.io/static/v1?logo=plex&logoColor=rgb(155,187,157)&label=clerk&message=notebooks&color=rgb(155,187,157))](https://nextjournal.github.io/markdown)
 
 A cross-platform clojure library for Markdown parsing and transformation.
 
@@ -11,7 +11,7 @@ A cross-platform clojure library for Markdown parsing and transformation.
 
 ## Flavour
 
-We adhere to the [CommonMark Spec](https://spec.commonmark.org/0.30/) with in addition all the extensions of [Github flavoured Markdown](https://github.github.com/gfm/#what-is-github-flavored-markdown-). We additionally parse $\LaTeX$ formulas delimited by a single dollar sign `$` for inline mode or by a double dollar sign `$$` for display mode.
+We adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) with in addition the extensions of [Github flavoured Markdown](https://github.github.com/gfm/#what-is-github-flavored-markdown-). We additionally parse $\LaTeX$ formulas delimited by a single dollar sign `$` for inline mode or by a double dollar sign `$$` for display mode.
 
 ## Usage
 

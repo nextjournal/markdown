@@ -11,5 +11,19 @@
 
   test
   {:doc "runs tests in the markdown module"
-   :depends [build:markdown:esm]
-   :task (clojure "-X:test")}}}
+   :depends [build-esm]
+   :task (clojure "-X:test")}
+
+  cljs:compile:tests
+  {:doc "compiles tests as node executable"
+   :depends [yarn-install]
+   :task (clojure "-M:cljs-test compile test")}
+
+  test:cljs:browser
+  {:doc "runs cljs tests in the browsr"
+   :task (clojure "-M:cljs-test watch browser-test")}
+
+  test:cljs
+  {:doc "runs cljs tests via node"
+   :depends [cljs:compile:tests]
+   :task (shell "yarn node --trace-uncaught out/node-tests.js")}}}

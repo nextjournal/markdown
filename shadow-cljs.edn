@@ -1,0 +1,16 @@
+{:source-paths ["src" "test"]
+ :dev-http {8021 "out/test"}
+ :builds
+ {:test
+  {:target :node-test
+   :output-dir "out"
+   :output-to "out/node-tests.js"
+   :closure-defines {shadow.debug true}
+   :js-options {:js-provider :shadow
+                :output-feature-set :es8}}
+
+  :browser-test
+  {:target :browser-test
+   :test-dir "out/test"
+   :closure-defines {shadow.debug true}
+   :js-options {:output-feature-set :es8}}}}

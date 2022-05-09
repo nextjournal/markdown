@@ -1,7 +1,6 @@
 (ns nextjournal.markdown
   (:require ["/js/markdown" :as md]
             ["markdown-it/lib/token" :as Token]
-            ["katex" :as katex]
             [applied-science.js-interop :as j]
             [nextjournal.markdown.parser :as markdown.parser]
             [nextjournal.markdown.transform :as markdown.transform]))

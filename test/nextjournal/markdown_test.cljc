@@ -1,5 +1,7 @@
 (ns nextjournal.markdown-test
-  (:require [clojure.test :refer :all]
+  (:require #?(:clj [clojure.test :refer :all]
+               :cljs [cljs.test :refer (deftest testing is)])
+            [matcher-combinators.test]
             [nextjournal.markdown :as md]
             [nextjournal.markdown.transform :as md.transform]))
 
@@ -176,9 +178,10 @@ $$\\int_a^bf(t)dt$$
 ### this is not a title" ))))))
 
 (deftest ->hiccup-toc-test
-  "Builds Toc"
+  (testing
+   "Builds Toc"
 
-  (let [md "# Title
+    (let [md "# Title
 
 ## Section 1
 
@@ -188,94 +191,94 @@ $$\\int_a^bf(t)dt$$
 
 ### Section 2.1
 "
-        data (md/parse md)
-        hiccup (md.transform/->hiccup data)]
+          data (md/parse md)
+          hiccup (md.transform/->hiccup data)]
 
-    (is (= {:type :doc
-            :title "Title"
-            :content [{:content [{:text "Title"
-                                  :type :text}]
-                       :heading-level 1
-                       :type :heading}
-                      {:content [{:text "Section 1"
-                                  :type :text}]
-                       :heading-level 2
-                       :type :heading}
-                      {:type :toc}
-                      {:content [{:text "Section 2"
-                                  :type :text}]
-                       :heading-level 2
-                       :type :heading}
-                      {:content [{:text "Section 2.1"
-                                  :type :text}]
-                       :heading-level 3
-                       :type :heading}]
-            :toc {:children [{:children [{:content [{:text "Section 1"
-                                                     :type :text}]
-                                          :heading-level 2
-                                          :path [:content 1]
-                                          :type :toc}
-                                         {:children [{:content [{:text "Section 2.1"
-                                                                 :type :text}]
-                                                      :heading-level 3
-                                                      :path [:content 4]
-                                                      :type :toc}]
-                                          :content [{:text "Section 2"
-                                                     :type :text}]
-                                          :heading-level 2
-                                          :path [:content 3]
-                                          :type :toc}]
-                              :content [{:text "Title"
-                                         :type :text}]
-                              :heading-level 1
-                              :path [:content 0]
-                              :type :toc}]
-                  :type :toc}}
-           data))
+      (is (= {:type :doc
+              :title "Title"
+              :content [{:content [{:text "Title"
+                                    :type :text}]
+                         :heading-level 1
+                         :type :heading}
+                        {:content [{:text "Section 1"
+                                    :type :text}]
+                         :heading-level 2
+                         :type :heading}
+                        {:type :toc}
+                        {:content [{:text "Section 2"
+                                    :type :text}]
+                         :heading-level 2
+                         :type :heading}
+                        {:content [{:text "Section 2.1"
+                                    :type :text}]
+                         :heading-level 3
+                         :type :heading}]
+              :toc {:children [{:children [{:content [{:text "Section 1"
+                                                       :type :text}]
+                                            :heading-level 2
+                                            :path [:content 1]
+                                            :type :toc}
+                                           {:children [{:content [{:text "Section 2.1"
+                                                                   :type :text}]
+                                                        :heading-level 3
+                                                        :path [:content 4]
+                                                        :type :toc}]
+                                            :content [{:text "Section 2"
+                                                       :type :text}]
+                                            :heading-level 2
+                                            :path [:content 3]
+                                            :type :toc}]
+                                :content [{:text "Title"
+                                           :type :text}]
+                                :heading-level 1
+                                :path [:content 0]
+                                :type :toc}]
+                    :type :toc}}
+             data))
 
-    (is (= [:div
-            [:h1
-             {:id "Title"}
-             "Title"]
-            [:h2
-             {:id "Section%201"}
-             "Section 1"]
-            [:div.toc
-             [:div
-              [:ul
-               [:li.toc-item
-                [:div
-                 [:a
-                  {:href "#Title"}
-                  [:h1
-                   "Title"]]
-                 [:ul
-                  [:li.toc-item
-                   [:div
-                    [:a
-                     {:href "#Section%201"}
-                     [:h2
-                      "Section 1"]]]]
-                  [:li.toc-item
-                   [:div
-                    [:a
-                     {:href "#Section%202"}
-                     [:h2
-                      "Section 2"]]
-                    [:ul
-                     [:li.toc-item
-                      [:div
-                       [:a
-                        {:href "#Section%202.1"}
-                        [:h3
-                         "Section 2.1"]]]]]]]]]]]]]
-            [:h2
-             {:id "Section%202"}
-             "Section 2"]
-            [:h3
-             {:id "Section%202.1"}
-             "Section 2.1"]]
-          hiccup))))
+      (is (match? [:div
+                   [:h1
+                    {:id "Title"}
+                    "Title"]
+                   [:h2
+                    {:id "Section%201"}
+                    "Section 1"]
+                   [:div.toc
+                    [:div
+                     [:ul
+                      [:li.toc-item
+                       [:div
+                        [:a
+                         {:href "#Title"}
+                         [:h1
+                          "Title"]]
+                        [:ul
+                         [:li.toc-item
+                          [:div
+                           [:a
+                            {:href "#Section%201"}
+                            [:h2
+                             "Section 1"]]]]
+                         [:li.toc-item
+                          [:div
+                           [:a
+                            {:href "#Section%202"}
+                            [:h2
+                             "Section 2"]]
+                           [:ul
+                            [:li.toc-item
+                             [:div
+                              [:a
+                               {:href "#Section%202.1"}
+                               [:h3
+                                "Section 2.1"]]]]]]]]]]]]]
+                   [:h2
+                    {:id "Section%202"}
+                    "Section 2"]
+                   [:h3
+                    {:id "Section%202.1"}
+                    "Section 2.1"]]
+                  hiccup)))))
 
 (deftest todo-lists
   (testing "todo lists"

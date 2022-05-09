@@ -27,6 +27,12 @@ jobs:
         with:
           cli: '1.10.3.943'
 
+      - name: 🔧 Install babashka
+        run: |
+          curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
+          chmod +x install
+          ./install
+
       - name: 🗝 maven cache
         uses: actions/cache@v2
         with:
@@ -39,7 +45,23 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: 🧪 Run tests
-        run: clojure -X:test
+        run: bb test
+
+  cljs-tests:
+    name: Cljs Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎 Checkout
+        uses: actions/checkout@v2
+
+      - name: 🔧 Install babashka
+        run: |
+          curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
+          chmod +x install
+          ./install
+
+      - name: 🧪 Run tests
+        run: bb test:cljs
 
   notebooks:
     name: Clerk Notebooks Build

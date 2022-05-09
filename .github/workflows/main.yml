@@ -27,11 +27,6 @@ jobs:
         with:
           cli: '1.10.3.943'
 
-      - name: 🔧 Setup Babashka
-        uses: turtlequeue/setup-babashka@v1.3.0
-        with:
-          babashka-version: 0.7.8
-
       - name: 🗝 maven cache
         uses: actions/cache@v2
         with:
@@ -44,10 +39,10 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: 🧪 Run tests
-        run: bb test
+        run: clojure -X:test
 
   cljs-tests:
-    name: Cljs Tests
+    name: ClojureScript Tests
     runs-on: ubuntu-latest
     steps:
       - name: 🛎 Checkout

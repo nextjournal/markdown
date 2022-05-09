@@ -6,8 +6,8 @@ A cross-platform clojure library for Markdown parsing and transformation.
 ## Features
 
 * _Focus on data_: parsing yields an AST ([à la Pandoc](https://snapshots.nextjournal.com/markdown/build/9c419d0158436ab7f9f24b8d7b875a9f514c38e7/index.html#/notebooks/pandoc.clj)) of clojure nested data representing a structured document.
-*_Cross Platform_: our parser folds tokens emitted by the js library [markdown-it](https://github.com/markdown-it/markdown-it). We're reaching out to the JVM by means of [Graal's Polyglot Engine](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context) while targeting clojurescript comes for free. By using a [common codebase](https://github.com/nextjournal/markdown/blob/ae2a2f0b6d7bdc6231f5d088ee559178b55c97f4/src/js/markdown.js) we can gurantee™️ that parsing server- or client-side leads to the same results.
-*_Configurable Hiccup conversion_: a set of convenience functions for transforming parsed data into hiccup, allowing to change the representation of each markdown node.
+* _Cross Platform_: our parser folds tokens emitted by the js library [markdown-it](https://github.com/markdown-it/markdown-it). We're reaching out to the JVM by means of [Graal's Polyglot Engine](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context) while targeting clojurescript comes for free. By using a [common codebase](https://github.com/nextjournal/markdown/blob/ae2a2f0b6d7bdc6231f5d088ee559178b55c97f4/src/js/markdown.js) we can gurantee™️ that parsing server- or client-side leads to the same results.
+* _Configurable Hiccup conversion_: a set of convenience functions for transforming parsed data into hiccup, allowing to change the representation of each markdown node.
 
 ## Flavour
 

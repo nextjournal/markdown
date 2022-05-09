@@ -27,11 +27,10 @@ jobs:
         with:
           cli: '1.10.3.943'
 
-      - name: 🔧 Install babashka
-        run: |
-          curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
-          chmod +x install
-          ./install
+      - name: 🔧 Setup Babashka
+        uses: turtlequeue/setup-babashka@v1.3.0
+        with:
+          babashka-version: 0.7.8
 
       - name: 🗝 maven cache
         uses: actions/cache@v2
@@ -54,11 +53,10 @@ jobs:
       - name: 🛎 Checkout
         uses: actions/checkout@v2
 
-      - name: 🔧 Install babashka
-        run: |
-          curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
-          chmod +x install
-          ./install
+      - name: 🔧 Setup Babashka
+        uses: turtlequeue/setup-babashka@v1.3.0
+        with:
+          babashka-version: 0.7.8
 
       - name: 🧪 Run tests
         run: bb test:cljs

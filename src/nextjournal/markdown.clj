@@ -37,18 +37,10 @@
         (eval (.build source))
         (getMember "default"))))
 
-(defn make-js-fn [fn-name]
-  (let [f (.getMember MD-imports fn-name)]
-    (fn [& args] (.execute f (to-array args)))))
-
-(def parse* (make-js-fn "parseJ"))
-
-(comment
-  (.execute (.getMember MD-imports "parse") (to-array ["# Hello"]))
-  (parse* "# Hello"))
+(def ^Value tokenize-fn (.getMember MD-imports "tokenizeJSON"))
 
 (defn tokenize [markdown-text]
-  (let [^Value tokens-json (parse* markdown-text)]
+  (let [^Value tokens-json (.execute tokenize-fn (to-array [markdown-text]))]
     (json/read-str (.asString tokens-json) :key-fn keyword)))
 
 (defn parse
@@ -61,31 +53,30 @@
   ([ctx markdown-text] (->> markdown-text parse (markdown.transform/->hiccup ctx))))
 
 (comment
-  ;; asks markdown-it parser for a sequence of tokens
   (tokenize "# Title
 - [ ] one
 - [x] two
 ")
 
-  ;; parse markdonw into an "AST" of nodes
   (parse "# Hello Markdown
 - [ ] what
 - [ ] [nice](very/nice/thing)
 - [x] ~~thing~~
 ")
 
-  ;; default render
   (->hiccup "# Hello Markdown
 
-What's _going_ on?
-[[TOC]]")
+* What's _going_ on?
+")
 
-  ;; custom overrides by type
   (->hiccup
    (assoc markdown.transform/default-hiccup-renderers
           :heading (fn [ctx node]
                      [:h1.some-extra.class
                       (markdown.transform/into-markup [:span.some-other-class] ctx node)]))
    "# Hello Markdown
-What's _going_ on?
-"))
+* What's _going_ on?
+")
+
+  ;; launch shadow cljs repl
+  (shadow.cljs.devtools.api/repl :browser-test))

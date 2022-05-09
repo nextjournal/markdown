@@ -9,7 +9,7 @@
   ILookup
   (-lookup [this key] (j/get this key)))
 
-(def tokenize md/parse)
+(def tokenize md/tokenize)
 
 (defn parse
   "Turns a markdown string into a nested clojure structure."
@@ -21,33 +21,30 @@
   ([ctx markdown-text] (->> markdown-text parse (markdown.transform/->hiccup ctx))))
 
 (comment
-  ;; asks markdown-it parser for a sequence of tokens
-  (js/console.log
-   (tokenize "# Title
+ (tokenize "# Title
 - [ ] one
 - [x] two
-"))
+")
 
-  ;; parse markdonw into an "AST" of nodes
-  (parse "# Hello Markdown
-
+ (parse "# Hello Markdown
 - [ ] what
 - [ ] [nice](very/nice/thing)
 - [x] ~~thing~~
 ")
 
-  ;; default render
-  (->hiccup "# Hello Markdown
+ (->hiccup "# Hello Markdown
 
-What's _going_ on?
-[[TOC]]")
+* What's _going_ on?
+")
 
-  ;; custom overrides by type
-  (->hiccup
-   (assoc markdown.transform/default-hiccup-renderers
-          :heading (fn [ctx node]
-                     [:h1.some-extra.class
-                      (markdown.transform/into-markup [:span.some-other-class] ctx node)]))
-   "# Hello Markdown
-What's _going_ on?
-"))
+ (->hiccup
+  (assoc markdown.transform/default-hiccup-renderers
+    :heading (fn [ctx node]
+               [:h1.some-extra.class
+                (markdown.transform/into-markup [:span.some-other-class] ctx node)]))
+  "# Hello Markdown
+* What's _going_ on?
+")
+
+ ;; launch shadow cljs repl
+ (shadow.cljs.devtools.api/repl :browser-test))

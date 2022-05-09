@@ -54,7 +54,7 @@ function todoListPlugin(md, opts) {
 
 MD.use(todoListPlugin)
 
-function parse(text)  { return MD.parse(text, {}) }
-function parseJ(text) { return JSON.stringify(MD.parse(text, {})) }
+function tokenize(text)  { return MD.parse(text, {}) }
+function tokenizeJSON(text) { return JSON.stringify(MD.parse(text, {})) }
 
-module.exports = {parseJ: parseJ, parse: parse}
+module.exports = {tokenize, tokenizeJSON}

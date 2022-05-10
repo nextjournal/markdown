@@ -7,7 +7,7 @@
 (def lib 'io.github.nextjournal/markdown)
 (def previous-repo-offset 69) ;; used to live in nextjournal/viewers
 (def major 0)
-(def minor 3)
+(def minor 4)
 
 (defn current-git-commit-sha [] (str/trim (:out (shell/sh "git" "rev-parse" "HEAD"))))
 (def scm {:url (format "https://github.com/nextjournal/markdown/tree/%s" (current-git-commit-sha))})

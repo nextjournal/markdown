@@ -12,3 +12,5 @@ pom.xml.asc
 public
 target
 .DS_Store
+.shadow-cljs
+out

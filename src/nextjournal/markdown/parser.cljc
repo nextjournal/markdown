@@ -130,7 +130,8 @@
        (push-node (node type [] attrs top-level))
        (update ::path into [:content -1]))))
 ;; after closing a node, document ::path will point at it
-(defn close-node [doc] (update doc ::path (comp pop pop)))
+(def ppop (comp pop pop))
+(defn close-node [doc] (update doc ::path ppop))
 (defn update-current [{:as doc path ::path} fn & args] (apply update-in doc path fn args))
 
 (comment                                                    ;; path after call
@@ -313,16 +314,18 @@ end"
     nextjournal.markdown.transform/->hiccup
     ))
 
-;; text
+;; ## Handling of Text Tokens
+;;
+;;    normalize-tokenizer :: {:regex, :doc-handler} | {:tokenizer-fn, :handler} -> Tokenizer
+;;    Tokenizer :: {:tokenizer-fn :: TokenizerFn, :doc-handler :: DocHandler}
+;;
+;;    Match :: Any
+;;    Handler :: Match -> Node
+;;    IndexedMatch :: (Match, Int, Int)
+;;    TokenizerFn :: String -> [IndexedMatch]
+;;    DocHandler :: Doc -> {:match :: Match} -> Doc
+
 (def text-tokenizers
-  "
-   Match :: Any
-   Handler :: Match -> Node
-   IndexedMatch :: (Match, Int, Int)
-   TokenizerFn :: String -> [IndexedMatch]
-   Tokenizer :: {:tokenizer-fn :: TokenizerFn,
-                 :handler :: Handler}
-  "
   [{:regex #"(^|\B)#[\w-]+"
     :handler (fn [match] {:type :hashtag :text (subs (match 0) 1)})}
    {:regex #"\[\[([^\]]+)\]\]"
@@ -330,48 +333,62 @@ end"
 
 (defn normalize-tokenizer
   "Normalizes a map of regex and handler into a Tokenizer"
-  [{:as t :keys [handler regex tokenizer-fn]}]
-  (assert (and handler (or regex tokenizer-fn)))
-  (cond-> t (not tokenizer-fn) (assoc :tokenizer-fn (partial re-idx-seq regex))))
+  [{:as tokenizer :keys [doc-handler handler regex tokenizer-fn]}]
+  (assert (and (or doc-handler handler) (or regex tokenizer-fn)))
+  (cond-> tokenizer
+    (not doc-handler) (assoc :doc-handler (fn [doc {:keys [match]}] (push-node doc (handler match))))
+    (not tokenizer-fn) (assoc :tokenizer-fn (partial re-idx-seq regex))))
 
-(defn tokenize-text [{:keys [tokenizer-fn handler]} text]
-  ;; TokenizerFn -> String -> [Node]
-  (assert (and (fn? tokenizer-fn) (string? text)))
+(defn tokenize-text-node [{:as tkz :keys [tokenizer-fn doc-handler]} {:as node :keys [text]}]
+  ;; TokenizerFn -> HNode -> [HNode]
+  (assert (and (fn? tokenizer-fn) (fn? doc-handler) (string? text))
+          {:text text :tokenizer tkz})
   (let [idx-seq (tokenizer-fn text)]
     (if (seq idx-seq)
-      (let [{:keys [nodes remaining-text]}
+      (let [text-hnode (fn [s] (assoc (text-node s) :doc-handler push-node))
+            {:keys [nodes remaining-text]}
             (reduce (fn [{:as acc :keys [remaining-text]} [match start end]]
                       (-> acc
                           (update :remaining-text subs 0 start)
                           (cond->
                             (< end (count remaining-text))
-                            (update :nodes conj (text-node (subs remaining-text end))))
-                          (update :nodes conj (handler match))))
+                            (update :nodes conj (text-hnode (subs remaining-text end))))
+                          (update :nodes conj {:doc-handler doc-handler
+                                               :match match :text text
+                                               :start start :end end})))
                     {:remaining-text text :nodes ()}
                     (reverse idx-seq))]
         (cond-> nodes
           (seq remaining-text)
-          (conj (text-node remaining-text))))
-      [(text-node text)])))
+          (conj (text-hnode remaining-text))))
+      [node])))
 
 (defmethod apply-token "text" [{:as doc :keys [text-tokenizers]} {:keys [content]}]
-  (push-nodes doc
-              (reduce (fn [list-of-nodes tokenizer] ;; [Node] -> Tokenizer -> [Node]
-                        (mapcat (fn [{:as node :keys [type text]}] (if (= :text type) (tokenize-text tokenizer text) [node]))
-                                list-of-nodes))
-                      [{:type :text :text content}]
-                      text-tokenizers)))
+  (reduce (fn [doc {:as node :keys [doc-handler]}] (doc-handler doc (dissoc node :doc-handler)))
+          doc
+          (reduce (fn [nodes tokenizer]
+                    (mapcat (fn [{:as node :keys [type]}]
+                              (if (= :text type) (tokenize-text-node tokenizer node) [node]))
+                            nodes))
+                  [{:type :text :text content :doc-handler push-node}]
+                  text-tokenizers)))
 
 (comment
-  (apply-token empty-doc {:type "text" :content "foo"} )
-  (apply-token empty-doc {:type "text" :content "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]]"})
-  (def mustache {:regex #"\{\{([^\{]+)\}\}" :handler (fn [m] {:type :eval :text (m 1)})})
-  (tokenize-text mustache "{{what}} the {{hellow}}")
-  (apply-token (update empty-doc :text-tokenizers conj mustache)
+  (def mustache (normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}" :handler (fn [m] {:type :eval :text (m 1)})}))
+  (tokenize-text-node mustache {:text "{{what}} the {{hellow}}"})
+  (apply-token (assoc empty-doc :text-tokenizers [mustache])
                {:type "text" :content "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]] and {{eval}} me"})
 
   (nextjournal.markdown/parse "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]]" )
-  (nextjournal.markdown/parse "foo"))
+
+  (parse (assoc empty-doc
+                :text-tokenizers
+                [(normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}"
+                                       :doc-handler (fn [doc {[_ meta] :match}]
+                                                      (update-in doc (pop (pop (::path ddoc))) assoc :meta meta))})])
+         (nextjournal.markdown/tokenize "# Title {{id=heading}}
+* one
+* two")))
 
 ;; inlines
 (defmethod apply-token "inline" [doc {:as _token ts :children}] (apply-tokens doc ts))

@@ -9,7 +9,7 @@ A cross-platform clojure library for
 
 🚧 ALPHA status, subject to frequent change. 🚧
 
-_🌴 For a richer reading experience, [get comfy in your hammock](https://www.youtube.com/watch?v=B1T06UhcX0Q), and [read this readme as a clerk notebook](https://nextjournal.github.io/markdown/#/README.md).🌴_
+_For a richer reading experience and [read this readme as a clerk notebook](https://nextjournal.github.io/markdown/#/README.md)._
 
 ## Features 🦶
 

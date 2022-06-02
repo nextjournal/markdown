@@ -18,8 +18,13 @@ A cross-platform clojure library for
   Uses [hiccup](https://github.com/weavejester/hiccup) for custom markdown
   representation.
 
+## Flavor
 
-We adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) and also comply with extensions from [Github flavoured Markdown](https://github.github.com/gfm/#what-is-github-flavored-markdown-). We additionally parse $\LaTeX$ formulas delimited dollars: `$` inline / `$$` display mode.
+By building on top of [markdown-it](https://github.com/markdown-it/markdown-it), We adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) and also
+comply with extensions from [Github flavoured
+Markdown](https://github.github.com/gfm/#what-is-github-flavored-markdown-).
+Additionally, we parse $\LaTeX$ formulas (with $ for inline latex or $$ for equation
+display).
 
 ## Usage
 

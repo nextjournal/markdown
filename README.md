@@ -5,6 +5,7 @@
 A cross-platform clojure library for
 [Markdown](https://en.wikipedia.org/wiki/Markdown) parsing and transformation.
 
+For a richer experience, [read this readme as a clerk notebook](https://nextjournal.github.io/markdown/#/README.md).
 
 🚧 ALPHA status, subject to frequent change. 🚧
 
@@ -82,6 +83,9 @@ _literate fragments_.
 ```clojure
 ^{:nextjournal.clerk/viewer :markdown}
 data
+;; If you don't see "👋 Hello Markdown" below,
+;; consider loading this README as a notebook!
+;; https://nextjournal.github.io/markdown/#/README.md
 ```
 
 The transformation of markdown node types can be specified like this:

@@ -23,7 +23,7 @@ _🌴 For a richer reading experience, [get comfy in your hammock](https://www.y
 
 ## Flavor 👅
 
-By building on top of [markdown-it](https://github.com/markdown-it/markdown-it), We adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) and also
+By building on top of [markdown-it](https://github.com/markdown-it/markdown-it), we adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) and also
 comply with extensions from [Github flavoured
 Markdown](https://github.github.com/gfm/#what-is-github-flavored-markdown-).
 Additionally, we parse $\LaTeX$ formulas (with $ for inline latex or $$ for equation

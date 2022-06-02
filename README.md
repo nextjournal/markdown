@@ -34,7 +34,7 @@ display).
             [nextjournal.markdown.transform :as md.transform]))
 ```
 
-This library does essentially one thing:
+Parsing markdown into an AST:
 
 ```clojure
 (def data (md/parse "### 👋🏻 Hello Markdown
@@ -46,7 +46,7 @@ This library does essentially one thing:
 ;; {:type :doc
 ;;  :toc {:type :toc :children [...]}
 ;;  :title "👋🏻 Hello Markdown"
-;;  :content [{:type :heading 
+;;  :content [{:type :heading
 ;;             :content [{:type :text :text "👋🏻 Hello Markdown"}] :heading-level 3}
 ;;            {:type :bullet-list
 ;;             :content [{:type :list-item
@@ -62,7 +62,7 @@ This library does essentially one thing:
 ;;            {:type :ruler}]}
 ```
 
-and just incidentally, helps you transform markdown data to hiccup.
+and transform that AST into `hiccup` syntax.
 
 ```clojure
 (md.transform/->hiccup data)
@@ -75,7 +75,9 @@ and just incidentally, helps you transform markdown data to hiccup.
 
 We've built hiccup transformation in for convenience, but the same approach can be used to target [more formats](https://nextjournal.github.io/markdown/#/notebooks/pandoc.clj).
 
-This library is one of the building blocks of [Clerk](https://github.com/nextjournal/clerk) where it is used for handling _literate_ fragments. As such, markdown data is natively rendered in notebooks 
+This library is one of the building blocks of
+[Clerk](https://github.com/nextjournal/clerk) where it is used for rendering
+_literate fragments_.
 
 ```clojure
 ^{:nextjournal.clerk/viewer :markdown}

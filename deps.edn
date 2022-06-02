@@ -7,7 +7,7 @@
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks"]
-   :extra-deps {io.github.nextjournal/clerk {:mvn/version "0.7.418"}}
+   :extra-deps {io.github.nextjournal/clerk {:mvn/version "0.8.442"}}
    :exec-fn nextjournal.clerk/build-static-app!
    :exec-args {:paths ["README.md"
                        "notebooks/pandoc.clj"

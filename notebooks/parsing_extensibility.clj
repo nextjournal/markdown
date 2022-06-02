@@ -10,27 +10,10 @@
             [clojure.string :as str]))
 
 ^{:nextjournal.clerk/visibility :hide ::clerk/viewer :hide-result}
-(def show-text {:transform-fn (fn [{::clerk/keys [var-from-def]}] (clerk/html [:pre @var-from-def]))})
+(def show-text {:transform-fn (fn [{{::clerk/keys [var-from-def]} :nextjournal/value}] (clerk/html [:pre @var-from-def]))})
 
 ;; With recent additions to our `nextjournal.markdown.parser` we added a tiny parsing layer on top of the tokenization provided by `markdown-it` ([n.markdown/tokenize](https://github.com/nextjournal/markdown/blob/ae2a2f0b6d7bdc6231f5d088ee559178b55c97f4/src/nextjournal/markdown.clj#L50-L52)).
-;; We're acting on the text (leaf) tokens, splitting each of those into a collection of [nodes](https://github.com/nextjournal/markdown/blob/ff68536eb15814fe81db7a6d6f11f049895a4282/src/nextjournal/markdown/parser.cljc#L5) according to the following strategy.
-;;
-;;    Tokenizer :: {:tokenizer-fn :: TokenizerFn,
-;;                  :doc-handler :: DocHandler}
-;;    normalize-tokenizer :: {:regex, :doc-handler} |
-;;                           {:tokenizer-fn, :handler} |
-;;                           {:regex, :handler} -> Tokenizer
-;;
-;;    Match :: Any
-;;    Handler :: Match -> Node
-;;    IndexedMatch :: (Match, Integer, Integer)
-;;    TokenizerFn :: String -> [IndexedMatch]
-;;    DocHandler :: Doc -> {:match :: Match} -> Doc
-
-;;    DocOpts :: {:text-tokenizers [Tokenizer]}
-;;    parse : DocOpts -> [Token] -> Doc
-;;
-;; We'll explain how that works by means of three examples.
+;; We're acting on the text (leaf) tokens, splitting each of those into a collection of [nodes](https://github.com/nextjournal/markdown/blob/ff68536eb15814fe81db7a6d6f11f049895a4282/src/nextjournal/markdown/parser.cljc#L5).  We'll explain how that works by means of three examples.
 ;;
 ;; ## Regex-based tokenization
 ;;
@@ -100,9 +83,8 @@ existing [[links]] or #tags")
 
 ;; ## Parsing with Document Handlers
 ;;
-;; Using tokenizers with document handlers we can actually have parsed tokens act upon the whole document tree. Consider
-;; the following textual example:
-
+;; Using tokenizers with document handlers we can let parsed tokens act upon the whole document tree. Consider
+;; the following textual example (**TODO** _rewrite parsing with a zipper state_):
 ^{::clerk/viewer show-text ::clerk/visibility :hide}
 (def text-with-meta
   "# Example ◊(add-meta {:id \"some-id\" :class \"semantc\"})
@@ -137,8 +119,24 @@ and adds a flag to its text.
    (md/tokenize text-with-meta)))
 
 
-(clerk.viewer/with-md-viewer data)
+(clerk/md data)
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
 (comment
-  (clerk/serve! {:port 8888}))
+  (clerk/serve! {:port 8888})
+  ;;    Tokenizer :: {:tokenizer-fn :: TokenizerFn,
+  ;;                  :doc-handler :: DocHandler}
+  ;;    normalize-tokenizer :: {:regex, :doc-handler} |
+  ;;                           {:tokenizer-fn, :handler} |
+  ;;                           {:regex, :handler} -> Tokenizer
+  ;;
+  ;;    Match :: Any
+  ;;    Handler :: Match -> Node
+  ;;    IndexedMatch :: (Match, Integer, Integer)
+  ;;    TokenizerFn :: String -> [IndexedMatch]
+  ;;    DocHandler :: Doc -> {:match :: Match} -> Doc
+
+  ;;    DocOpts :: {:text-tokenizers [Tokenizer]}
+  ;;    parse : DocOpts -> [Token] -> Doc
+  ;;
+  )

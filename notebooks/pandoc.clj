@@ -65,7 +65,7 @@
     (if (zero? exit) out err)))
 
 ;; Now take a piece of `markdown-text`
-^{::clerk/visibility :hide ::clerk/viewer {:transform-fn #(v/html [:pre @(::clerk/var-from-def %)])}}
+^{::clerk/visibility :hide ::clerk/viewer {:transform-fn #(v/html [:pre @(::clerk/var-from-def (v/->value %))])}}
 (def markdown-text "# Hello
 
 ## Sub _Section_
@@ -85,7 +85,7 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
 (def pandoc-data (-> markdown-text md/parse md->pandoc))
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
-(def verbatim (partial clerk/with-viewer {:transform-fn #(v/html [:pre %])}))
+(def verbatim (partial clerk/with-viewer {:transform-fn #(v/html [:pre (v/->value %)])}))
 
 ;; then we can convert it to whatever supported format. Say **Org Mode**
 (-> pandoc-data (pandoc-> "org") verbatim)
@@ -180,7 +180,7 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
   (-> (io/file "notebooks/demo.docx")
       (pandoc<- "docx")
       pandoc->md
-      v/with-md-viewer)])
+      v/md)])
 
 ;; or ingest some **Org Mode**.
 (v/html
@@ -189,7 +189,7 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
    (-> (io/input-stream "https://raw.githubusercontent.com/erikriverson/org-mode-R-tutorial/master/org-mode-R-tutorial.org")
        (pandoc<- "org")
        pandoc->md
-       v/with-md-viewer)]])
+       v/md)]])
 
 ;; We also might want to test that our functions are invertible:
 (v/html
@@ -202,7 +202,7 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
        (pandoc-> "org")
        (pandoc<- "org")
        pandoc->md
-       v/with-md-viewer)]])
+       v/md)]])
 
 ;; this brief experiment shows how Pandoc AST makes for an interesting format for Clerk to potentially
 ;; interact with formats other than markdown and clojure.

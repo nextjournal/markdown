@@ -101,4 +101,6 @@ The transformation of markdown node types can be specified like this:
 
 ## Extensibility
 
-We added a tiny layer for [parsing custom expressions](https://nextjournal.github.io/markdown/#/notebooks/parsing_extensibility.clj) at the level of text leaf nodes on top of the base tokenization from markdown-it.
+We added minimal tooling for [extending markdown
+expressions](https://nextjournal.github.io/markdown/#/notebooks/parsing_extensibility.clj).
+See the linked notebook for an extended example.

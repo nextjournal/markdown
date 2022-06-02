@@ -10,7 +10,8 @@
 (def minor 4)
 
 (defn current-git-commit-sha [] (str/trim (:out (shell/sh "git" "rev-parse" "HEAD"))))
-(def scm {:url (format "https://github.com/nextjournal/markdown/tree/%s" (current-git-commit-sha))})
+(def scm {:url "https://github.com/nextjournal/markdown"
+          :tag (current-git-commit-sha)})
 (def version (format "%s.%s.%s" major minor (+ previous-repo-offset (Integer/parseInt (b/git-count-revs nil)))))
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
@@ -43,4 +44,5 @@
   (jar 1)
   (clean 1)
   (b/git-count-revs nil)
-  (current-git-commit-sha))
+  (current-git-commit-sha)
+  scm)

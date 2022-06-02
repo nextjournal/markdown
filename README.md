@@ -84,14 +84,17 @@ _literate fragments_.
 data
 ```
 
-The transformation of single node types can be specified like this
+The transformation of markdown node types can be specified like this:
 
 ```clojure
 ^{:nextjournal.clerk/viewer :html}
 (md.transform/->hiccup
  (assoc md.transform/default-hiccup-renderers
+        ;; :text is funkier when it's teal
         :text (fn [_ctx node] [:span {:style {:color "teal"}} (:text node)])
+        ;; :paragraphs linebreaks are too damn high 🐜
         :paragraph (partial md.transform/into-markup [:p {:style {:margin-top "-1.6rem"}}])
+        ;; :ruler gets to be funky, too
         :ruler (constantly [:hr {:style {:border "2px dashed teal"}}]))
  data)
 ```

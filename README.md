@@ -9,7 +9,7 @@ For a richer experience, [read this readme as a clerk notebook](https://nextjour
 
 🚧 ALPHA status, subject to frequent change. 🚧
 
-## Features
+## Features 🦶
 
 - _Focus on data_: parsing yields an AST ([à la Pandoc](https://nextjournal.github.io/markdown/#/notebooks/pandoc.clj)) of nested data representing a structured document.
 - _Cross Platform_: clojurescript native with bindings to the JVM using [Graal's
@@ -19,7 +19,7 @@ For a richer experience, [read this readme as a clerk notebook](https://nextjour
   Uses [hiccup](https://github.com/weavejester/hiccup) for custom markdown
   representation.
 
-## Flavor
+## Flavor 👅
 
 By building on top of [markdown-it](https://github.com/markdown-it/markdown-it), We adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) and also
 comply with extensions from [Github flavoured
@@ -27,7 +27,7 @@ Markdown](https://github.github.com/gfm/#what-is-github-flavored-markdown-).
 Additionally, we parse $\LaTeX$ formulas (with $ for inline latex or $$ for equation
 display).
 
-## Usage
+## Usage 🔩
 
 ```clojure
 (ns hello-markdown
@@ -103,7 +103,7 @@ The transformation of markdown node types can be specified like this:
  data)
 ```
 
-## Extensibility
+## Extensibility 🐢
 
 We added minimal tooling for [extending markdown
 expressions](https://nextjournal.github.io/markdown/#/notebooks/parsing_extensibility.clj).

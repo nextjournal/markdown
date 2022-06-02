@@ -25,8 +25,8 @@
 ;; this is a list of supported output formats as of Pandoc v2.18 (API version 1.22.2):
 ^{::clerk/visibility :hide}
 (clerk/html
- [:div {:style {:height "200px" :width "85%"}}
-  (into [:ul.shadow-xl]
+ [:div.overflow-y-auto.shadow-lg {:style {:height "200px" :width "85%"}}
+  (into [:ul]
         (map (partial vector :li))
         (str/split-lines (:out (shell/sh "pandoc" "--list-output-formats"))))])
 
@@ -105,8 +105,8 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
 ;; Import works same same. This is a list of supported input formats:
 ^{::clerk/visibility :hide}
 (clerk/html
- [:div {:style {:height "200px" :width "85%"}}
-  (into [:ul.shadow-xl]
+ [:div.overflow-y-auto.shadow-lg {:style {:height "200px" :width "85%"}}
+  (into [:ul]
         (map (partial vector :li))
         (str/split-lines (:out (shell/sh "pandoc" "--list-input-formats"))))])
 
@@ -184,8 +184,8 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
 
 ;; or ingest some **Org Mode**.
 (v/html
- [:div {:style {:height "400px"}}
-  [:div.shadow-xl.p-8
+ [:div.overflow-y-auto.shadow-xl {:style {:height "400px"}}
+  [:div.p-8
    (-> (io/input-stream "https://raw.githubusercontent.com/erikriverson/org-mode-R-tutorial/master/org-mode-R-tutorial.org")
        (pandoc<- "org")
        pandoc->md
@@ -209,7 +209,7 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
 (comment
-  (clerk/serve! {:port 8888})
+  (clerk/serve! {:port 9999})
   (-> *e ex-cause ex-data)
   (json/read-str
    (:out

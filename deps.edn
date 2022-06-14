@@ -12,7 +12,8 @@
    :exec-args {:paths ["README.md"
                        "notebooks/pandoc.clj"
                        "notebooks/parsing_extensibility.clj"
-                       "notebooks/benchmarks.clj"]}}
+                       "notebooks/benchmarks.clj"
+                       "notebooks/tight_lists.clj"]}}
 
   :quiet
   {:jvm-opts ["-Dpolyglot.engine.WarnInterpreterOnly=false"]}

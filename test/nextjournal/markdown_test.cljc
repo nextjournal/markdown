@@ -404,5 +404,4 @@ par with #really_nice #useful-123 tags
 * two")))))
 
 (comment
-  (run-tests 'nextjournal.markdown-test)
-  )
+  (run-tests 'nextjournal.markdown-test))

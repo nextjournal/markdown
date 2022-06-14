@@ -92,6 +92,7 @@ In this example we're using the losange tokenizer to modify the
 document AST in conjunction with the following functions:
 * `add-meta`: looks up the parent node, merges a map in it
 and adds a flag to its text.
+
 * `strong`: makes the text ◊(strong much more impactful) indeeed.
 ")
 
@@ -117,7 +118,6 @@ and adds a flag to its text.
                   :doc-handler (fn [doc {:keys [match]}]
                                  (apply (eval (first match)) doc (rest match)))))
    (md/tokenize text-with-meta)))
-
 
 (clerk/md data)
 

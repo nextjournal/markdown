@@ -13,9 +13,11 @@ _For a richer reading experience and [read this readme as a clerk notebook](http
 ## Features 🦶
 
 - _Focus on data_: parsing yields an AST ([à la Pandoc](https://nextjournal.github.io/markdown/#/notebooks/pandoc.clj)) of nested data representing a structured document.
+
 - _Cross Platform_: clojurescript native with bindings to the JVM using [Graal's
   Polyglot
   Engine](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context).
+
 - _Configurable [Hiccup](https://github.com/weavejester/hiccup) conversion_:
   Uses [hiccup](https://github.com/weavejester/hiccup) for custom markdown
   representation.
@@ -41,6 +43,7 @@ Parsing markdown into an AST:
 ```clojure
 (def data (md/parse "### 👋🏻 Hello Markdown
 * this _looks_
+
 * something ~~unusual~~ **familiar**
 ---
 "))

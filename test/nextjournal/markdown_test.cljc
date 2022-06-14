@@ -17,6 +17,7 @@ some **strong** _assertion_ and a [link] and a $\\pi$ formula
 $$\\int_a^bf(t)dt$$
 
 * one
+
 * two
 
 [link]:/path/to/something
@@ -123,15 +124,15 @@ $$\\int_a^bf(t)dt$$
                                                         :type :internal-link}
                                                        {:text " to"
                                                         :type :text}]
-                                             :type :paragraph}]}
+                                             :type :plain}]}
                                  {:type :todo-item
                                   :attrs {:checked false :todo true}
-                                  :content [{:type :paragraph
+                                  :content [{:type :plain
                                              :content [{:text "pending"
                                                         :type :text}]}]}
                                  {:type :todo-item
                                   :attrs {:checked false :todo true}
-                                  :content [{:type :paragraph
+                                  :content [{:type :plain
                                              :content [{:text "pending"
                                                         :type :text}]}]}]}]}
            (md/parse "- [x] done [[linkme]] to
@@ -289,20 +290,20 @@ $$\\int_a^bf(t)dt$$
               [:input
                {:checked true
                 :type "checkbox"}]
-              [:p
+              [:<>
                "checked"]]
              [:li
               [:input
                {:checked false
                 :type "checkbox"}]
-              [:p
+              [:<>
                "unchecked"]
               [:ul.contains-task-list
                [:li
                 [:input
                  {:checked false
                   :type "checkbox"}]
-                [:p
+                [:<>
                  "nested"]]]]]]
            (md/->hiccup "# Todos
 - [x] checked
@@ -356,6 +357,51 @@ par with #really_nice #useful-123 tags
 par with #really_nice #useful-123 tags
 ")))))
 
+
+(deftest tight-vs-loose-lists
+  (testing "tight lists"
+
+    (is (match? {:type :doc
+                 :content [{:type :bullet-list,
+                            :content
+                            [{:type :list-item,
+                              :content [{:type :plain :content [{:text "one"}]}]}
+                             {:type :list-item,
+                              :content [{:type :plain :content [{:text "two"}]}]}]}]}
+                (md/parse "
+* one
+* two"))))
+
+
+  (testing "loose lists (2-newline separated lists)"
+    (is (match? {:type :doc
+                 :content [{:type :bullet-list,
+                            :content
+                            [{:type :list-item,
+                              :content [{:type :paragraph :content [{:text "one"}]}]}
+                             {:type :list-item,
+                              :content [{:type :paragraph :content [{:text "two"}]}]}]}]}
+                (md/parse "
+* one
+
+* two"))))
+
+  (testing "loose lists (more than one block in any item)"
+    (is (match? {:type :doc
+                 :content [{:type :bullet-list,
+                            :content
+                            [{:type :list-item,
+                              :content [{:type :paragraph :content [{:text "one"}]}
+                                        {:type :paragraph :content [{:text "inner paragraph"}]}
+
+                                        ]}
+                             {:type :list-item,
+                              :content [{:type :paragraph :content [{:text "two"}]}]}]}]}
+                (md/parse "
+* one
+
+  inner paragraph
+* two")))))
+
 (comment
-  (run-tests 'nextjournal.markdown-test)
-  )
+  (run-tests 'nextjournal.markdown-test))

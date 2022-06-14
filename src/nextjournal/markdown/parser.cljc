@@ -243,7 +243,7 @@ end"
     (cond-> doc (zero? doc-level) (-> (add-to-toc heading) (set-title-when-missing heading)))))
 ;; for building the TOC we just care about headings at document top level (not e.g. nested under lists) ⬆
 
-(defmethod apply-token "paragraph_open" [doc _token] (open-node doc :paragraph))
+(defmethod apply-token "paragraph_open" [doc {:as _token :keys [hidden]}] (open-node doc (if hidden :plain :paragraph)))
 (defmethod apply-token "paragraph_close" [doc _token] (close-node doc))
 
 (defmethod apply-token "bullet_list_open" [doc {{:as attrs :keys [has-todos]} :attrs}] (open-node doc (if has-todos :todo-list :bullet-list) attrs))

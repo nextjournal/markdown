@@ -42,36 +42,36 @@ Parsing markdown into an AST:
 * something ~~unusual~~ **familiar**
 ---
 "))
-;; =>
-;; {:type :doc
-;;  :toc {:type :toc :children [...]}
-;;  :title "👋🏻 Hello Markdown"
-;;  :content [{:type :heading
-;;             :content [{:type :text :text "👋🏻 Hello Markdown"}] :heading-level 3}
-;;            {:type :bullet-list
-;;             :content [{:type :list-item
-;;                        :content [{:type :plain
-;;                                   :content [{:type :text :text "this "}
-;;                                             {:type :em :content [{:type :text :text "looks"}]}]}]}
-;;                       {:type :list-item
-;;                        :content [{:type :plain
-;;                                   :content [{:type :text :text "something "}
-;;                                             {:type :strikethrough, :content [{:type :text :text "unusual"}]}
-;;                                             {:type :text :text " "}
-;;                                             {:type :strong, :content [{:type :text :text "familiar"}]}]}]}]}
-;;            {:type :ruler}]}
 ```
+    =>
+    {:type :doc
+     :toc {:type :toc :children [...]}
+     :title "👋🏻 Hello Markdown"
+     :content [{:type :heading
+                :content [{:type :text :text "👋🏻 Hello Markdown"}] :heading-level 3}
+               {:type :bullet-list
+                :content [{:type :list-item
+                           :content [{:type :plain
+                                      :content [{:type :text :text "this "}
+                                                {:type :em :content [{:type :text :text "looks"}]}]}]}
+                          {:type :list-item
+                           :content [{:type :plain
+                                      :content [{:type :text :text "something "}
+                                                {:type :strikethrough, :content [{:type :text :text "unusual"}]}
+                                                {:type :text :text " "}
+                                                {:type :strong, :content [{:type :text :text "familiar"}]}]}]}]}
+               {:type :ruler}]}
 
 and transform that AST into `hiccup` syntax.
 
 ```clojure
 (md.transform/->hiccup data)
-;; =>
-;; [:div
-;;  [:h3 {:id "%F0%9F%91%8B%F0%9F%8F%BB%20Hello%20Markdown"} "👋🏻 Hello Markdown"]
-;;  [:ul [:li [:<> "this " [:em "looks"]]] [:li [:<> "something " [:s "unusual"] " " [:strong "familiar"]]]]
-;;  [:hr]]
 ```
+    =>
+    [:div
+     [:h3 {:id "%F0%9F%91%8B%F0%9F%8F%BB%20Hello%20Markdown"} "👋🏻 Hello Markdown"]
+     [:ul [:li [:<> "this " [:em "looks"]]] [:li [:<> "something " [:s "unusual"] " " [:strong "familiar"]]]]
+     [:hr]]
 
 We've built hiccup transformation in for convenience, but the same approach can be used to target [more formats](https://nextjournal.github.io/markdown/#/notebooks/pandoc.clj).
 
@@ -82,9 +82,6 @@ _literate fragments_.
 ```clojure
 ^{:nextjournal.clerk/viewer :markdown}
 data
-;; If you don't see "👋 Hello Markdown" below,
-;; consider loading this README as a notebook!
-;; https://nextjournal.github.io/markdown/#/README.md
 ```
 
 The transformation of markdown node types can be specified like this:

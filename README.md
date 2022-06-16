@@ -12,13 +12,11 @@ _For a richer reading experience and [read this readme as a clerk notebook](http
 
 ## Features
 
-- _Focus on data_: parsing yields an AST ([à la Pandoc](https://nextjournal.github.io/markdown/#/notebooks/pandoc.clj)) of nested data representing a structured document.
-
-- _Cross Platform_: clojurescript native with bindings to the JVM using [Graal's
+* _Focus on data_: parsing yields an AST ([à la Pandoc](https://nextjournal.github.io/markdown/#/notebooks/pandoc.clj)) of nested data representing a structured document.
+* _Cross Platform_: clojurescript native with bindings to the JVM using [Graal's
   Polyglot
   Engine](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context).
-
-- _Configurable [Hiccup](https://github.com/weavejester/hiccup) conversion_.
+* _Configurable [Hiccup](https://github.com/weavejester/hiccup) conversion_.
 
 ## Flavor
 
@@ -41,7 +39,6 @@ Parsing markdown into an AST:
 ```clojure
 (def data (md/parse "### 👋🏻 Hello Markdown
 * this _looks_
-
 * something ~~unusual~~ **familiar**
 ---
 "))
@@ -53,11 +50,11 @@ Parsing markdown into an AST:
 ;;             :content [{:type :text :text "👋🏻 Hello Markdown"}] :heading-level 3}
 ;;            {:type :bullet-list
 ;;             :content [{:type :list-item
-;;                        :content [{:type :paragraph
+;;                        :content [{:type :plain
 ;;                                   :content [{:type :text :text "this "}
 ;;                                             {:type :em :content [{:type :text :text "looks"}]}]}]}
 ;;                       {:type :list-item
-;;                        :content [{:type :paragraph
+;;                        :content [{:type :plain
 ;;                                   :content [{:type :text :text "something "}
 ;;                                             {:type :strikethrough, :content [{:type :text :text "unusual"}]}
 ;;                                             {:type :text :text " "}
@@ -72,7 +69,7 @@ and transform that AST into `hiccup` syntax.
 ;; =>
 ;; [:div
 ;;  [:h3 {:id "%F0%9F%91%8B%F0%9F%8F%BB%20Hello%20Markdown"} "👋🏻 Hello Markdown"]
-;;  [:ul [:li [:p "this " [:em "looks"]]] [:li [:p "something " [:s "unusual"] " " [:strong "familiar"]]]]
+;;  [:ul [:li [:<> "this " [:em "looks"]]] [:li [:<> "something " [:s "unusual"] " " [:strong "familiar"]]]]
 ;;  [:hr]]
 ```
 
@@ -98,8 +95,8 @@ The transformation of markdown node types can be specified like this:
  (assoc md.transform/default-hiccup-renderers
         ;; :text is funkier when it's teal
         :text (fn [_ctx node] [:span {:style {:color "teal"}} (:text node)])
-        ;; :paragraphs linebreaks are too damn high 🐜
-        :paragraph (partial md.transform/into-markup [:p {:style {:margin-top "-1.6rem"}}])
+        ;; :plain fragments might be nice, but paragraphs help when no reagent at hand
+        :plain (partial md.transform/into-markup [:p {:style {:margin-top "-1.6rem"}}])
         ;; :ruler gets to be funky, too
         :ruler (constantly [:hr {:style {:border "2px dashed teal"}}]))
  data)

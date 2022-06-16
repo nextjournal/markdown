@@ -41,6 +41,7 @@
 
    :heading (fn [{:keys [content heading-level]}] {:t "Header" :c [heading-level ["id" [] []] (map md->pandoc content)]})
    :paragraph (fn [{:keys [content]}] {:t "Para" :c (map md->pandoc content)})
+   :plain (fn [{:keys [content]}] {:t "Plain" :c (map md->pandoc content)})
    :code (fn [{:as node :keys [language]}] {:t "CodeBlock" :c [["" [language "code"] []] (md.transform/->text node)]})
    :block-formula (fn [{:keys [text]}] {:t "Para" :c [{:t "Math" :c [{:t "DisplayMath"} text]}]})
 
@@ -48,6 +49,9 @@
    :strong (fn [{:keys [content]}] {:t "Strong" :c (map md->pandoc content)})
    :strikethrough (fn [{:keys [content]}] {:t "Strikeout" :c (map md->pandoc content)})
    :link (fn [{:keys [attrs content]}] {:t "Link" :c [["" [] []] (map md->pandoc content) [(:href attrs) ""]]})
+
+   :list-item (fn [{:keys [content]}] (map md->pandoc content))
+   :bullet-list (fn [{:keys [content]}] {:t "BulletList" :c (map md->pandoc content)})
 
    :text (fn [{:keys [text]}] {:t "Str" :c text})})
 
@@ -79,7 +83,10 @@ With a block formula:
 
 $$F(t) = \\int_{t_0}^t \\phi(x)dx$$
 
-this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
+this _is_ a
+* ~~boring~~
+* **awesome**
+* [example](https://some/path)!")
 
 ;; once we've turned it into Pandoc's JSON format
 (def pandoc-data (-> markdown-text md/parse md->pandoc))
@@ -117,9 +124,7 @@ this _is_ a ~~boring~~ **awesome** [example](https://some/path)!")
   {:Space (constantly {:type :text :text " "})
    :Str (fn [node] {:type :text :text (:c node)})
    :Para (partial node+content :paragraph)
-   :Plain (partial node+content :paragraph)
-   ;; ⬆ Pandoc distinguishes a plain-text container in e.g. list items
-   ;; which is not a paragraph (we should do the same)
+   :Plain (partial node+content :plain)
    :Header (fn [node]
              (let [[level _meta content] (:c node)]
                {:type :heading

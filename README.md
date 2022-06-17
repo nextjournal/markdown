@@ -32,10 +32,10 @@ Parsing markdown into an AST:
 ```clojure
 (def data 
   (md/parse "> et tout autour, la longue cohorte de ses personnages, avec leur histoire, leur passé, leurs légendes:
-> - Pélage vainqueur d'Alkhamah se faisant couronner à Covadonga
-> - La cantatrice exilée de Russie suivant Schönberg à Amsterdam
-> - Le petit chat sourd aux yeux vairons vivant au dernier étage
-> - ...
+> 1. Pélage vainqueur d'Alkhamah se faisant couronner à Covadonga
+> 2. La cantatrice exilée de Russie suivant Schönberg à Amsterdam
+> 3. Le petit chat sourd aux yeux vairons vivant au dernier étage
+> 4. ...
 
 **Georges Perec**, _La Vie mode d'emploi_.
 
@@ -48,7 +48,7 @@ Parsing markdown into an AST:
                 :content [{:type :paragraph,
                            :content [{:type :text,
                                       :text "et tout autour, la longue cohorte de ses personnage, avec leur histoire, leur passé, leurs légendes:"}]}
-                          {:type :bullet-list,
+                          {:type :numbered-list,
                            :content [{:type :list-item,
                                       :content [{:type :plain,
                                                  :content [{:type :text,
@@ -77,7 +77,7 @@ and transform that AST into `hiccup` syntax.
     [:div
      [:blockquote
       [:p "et tout autour, la longue cohorte de ses personnage, avec leur histoire, leur passé, leurs légendes:"]
-      [:ul
+      [:ol
        [:li [:<> "Pélage vainqueur d'Alkhamah se faisant couronner à Covadonga"]]
        [:li [:<> "La cantatrice exilée de Russie suivant Schönberg à Amsterdam"]]
        [:li [:<> "Le petit chat sourd aux yeux vairons vivant au dernier étage"]]]]

@@ -137,3 +137,45 @@ jobs:
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}
           target_url: https://snapshots.nextjournal.com/markdown/build/${{ github.sha }}
+
+  deploy:
+    needs: [tests, cljs-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎 Checkout
+        uses: actions/checkout@v3
+
+      - name: 🏷 Get tags
+        run: git fetch --tags origin
+
+      - name: 🔧 Setup Babashka
+        uses: turtlequeue/setup-babashka@v1.3.0
+        with:
+          babashka-version: 0.8.156
+
+      - name: 🗝 maven cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2
+            ~/.gitlibs
+          key: ${{ runner.os }}-maven-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: 🍯 Publish to clojars
+        env:
+          CLOJARS_USERNAME: mkvlr
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD_MKVLR }}
+        run: bb ci:publish
+
+      - name: 🔢 Set lib version
+        id: jar-version
+        run: |
+          JAR_VERSION=$(bb current-version)
+          echo "##[set-output name=version;]${JAR_VERSION}"
+
+      - uses: 📤 actions/upload-artifact@v1
+        with:
+          name: clerk-${{ steps.jar-version.outputs.version }}.jar
+          path: target/clerk-${{ steps.jar-version.outputs.version }}.jar

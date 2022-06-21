@@ -1,4 +1,4 @@
-{:min-bb-version "0.5.1"
+{:min-bb-version "0.8.156"
  :tasks
  {:requires ([clojure.edn :as edn]
              [clojure.string :as str]

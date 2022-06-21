@@ -175,7 +175,8 @@ jobs:
           JAR_VERSION=$(bb current-version)
           echo "##[set-output name=version;]${JAR_VERSION}"
 
-      - uses: 📤 actions/upload-artifact@v1
+      - name: 📤 Upload JAR
+        uses: actions/upload-artifact@v1
         with:
           name: clerk-${{ steps.jar-version.outputs.version }}.jar
           path: target/clerk-${{ steps.jar-version.outputs.version }}.jar

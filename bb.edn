@@ -1,6 +1,25 @@
-{:min-bb-version "0.5.1"
+{:min-bb-version "0.7.8"
  :tasks
- {yarn-install
+ {:requires ([clojure.edn :as edn]
+             [clojure.string :as str]
+             [babashka.fs :as fs]
+             [babashka.process :as p])
+
+  :init (do
+          (def major 0)
+          (def minor 4)
+          (def rev-count-offset 69) ;; previous repo offset
+          (def meta-inf-file "resources/META-INF/nextjournal/markdown/meta.edn")
+
+          (defn rev-count []
+            (-> (p/process ["git" "rev-list" "HEAD" "--count"] {:out :string})
+              p/check :out str/trim Integer/parseInt))
+
+          (defn version [] (format "%d.%d.%d" major minor (inc (+ (rev-count) rev-count-offset))))
+
+          (defn read-version [] (-> (slurp meta-inf-file) edn/read-string :version)))
+
+  yarn-install
   {:doc "Installs and updates npm dependencies"
    :task (shell "yarn install")}
 
@@ -26,4 +45,55 @@
   test:cljs
   {:doc "runs cljs tests via node"
    :depends [cljs:compile:tests]
-   :task (shell "yarn node --trace-uncaught out/node-tests.js")}}}
+   :task (shell "yarn node --trace-uncaught out/node-tests.js")}
+
+  update-meta {:doc "Updates meta.edn with current version (based on commit count currently)."
+               :task (spit (doto (fs/file meta-inf-file)
+                             (-> fs/parent fs/create-dirs)) {:version (version)})}
+
+  tag {:doc "Tags release and pushes tag to Github."
+       :task (let [tag (str "v" (read-version))]
+               (shell "git tag" tag))}
+
+  delete-tag {:doc "Tells git to delete the tag at the current version"
+              :task (shell (str "git tag -d v" (read-version)))}
+
+  current-version {:doc "Prints the version as written to META-INF during publishing"
+                   :task (print (read-version))}
+
+  publish {:doc "Prepares repo for publishing via CI"
+           :task (do
+                   (run 'update-meta)
+                   (println "Preparing repo for Release" (read-version))
+                   (shell "git add resources/META-INF")
+                   (shell (str "git commit -m v" (read-version)))
+                   (run 'tag)
+                   (println "\n\nRun:\n\n" "  git push --atomic"
+                     "origin" "main" (str "v" (read-version))
+                     "\n\nto push the release and let CI build it!"))}
+
+  -current-tag (->> (shell {:out :string} "git tag --points-at HEAD")
+                 :out
+                 str/trim
+                 not-empty)
+
+  -current-branch (->> (shell {:out :string} "git branch --show-current")
+                    :out
+                    str/trim)
+
+  jar {:doc "Build jar"
+       :task (do
+               (println "Building jar")
+               (clojure (str "-T:build jar :version '\"" (read-version) "\"'")))}
+
+  ci:publish {:doc "Publish task which will be run on CI"
+              :depends [-current-tag -current-branch]
+              :task (do
+                      (prn :current-tag -current-tag)
+                      (prn :current-branch -current-branch)
+                      (if (and -current-tag (= "main" -current-branch))
+                        (do
+                          (println "Deploying to clojars")
+                          (clojure "-T:build deploy :version '\"" (read-version) "\"'"))
+                        ;; still build jar for artifact upload
+                        (run 'jar)))}}}

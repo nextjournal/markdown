@@ -14,3 +14,4 @@ target
 .DS_Store
 .shadow-cljs
 out
+notebooks/scratch

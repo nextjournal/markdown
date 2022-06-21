@@ -94,6 +94,6 @@
                       (if (and -current-tag (= "main" -current-branch))
                         (do
                           (println "Deploying to clojars")
-                          (clojure "-T:build deploy :version '\"" (read-version) "\"'"))
+                          (clojure (str "-T:build deploy :version '\"" (read-version) "\"'")))
                         ;; still build jar for artifact upload
                         (run 'jar)))}}}

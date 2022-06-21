@@ -1,4 +1,4 @@
-{:min-bb-version "0.8.156"
+{:min-bb-version "0.7.8"
  :tasks
  {:requires ([clojure.edn :as edn]
              [clojure.string :as str]
@@ -9,6 +9,7 @@
           (def major 0)
           (def minor 4)
           (def rev-count-offset 69) ;; previous repo offset
+          (def meta-inf-file "resources/META-INF/nextjournal/markdown/meta.edn")
 
           (defn rev-count []
             (-> (p/process ["git" "rev-list" "HEAD" "--count"] {:out :string})
@@ -16,9 +17,7 @@
 
           (defn version [] (format "%d.%d.%d" major minor (inc (+ (rev-count) rev-count-offset))))
 
-          (defn read-version []
-            (-> (slurp "resources/META-INF/nextjournal/clerk/meta.edn")
-              edn/read-string :version)))
+          (defn read-version [] (-> (slurp meta-inf-file) edn/read-string :version)))
 
   yarn-install
   {:doc "Installs and updates npm dependencies"
@@ -49,7 +48,7 @@
    :task (shell "yarn node --trace-uncaught out/node-tests.js")}
 
   update-meta {:doc "Updates meta.edn with current version (based on commit count currently)."
-               :task (spit (doto (fs/file "resources/META-INF/nextjournal/clerk/meta.edn")
+               :task (spit (doto (fs/file meta-inf-file)
                              (-> fs/parent fs/create-dirs)) {:version (version)})}
 
   tag {:doc "Tags release and pushes tag to Github."

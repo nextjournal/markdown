@@ -178,5 +178,5 @@ jobs:
       - name: 📤 Upload JAR
         uses: actions/upload-artifact@v1
         with:
-          name: clerk-${{ steps.jar-version.outputs.version }}.jar
-          path: target/clerk-${{ steps.jar-version.outputs.version }}.jar
+          name: markdown-${{ steps.jar-version.outputs.version }}.jar
+          path: target/markdown-${{ steps.jar-version.outputs.version }}.jar

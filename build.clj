@@ -17,7 +17,7 @@
   (b/write-pom {:basis basis
                 :class-dir class-dir
                 :lib lib
-                :scm scm
+                :scm (scm version)
                 :src-dirs ["src"]
                 :version version})
   (b/copy-dir {:src-dirs ["src" "resources"]

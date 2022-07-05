@@ -41,7 +41,7 @@ markdown-it-block-image@^0.0.3:
   resolved "https://registry.yarnpkg.com/markdown-it-block-image/-/markdown-it-block-image-0.0.3.tgz#d3fe650ebf2215ea2c7afb577b394e5f7ffc12ca"
   integrity sha1-0/5lDr8iFeosevtXezlOX3/8Eso=
 
-"markdown-it-sidenote@github:gerwitz/markdown-it-sidenote":
+markdown-it-sidenote@gerwitz/markdown-it-sidenote#aa5de8ce3168b7d41cb33c3aed071a5f41ce0083:
   version "0.2.0"
   resolved "https://codeload.github.com/gerwitz/markdown-it-sidenote/tar.gz/aa5de8ce3168b7d41cb33c3aed071a5f41ce0083"
 

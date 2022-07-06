@@ -64,8 +64,8 @@
   publish {:doc "Prepares repo for publishing via CI"
            :task (do
                    (run 'update-meta)
-                   (println "Preparing repo for Release" (read-version))
-                   (shell "git add resources/META-INF")
+                   (println "Preparing repo for Release.\n Updated worktree will be added and committed (e.g. changes to CHANGELOG)" (read-version))
+                   (shell "git add -u")
                    (shell (str "git commit -m v" (read-version)))
                    (run 'tag)
                    (println "\n\nRun:\n\n" "  git push --atomic"

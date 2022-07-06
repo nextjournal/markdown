@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.126
+* Add `deps.cljs` to classpath
+
 ## 0.4.123
 * downgrade GraalJS to keep Java 8 compatibility
 

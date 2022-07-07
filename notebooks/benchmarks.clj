@@ -2,6 +2,7 @@
 (ns ^:nextjournal.clerk/no-cache benchmarks
   (:require [clojure.test :refer :all]
             [nextjournal.clerk :as clerk]
+            [nextjournal.clerk.eval :as clerk.eval]
             [nextjournal.markdown :as md]
             parsing-extensibility
             [nextjournal.markdown.parser :as md.parser]))
@@ -9,7 +10,7 @@
 (def reference-text (slurp "notebooks/reference.md"))
 
 (defmacro time-ms [& expr]
-  `(-> (clerk/time-ms (dotimes [_# 100] ~@expr)) :time-ms (/ 100)))
+  `(-> (clerk.eval/time-ms (dotimes [_# 100] ~@expr)) :time-ms (/ 100)))
 
 (comment
   (macroexpand '(time-ms do-this)))

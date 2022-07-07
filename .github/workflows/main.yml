@@ -53,6 +53,17 @@ jobs:
         with:
           babashka-version: 0.7.8
 
+      - name: 🗝 Yarn Cache
+        uses: c-hive/gha-yarn-cache@v2
+
+      - name: 🗝 Shadow compiler cache
+        uses: actions/cache@v2
+        with:
+          path: .shadow-cljs
+          key: ${{ runner.os }}-shadow-cljs-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-shadow-cljs-
+
       - name: 🧪 Run tests
         run: bb test:cljs
 
@@ -72,6 +83,11 @@ jobs:
         uses: DeLaGuardo/setup-clojure@master
         with:
           cli: '1.10.3.943'
+
+      - name: 🔧 Setup Babashka
+        uses: turtlequeue/setup-babashka@v1.3.0
+        with:
+          babashka-version: 0.7.8
 
       - name: 🔧 Install Pandoc
         run: |
@@ -100,6 +116,17 @@ jobs:
           path: .clerk
           key: ${{ runner.os }}-clerk-cache
 
+      - name: 🗝 Yarn Cache
+        uses: c-hive/gha-yarn-cache@v2
+
+      - name: 🗝 Shadow compiler cache
+        uses: actions/cache@v2
+        with:
+          path: .shadow-cljs
+          key: ${{ runner.os }}-shadow-cljs-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-shadow-cljs-
+
       - name: 🔐 Google Auth
         uses: google-github-actions/auth@v0
         with:
@@ -108,8 +135,8 @@ jobs:
       - name: 🔧 Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0.3.0
 
-      - name: 🏗 Build Clerk Notebooks
-        run: clojure -J-Dclojure.main.report=stderr -X:nextjournal/clerk :git/sha '"${{ github.sha }}"' :git/url '"https://github.com/nextjournal/markdown"' :browse? false
+      - name: 🏗 Build Clerk Notebooks with Bundled SCI Context
+        run: bb build:notebooks ${{ github.sha }}
 
       - name: 📠 Copy static build to bucket under SHA
         run: |

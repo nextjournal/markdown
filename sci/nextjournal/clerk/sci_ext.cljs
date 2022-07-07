@@ -102,16 +102,24 @@ _this_ is a **strong** text
    [:hr.mb-4]
    [clojure-editor {:doc "(+ 1 2 3)" :editable? true}]])
 
+(defn expand-all-by-default [store]
+  (reify
+    ILookup
+    (-lookup [_ k] (get store k true))
+    IAssociative
+    (-assoc [_ k v] (expand-all-by-default (assoc store k v)))
+    IMap
+    (-dissoc [_ k] (expand-all-by-default (dissoc store k)))))
+
 (sci/merge-opts @sv/!sci-ctx
                 {:namespaces {'md {'parse md/parse}
                               'md.transform {'->hiccup md.transform/->hiccup}
                               'md.demo {'editor markdown-editor
                                         'renderers markdown-renderers
                                         'inspect-expanded (fn [x]
-                                                            (sv/inspect {:!expanded-at (atom (reify ILookup
-                                                                                               (-lookup [_ k]
-                                                                                                 (case k (:hover-path :prompt-multi-expand?) [] true))))}
-                                                                        (v/present x)))}}})
+                                                            (r/with-let [expanded-at (r/atom (expand-all-by-default {:hover-path [] :prompt-multi-expand? false}))]
+                                                              (sv/inspect {:!expanded-at expanded-at}
+                                                                          (v/present x))))}}})
 
 (comment
   (js/console.log (new LanguageSupport

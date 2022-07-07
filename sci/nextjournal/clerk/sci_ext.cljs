@@ -8,12 +8,13 @@
             [nextjournal.viewer.markdown :as viewer.markdown]
             [nextjournal.markdown.transform :as md.transform]
             [nextjournal.viewer.code :as viewer.code]
+            ["react" :as react]
+            [reagent.core :as r]
             [nextjournal.clojure-mode :as clojure-mode]
             ["@codemirror/view" :refer [EditorView highlightActiveLine highlightSpecialChars ViewPlugin keymap]]
             ["@codemirror/state" :refer [EditorState]]
             ["@codemirror/language" :refer [defaultHighlightStyle syntaxHighlighting foldGutter LanguageSupport]]
             ["@codemirror/lang-markdown" :as MD :refer [markdown markdownLanguage]]
-            [reagent.core :as r]
             [sci.core :as sci]))
 
 (def theme (j/lit {"&.cm-editor.cm-focused" {:outline "none"}
@@ -24,6 +25,10 @@
                                :font-family "\"Fira Mono\", monospace"}}))
 
 (defn update-plugin [doc-update _view] (j/obj :update (fn [update] (doc-update (.. update -state -doc toString)))))
+
+;; syntax (an LRParser) + support (a set of extensions)
+(def clojure-lang (LanguageSupport. (clojure-mode/syntax)
+                                    (.. clojure-mode/default-extensions (slice 1))))
 
 ;; duplicate code viewer logic to get content editable + fix concurrent issues related to clojure-mode
 (defn editor [{:as opts :keys [lang doc-update doc editable?] :or {editable? true}}]
@@ -48,36 +53,40 @@
                                                                                           (conj (.define ViewPlugin (partial update-plugin doc-update)))
 
                                                                                           (= lang :clojure)
-                                                                                          (conj viewer.code/ext)
+                                                                                          (conj (j/get clojure-lang :extension))
 
                                                                                           (= lang :markdown)
                                                                                           (conj (markdown (j/obj :base markdownLanguage
-                                                                                                                 :defaultCodeLanguage
-                                                                                                                 (LanguageSupport. (clojure-mode/syntax)
-                                                                                                                                   (.. clojure-mode/default-extensions
-                                                                                                                                       (slice 1)))))))))))))))))}])
+                                                                                                                 :defaultCodeLanguage clojure-lang))))))))))))))}])
 
 (defn markdown-editor [opts]
   (editor (assoc opts :lang :markdown)))
 
-(defn code-editor [{:as opts :keys [doc editable?] :or {editable? false}}]
-  ;; (r/with-let [!state (r/atom {:text ""})])
-  ;; as an alternative make code editors also editable
-  [:div
-   [:div.p-2.bg-slate-100
-    [editor (assoc opts :lang :clojure :editable? editable?)]]
-   [:div.viewer-result.mt-3.ml-5
-    (when-some [code (not-empty (str/trim doc))]
+(defn eval-string [source]
+  (when-some [code (not-empty (str/trim source))]
+    (try {:result (sci/eval-string* @sv/!sci-ctx code)}
+         (catch js/Error e
+           {:error (str (.-message e))}))))
+
+(defn clojure-editor [{:as opts :keys [editable?] :or {editable? false}}]
+  (r/with-let [!text (r/atom "")]
+    [:div
+     [:div.p-2.bg-slate-100
+      [editor (assoc opts :lang :clojure :editable? editable? :doc-update (partial reset! !text))]]
+     [:div.viewer-result.mt-3.ml-5
       (try
-        (js/console.log :doc doc )
-        (sv/inspect-paginated (sci/eval-string code))
-        (catch :default e
-          [:div.red (.-message e)])))]])
+        (when-some [{:keys [error result]}
+                    (when-some [code (not-empty (str/trim @!text))]
+                      (eval-string code))]
+          (cond
+            error [:div.red error]
+            (react/isValidElement result) result
+            'else (sv/inspect-paginated result))))]]))
 
 (def markdown-renderers
   (assoc viewer.markdown/default-renderers
          :code (fn [_ctx node]
-                 [code-editor {:doc (md.transform/->text node)}])))
+                 [clojure-editor {:doc (md.transform/->text node)}])))
 
 (dc/defcard editor
   [:div
@@ -91,7 +100,7 @@ _this_ is a **strong** text
 ```
 "}]
    [:hr.mb-4]
-   [code-editor {:doc "(+ 1 2 3)" :editable? true}]])
+   [clojure-editor {:doc "(+ 1 2 3)" :editable? true}]])
 
 (sci/merge-opts @sv/!sci-ctx
                 {:namespaces {'md {'parse md/parse}

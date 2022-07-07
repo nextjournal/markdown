@@ -27,3 +27,7 @@
                                    [:div.m-2.p-2.overflow-x-scroll [md.demo/inspect-expanded (:hiccup @!state)]]
                                    [:div.m-2.p-2.bg-slate-50.viewer-markdown [v/html (:hiccup @!state)]]])))}}
 (Object.)
+
+
+(comment
+  (clerk/serve! {:port 8023}))

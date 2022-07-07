@@ -44,9 +44,11 @@
                                                     :state (.create EditorState
                                                                     (j/obj :doc (str/trim doc)
                                                                            :extensions (into-array
-                                                                                        (cond-> [(syntaxHighlighting defaultHighlightStyle (j/obj :fallback true))
+                                                                                        (cond-> [(syntaxHighlighting defaultHighlightStyle)
                                                                                                  (.. EditorState -allowMultipleSelections (of editable?))
+                                                                                                 #_ (foldGutter)
                                                                                                  (.. EditorView -editable (of editable?))
+                                                                                                 (.of keymap clojure-mode/complete-keymap)
                                                                                                  (.theme EditorView theme)]
 
                                                                                           doc-update
@@ -75,9 +77,7 @@
       [editor (assoc opts :lang :clojure :editable? editable? :doc-update (partial reset! !text))]]
      [:div.viewer-result.mt-3.ml-5
       (try
-        (when-some [{:keys [error result]}
-                    (when-some [code (not-empty (str/trim @!text))]
-                      (eval-string code))]
+        (when-some [{:keys [error result]} (eval-string @!text)]
           (cond
             error [:div.red error]
             (react/isValidElement result) result

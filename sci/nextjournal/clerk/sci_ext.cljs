@@ -108,7 +108,9 @@ _this_ is a **strong** text
                               'md.demo {'editor markdown-editor
                                         'renderers markdown-renderers
                                         'inspect-expanded (fn [x]
-                                                            (sv/inspect {:!expanded-at (atom (constantly true))}
+                                                            (sv/inspect {:!expanded-at (atom (reify ILookup
+                                                                                               (-lookup [_ k]
+                                                                                                 (case k (:hover-path :prompt-multi-expand?) [] true))))}
                                                                         (v/present x)))}}})
 
 (comment

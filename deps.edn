@@ -7,7 +7,7 @@
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks"]
-   :extra-deps {io.github.nextjournal/clerk {:git/sha "1724ea2488e550a39e4953f90f9b9bede559f030"}}
+   :extra-deps {io.github.nextjournal/clerk {:git/sha "c0831a6cee36b8c88dca54341d118595b34f7522"}}
    :jvm-opts ["-Dclojure.main.report=stderr"
               "-Dclerk.resource_manifest={\"/js/viewer.js\" \"js/viewer.js\"}"] ;;
    :exec-fn nextjournal.clerk/build-static-app!

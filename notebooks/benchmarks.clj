@@ -43,6 +43,6 @@
          :handler (fn [data] {:type :losange :data data})}]
        reference-text)
 
-^{::clerk/visibility :hide ::clerk/viewer :hide-result}
+^{::clerk/visibility {:code :hide :result :hide}}
 (comment
   (clerk/serve! {:port 8888}))

@@ -1,10 +1,10 @@
 ;; # ✏️ Nextjournal Markdown Live Demo
-^{:nextjournal.clerk/visibility :hide-ns}
 (ns try
+  {:nextjournal.clerk/visibility {:code :hide}}
   (:require [nextjournal.clerk :as clerk]))
 ;; _Edit markdown text, see parsed AST and transformed hiccup live. Preview how Clerk renders it._
 ^{::clerk/width :full
-  ::clerk/visibility :fold
+  ::clerk/visibility {:code :fold}
   ::clerk/viewer {:render-fn '(fn [_]
                                 (v/html
                                  (reagent/with-let

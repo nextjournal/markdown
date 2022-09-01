@@ -1,7 +1,6 @@
 ;; # Tight Lists
-
-^{:nextjournal.clerk/visibility :hide-ns :nextjournal.clerk/toc :collapsed}
 (ns ^:nextjournal.clerk/no-cache tight-lists
+  {:nextjournal.clerk/toc :collapsed}
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
@@ -127,7 +126,8 @@
 (clerk/add-viewers! [{:name ::md/plain
                       :transform-fn (v/into-markup [:<>])}])
 
-^{::clerk/visibility :hide ::clerk/viewer :hide-result}
+^{::clerk/visibility {:code :hide :result :hide}}
 (comment
+  (clerk/clear-cache!)
   (clerk/serve! {:port 9999})
   (-> *e ex-cause ex-data))

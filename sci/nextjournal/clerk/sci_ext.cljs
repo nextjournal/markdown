@@ -81,7 +81,7 @@
           (cond
             error [:div.red error]
             (react/isValidElement result) result
-            'else (sv/inspect-paginated result))))]]))
+            'else (sv/inspect result))))]]))
 
 (def markdown-renderers
   (assoc viewer.markdown/default-renderers
@@ -118,7 +118,7 @@ _this_ is a **strong** text
                                         'renderers markdown-renderers
                                         'inspect-expanded (fn [x]
                                                             (r/with-let [expanded-at (r/atom (expand-all-by-default {:hover-path [] :prompt-multi-expand? false}))]
-                                                              (sv/inspect {:!expanded-at expanded-at}
+                                                              (sv/inspect-presented {:!expanded-at expanded-at}
                                                                           (v/present x))))}}})
 
 (comment

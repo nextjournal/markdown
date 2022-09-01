@@ -1,6 +1,6 @@
 ;; # 🏗 Extending Markdown Parsing
 
-^{:nextjournal.clerk/visibility :hide-ns :nextjournal.clerk/toc :collapsed}
+^{:nextjournal.clerk/visibility {:code :hide} :nextjournal.clerk/toc :collapsed}
 (ns ^:nextjournal.clerk/no-cache parsing-extensibility
   (:require [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as clerk.viewer]
@@ -9,7 +9,7 @@
             [edamame.core :as edamame]
             [clojure.string :as str]))
 
-^{:nextjournal.clerk/visibility :hide ::clerk/viewer :hide-result}
+^{:nextjournal.clerk/visibility {:code :hide :result :hide}}
 (def show-text {:transform-fn (fn [{{::clerk/keys [var-from-def]} :nextjournal/value}] (clerk/html [:pre @var-from-def]))})
 
 ;; With recent additions to our `nextjournal.markdown.parser` we added a tiny parsing layer on top of the tokenization provided by `markdown-it` ([n.markdown/tokenize](https://github.com/nextjournal/markdown/blob/ae2a2f0b6d7bdc6231f5d088ee559178b55c97f4/src/nextjournal/markdown.clj#L50-L52)).

@@ -1,5 +1,5 @@
 ;; # 🏳️‍🌈 Pandoc
-^{:nextjournal.clerk/visibility :hide-ns :nextjournal.clerk/toc :collapsed}
+^{:nextjournal.clerk/visibility {:code :hide} :nextjournal.clerk/toc :collapsed}
 (ns ^:nextjournal.clerk/no-cache pandoc
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]

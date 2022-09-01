@@ -13,6 +13,10 @@ A cross-platform clojure library for [Markdown](https://en.wikipedia.org/wiki/Ma
 * _Cross Platform_: clojurescript native, we target the JVM using [Graal's Polyglot Library](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context).
 * _Configurable [Hiccup](https://github.com/weavejester/hiccup) conversion_.
 
+## Try
+
+[Try it online](https://nextjournal.github.io/markdown/#/notebooks/try.clj).
+
 ## Flavor
 
 By building on top of [markdown-it](https://github.com/markdown-it/markdown-it), we adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) and also comply with extensions from [Github flavoured Markdown](https://github.github.com/gfm). Additionally, we parse $\LaTeX$ formulas (delimited by a $ for inline rendering or $$ for display mode).

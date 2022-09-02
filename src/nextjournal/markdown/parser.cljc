@@ -103,7 +103,8 @@
 (defn tag-node [text] {:type :hashtag :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
-(defn sidenote-ref [ref] {:type :sidenote-ref :content [(text-node (str (inc ref)))]})
+(defn sidenote-data [token] {:ref (get-in* token [:meta :id])
+                             :label (get-in* token [:meta :label])})
 
 ;; node constructors
 (defn node
@@ -279,9 +280,11 @@ end"
       close-node))
 
 ;; footnotes
-(defmethod apply-token "sidenote_ref" [doc token] (push-node doc (sidenote-ref (get-in* token [:meta :id]))))
+(defmethod apply-token "sidenote_ref" [doc token] (push-node doc (assoc (sidenote-data token) :type :sidenote-ref) ))
 (defmethod apply-token "sidenote_anchor" [doc token] doc)
-(defmethod apply-token "sidenote_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
+(defmethod apply-token "sidenote_open" [doc token] (-> doc
+                                                       (assoc :sidenotes? true)
+                                                       (open-node :sidenote nil (sidenote-data token))))
 (defmethod apply-token "sidenote_close" [doc token] (close-node doc))
 (defmethod apply-token "sidenote_block_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
 (defmethod apply-token "sidenote_block_close" [doc token] (close-node doc))

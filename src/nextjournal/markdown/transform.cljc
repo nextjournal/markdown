@@ -321,10 +321,10 @@ par two"
 
 (defn ->md
   ([doc] (->md default-md-renderers doc))
-  ([{:as ctx ::keys [sidenotes]} doc]
+  ([ctx doc]
    (as-> ctx c
      (write-node c doc)
-     (reduce write-sidenote c (reverse sidenotes))
+     (reduce write-sidenote c (reverse (::sidenotes c)))
      (str (str/trim (apply str (reverse (::buf c)))) "\n"))))
 
 (comment
@@ -349,14 +349,17 @@ $$
   * sub1
   * sub2 some bla
     bla bla
+
 * is not
 
   2. nsub1
   3. nsub2
   4. nsub3
+
 * thight
   - [ ] undone
   - [x] done
+
 * > and
   > a nice
   > quote
@@ -376,10 +379,16 @@ another
 [^sn2]: And some _other_
 "))
 
-    (-> doc
-        ->md
-        #_ nextjournal.markdown/parse
-        ))
+
+    (->md doc )
+
+    (::buf (write-node default-md-renderers doc))
+
+
+    (def doc2 (-> doc ->md nextjournal.markdown/parse))
+    (= (:content doc) (= (:content doc2)))
+    doc
+    doc2)
 
 
   (nextjournal.markdown/parse "

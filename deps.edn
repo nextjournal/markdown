@@ -17,6 +17,7 @@
                        "notebooks/pandoc.clj"
                        "notebooks/parsing_extensibility.clj"
                        "notebooks/benchmarks.clj"
+                       "notebooks/clerk_to_markdown.clj"
                        "notebooks/tight_lists.clj"]}}
 
   :quiet

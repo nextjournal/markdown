@@ -253,6 +253,43 @@ par two"
 (defn write-sidenote [ctx {:as node :keys [label]}]
   (-> ctx (write "[^" label "]: ") (write-child-nodes node) (write new-line)))
 
+(declare ->md)
+(defn process-table-cell [ctx node]
+  (-> node (select-keys [:attrs]) (assoc :text (str/trim (->md (dissoc ctx ::buf ::sidenotes) node)))))
+
+(defn write-row [col-widths ctx row]
+  (as-> ctx c
+    (write c "|")
+    (reduce-kv (fn [ctx i {:as cell :keys [text]}]
+                 (as-> ctx c
+                   (write c " ")
+                   (write c text)
+                   (apply write c (repeat (- (col-widths i) (count text)) " "))
+                   (write c " |"))) c (vec row))
+    (write c new-line)))
+
+(defn write-head-line [col-widths ctx row]
+  (as-> ctx c
+    (write c "|")
+    (reduce-kv (fn [ctx i {{:keys [style]} :attrs}]
+                 (as-> ctx c
+                   (write c (if (#{"text-align:center" "text-align:left"} style) ":" "-"))
+                   (apply write c (repeat (col-widths i) "-"))
+                   (write c (if (#{"text-align:center" "text-align:right"} style) ":" "-") "|"))) c (vec row))
+    (write c new-line)))
+
+(defn write-table [{:as ctx ::keys [table]}]
+  (def table table)
+  (let [[head & body :as rows] (:rows table)
+        column-widths (mapv (fn [i] (apply max (map (comp count :text #(nth % i)) rows)))
+                            (range (count (first rows))))]
+    (as-> ctx c
+      (write-row column-widths c head)
+      (write-head-line column-widths c head)
+      (reduce (partial write-row column-widths) c body)
+      (write c new-line))))
+
+;; md text renderers
 (def default-md-renderers
   {:doc write-child-nodes
    :toc (fn [ctx n] ctx)                              ;; ignore toc
@@ -317,7 +354,15 @@ par two"
 
    :sidenote-ref (fn [ctx {:keys [label]}] (write ctx "[^" label "]"))
    :sidenote (fn [ctx n] (update ctx ::sidenotes conj n))
-   })
+
+   ;; tables
+   :table (fn [ctx n] (-> ctx (assoc ::table {:rows []}) (write-child-nodes n) write-table (dissoc ::table)))
+   :table-head write-child-nodes
+   :table-body write-child-nodes
+   :table-header write-child-nodes
+   :table-data write-child-nodes
+   :table-row (fn [ctx {:keys [content]}]
+                (update-in ctx [::table :rows] conj (map (partial process-table-cell ctx) content)))})
 
 (defn ->md
   ([doc] (->md default-md-renderers doc))
@@ -327,9 +372,7 @@ par two"
      (reduce write-sidenote c (reverse (::sidenotes c)))
      (str (str/trim (apply str (reverse (::buf c)))) "\n"))))
 
-(comment
-  (do
-    (def doc (nextjournal.markdown/parse "# Ahoi
+#_ (->md (nextjournal.markdown/parse "# Ahoi
 this is *just* a __strong__ ~~text~~ with a $\\phi$ and a #hashtag
 
 this is an ![inline-image](/some/src) and a [_link_](/foo/bar)
@@ -371,57 +414,18 @@ $$
 
 1. one
 2. two
+
 ---
 
 another
 
+| _col1_        | col2                    |
+|:-------------:|:------------------------|
+| whatthasdasfd | hell                    |
+| this is       | insane as as as as as f |
+
+end
+
 [^sidenote]: Here a __description__
 [^sn2]: And some _other_
 "))
-
-
-    (->md doc )
-
-    (::buf (write-node default-md-renderers doc))
-
-
-    (def doc2 (-> doc ->md nextjournal.markdown/parse))
-    (= (:content doc) (= (:content doc2)))
-    doc
-    doc2)
-
-
-  (nextjournal.markdown/parse "
-this is ![alt](/the/hell/is/you \"hey\") inline")
-  (nextjournal.markdown/parse "
-[_alt_](/the/hell/is/you)")
-
-  (nextjournal.markdown/parse "
-par with a sidenote at the end[^sidenote] and another[^sn2] somewhere
-
-[^sidenote]: some desc
-[^sn2]: some other desc
-")
-
-  (nextjournal.markdown/parse "
-a [_link text_](/foo/bar) and a sn [^sidenote]
-
-[^sidenote]: what a __description__")
-
-  (nextjournal.markdown/tokenize "
-a [_link text_](/foo/bar) and a sn")
-
-  (nextjournal.markdown/tokenize "
-a [_link_](/foo/bar) link and a sidenote at the end[^sidenote]
-
-[^sidenote]: what a sn")
-
-  (nextjournal.markdown/parse "
-* foo bar
-  bla bla
-* and what
-* > is this
-  > for a
-  > nice quote")
-
-  )

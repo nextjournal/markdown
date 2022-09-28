@@ -45,9 +45,17 @@ $$\\int_a^b\\phi(t)dt$$
 
 1. one
 2. two
+
 ---
 
 another
+
+| _col1_        | col2                    |
+|:-------------:|:------------------------|
+| whatthasdasfd | hell                    |
+| this is       | insane as as as as as f |
+
+end
 
 [^sidenote]: Here a __description__
 [^sn2]: And some _other_

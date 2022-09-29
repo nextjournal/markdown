@@ -1,6 +1,8 @@
 ;; # 🗜 Clerk to Markdown
 (ns clerk_to_markdown
-  (:require [nextjournal.clerk :as clerk]
+  {:nextjournal.clerk/no-cache true}
+  (:require [clojure.string :as str]
+            [nextjournal.clerk :as clerk]
             [nextjournal.clerk.parser :as clerk.parser]
             [nextjournal.markdown.transform :as md.transform]))
 
@@ -10,7 +12,7 @@
 
 ;; A clerk notebook is composed of blocks, of type `:markdown` and `:code`. With recent additions to the markdown library we can turn our markdown AST data back into markdown text.
 
-;; This function turns a Clerk block into a string
+;; This function turns a Clerk block into a markdown string
 
 (defn block->md [{:as block :keys [type text doc]}]
   (case type
@@ -20,10 +22,26 @@
 ;; to put everything together, parse this notebook with Clerk and emit markdown as follows.
 
 ^{::clerk/viewer '(fn [s _] (v/html [:pre s]))}
-(->> this-notebook
-     (clerk.parser/parse-file {:doc? true})
+(def as-markdown
+  (->> this-notebook
+       (clerk.parser/parse-file {:doc? true})
+       :blocks
+       (map block->md)
+       (apply str)))
+
+;; We can go back to a clojure namespace as follows
+(defn block->clj [{:as block :keys [type text doc]}]
+  (case type
+    :code (str "\n" text "\n")
+    :markdown (apply str
+                     (interleave (repeat ";; ")
+                                 (str/split-lines (md.transform/->md doc))
+                                 (repeat "\n")))))
+
+^{::clerk/viewer '(fn [s _] (v/html [:pre s]))}
+(->> (clerk.parser/parse-markdown-string {:doc? true} as-markdown)
      :blocks
-     (map block->md)
+     (map block->clj)
      (apply str))
 
 ;; To learn more about clerk visit our [github page](https://github.com/nextjournal/clerk).

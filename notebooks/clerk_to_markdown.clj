@@ -1,4 +1,4 @@
-;; # 🗜 Clerk to Markdown
+;; # 🔄 Clerk to Markdown and Back
 (ns clerk_to_markdown
   {:nextjournal.clerk/no-cache true}
   (:require [clojure.string :as str]

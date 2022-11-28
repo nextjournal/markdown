@@ -3,20 +3,19 @@
             [clojure.string :as str]))
 
 (defn next-paragraph [state]
-  (cond
+  (cond-> state
     (:paragraph state)
-    (-> state (dissoc :paragraph)
+    (-> (dissoc :paragraph)
         (update :blocks conj
                 {:type "paragraph_close"
                  :tag "p"}))
     (not (:end state))
-    (-> state (assoc :paragraph true)
+    (-> (assoc :paragraph true)
         (update :blocks conj
                 {:type "paragraph_open"
                  :tag "p"
                  :block true
-                 :level 0}))
-    :else state))
+                 :level 0}))))
 
 (defn add-child [state line]
   (update state :blocks conj {:children [{:content line
@@ -32,7 +31,7 @@
         (if-let [line (read-line)]
           (cond
             (str/blank? line)
-            (next-paragraph state)
+            (recur (next-paragraph state))
             (:begin state)
             (recur
              (-> state
@@ -48,7 +47,9 @@
   (tokenize "hello")
 
   (require '[nextjournal.markdown :as original])
-  (tokenize "hello world #foo")
+  (tokenize "first paragraph
+
+second paragraph")
   (original/tokenize "hello world #foo")
   (original/tokenize "hello world
 #foo")

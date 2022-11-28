@@ -36,8 +36,14 @@
 (deftest tokenize-test
   (testing "hello world"
     (is (= (mapv :type (reference-tokenize "hello world"))
-           (mapv :type (m/tokenize "hello world")))))
+           (mapv :type (m/tokenize "hello world"))))))
 
-  (testing "hello world 2"
+(deftest paragraphs-test
+  (testing "hello world"
     (let [[expected actual] (compare-tokenize "hello world")]
+      (is (match? expected actual))))
+  (testing "multiple paragraphs"
+    (let [[expected actual] (compare-tokenize "first paragraph
+
+second paragraph")]
       (is (match? expected actual)))))

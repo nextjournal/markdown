@@ -1,6 +1,7 @@
 (ns test-runner
   (:require [clojure.test]
-            [nextjournal.markdown-test]))
+            [nextjournal.markdown-test]
+            [nextjournal.markdown.tokenizer-test]))
 
 (defn run [_]
   (let [{:keys [fail error]} (clojure.test/run-all-tests #"nextjournal\.markdown.*-test")]

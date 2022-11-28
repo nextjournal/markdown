@@ -1,17 +1,19 @@
 (ns nextjournal.markdown.tokenizer-test
-  (:require [clojure.string :as str]
-            [clojure.test :refer :all]
-            [clojure.walk :as w]
-            [nextjournal.markdown :as m]
-            [nextjournal.markdown.tokenizer :as t]))
+  (:require
+   [clojure.string :as str]
+   [clojure.test :refer [deftest is testing]]
+   [clojure.walk :as w]
+   [matcher-combinators.test :refer [match?]]
+   [nextjournal.markdown :as m]
+   [nextjournal.markdown.tokenizer :as t]))
 
 (defn reduce-noise [tokenized]
   (w/postwalk (fn [x]
                 (cond->> x
                   (map? x) (into {}
                                  (filter (fn [[_ v]] (if (string? v)
-                                                      (not (str/blank? v))
-                                                      (some? v)))))))
+                                                       (not (str/blank? v))
+                                                       (some? v)))))))
               tokenized))
 
 (defn reference-tokenize
@@ -31,4 +33,5 @@
            (mapv :type (m/tokenize "hello world")))))
 
   (testing "hello world 2"
-    (is (apply = (compare-tokenize "hello world")))))
+    (let [[expected actual] (compare-tokenize "hello world")]
+      (is (match? expected actual)))))

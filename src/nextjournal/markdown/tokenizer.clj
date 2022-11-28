@@ -2,20 +2,22 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]))
 
-(defn next-paragraph [state]
+(defn close-paragraph [state]
   (cond-> state
     (:paragraph state)
     (-> (dissoc :paragraph)
         (update :blocks conj
                 {:type "paragraph_close"
-                 :tag "p"}))
-    (not (:end state))
-    (-> (assoc :paragraph true)
-        (update :blocks conj
-                {:type "paragraph_open"
-                 :tag "p"
-                 :block true
-                 :level 0}))))
+                 :tag "p"}))))
+
+(defn next-paragraph [state]
+  (-> state
+      (assoc :paragraph true)
+      (update :blocks conj
+              {:type "paragraph_open"
+               :tag "p"
+               :block true
+               :level 0})))
 
 (defn add-child [state line]
   (update state :blocks conj {:children [{:content line
@@ -31,7 +33,8 @@
         (if-let [line (read-line)]
           (cond
             (str/blank? line)
-            (recur (next-paragraph state))
+            (recur (-> state close-paragraph
+                       (assoc :begin true)))
             (:begin state)
             (recur
              (-> state
@@ -39,7 +42,7 @@
                  (next-paragraph)
                  (add-child line)))
             :else (recur (add-child state line)))
-          (:blocks (next-paragraph (assoc state :end true))))))))
+          (:blocks (close-paragraph state)))))))
 
 ;;;; Scratch
 

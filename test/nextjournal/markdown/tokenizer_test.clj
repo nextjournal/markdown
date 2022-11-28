@@ -46,4 +46,10 @@
     (let [[expected actual] (compare-tokenize "first paragraph
 
 second paragraph")]
+      (is (match? expected actual))))
+  (testing "multiple paragraphs separated by multiple blank lines"
+    (let [[expected actual] (compare-tokenize "first paragraph
+
+
+second paragraph")]
       (is (match? expected actual)))))

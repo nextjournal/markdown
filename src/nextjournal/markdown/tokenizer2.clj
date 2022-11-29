@@ -133,6 +133,25 @@
          :column next-nonspace-col
          :partially-consumed-tab false))
 
+(defn add-line [state]
+  (if (:partially-consumed-tab state)
+    (let [state (update state :offset inc)
+          chars-to-tab (- 4 (mod (:column state) 4))
+          state (update state :tip update :string-content apply str (repeat chars-to-tab " "))]
+      state)
+    state))
+
+(defn close-unmatched-blocks [state]
+  (if (not (:all-closed state))
+    (loop [state state]
+      (if (= (:old-tip state) (:last-matched-container state))
+        (assoc state :all-closed true)
+        (let [parent (-> state :old-tip :parent)
+              state ((:finalize state) (:old-tip state) (dec (:line-number state)))
+              state (assoc state :old-tip parent)]
+          (recur state))))
+    state))
+
 (defn incorporate-line [{:keys [doc tip line-number line] :as state}] ;; https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L738
   (let [container doc
         state (assoc state
@@ -188,8 +207,13 @@
                                       [(advance-next-nonspace state) container]
                                       (recur state container matched-leaf)))))
                               [state container]))
-        
-        ]
+        [state] (if (and (not (:all-closed state))
+                         (not (:blank state))
+                         (= :paragraph (-> state :tip :type)))
+                  [(add-line state)]
+                  ;; https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L833
+                  (let [state (close-unmatched-blocks state)])
+                  )]
     ;; TODO more work
 
     )

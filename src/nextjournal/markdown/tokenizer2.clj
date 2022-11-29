@@ -220,10 +220,23 @@
                                                 (assoc container :last-child last-child))
                                               container)
                                   ;; https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L842
-                                  t (:type container)]
-                              [state container])
-                            )
+                                  t (:type container)
+                                  last-line-blank (and (:blank state)
+                                                       (not (or (= :block-quote t)
+                                                                (and (= :code-block t)
+                                                                     (:fenced container))
+                                                                (and (= :item t)
+                                                                     (not (:first-child container))
+                                                                     (= (:line-number state) (-> container :sourcepos (nth 0) (nth 0)))))))
+                                  #_#__ (loop [cont container]
+                                     (let [p (parent container)]
+                                       (if p
+                                         ;; TODO, perhaps use mutable container here, because this obviously doesn't work
+                                         (recur (assoc p :last-line-blank last-line-blank))
+                                         )))]
+                              [state container]))
         
+
         ]
     ;; TODO more work
 

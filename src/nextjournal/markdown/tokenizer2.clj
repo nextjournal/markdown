@@ -8,7 +8,7 @@
 
 (def code-indent 4)
 
-(defn find-next-non-space [{:keys [line offset column] :as state}]
+(defn find-next-nonspace [{:keys [line offset column] :as state}]
   (let [[c idx cols]
         (loop [idx offset
                cols column
@@ -25,15 +25,15 @@
            :blank (or (= "\n" c)
                       (= "\r" c)
                       (= "" c))
-           :next-non-space idx
-           :next-non-space-col cols
+           :next-nonspace idx
+           :next-nonspace-col cols
            :indent indent
            :indented (>= indent code-indent))))
 
 (comment
-  (find-next-non-space {:line "hello there" :offset 0 :column 0})
-  (find-next-non-space {:line " hello there" :offset 0 :column 0})
-  (find-next-non-space {:line "    hello there" :offset 0 :column 0})
+  (find-next-nonspace {:line "hello there" :offset 0 :column 0})
+  (find-next-nonspace {:line " hello there" :offset 0 :column 0})
+  (find-next-nonspace {:line "    hello there" :offset 0 :column 0})
   )
 
 (defn get-last-child [{:keys [container]}]
@@ -120,6 +120,19 @@
   ;; TODO
   )
 
+;; var reMaybeSpecial = /^[#`~*+_=<>0-9-]/;
+(def re-maybe-special #"^[#`~*+_=<>0-9-]")
+
+(comment
+  (re-find re-maybe-special "#")
+  )
+
+(defn advance-next-nonspace [{:keys [next-nonspace next-nonspace-col] :as state}]
+  (assoc state
+         :offset next-nonspace
+         :column next-nonspace-col
+         :partially-consumed-tab false))
+
 (defn incorporate-line [{:keys [doc tip line-number line] :as state}] ;; https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L738
   (let [container doc
         all-matched true
@@ -133,18 +146,46 @@
 
         current-line line
         last-child (get-last-child container)
-        [container] (loop [container last-child]
+        [container] (loop [last-child last-child]
                       (if (open? last-child)
-                        ;; TODO, what do to with the result of find-next-non-space?
-                        (let [state (find-next-non-space (assoc state :line current-line :offset offset :column column))
-                              ct (container-type container)
+                        ;; TODO, what do to with the result of find-next-nonspace?
+                        (let [state (find-next-nonspace (assoc state :line current-line :offset offset :column column))
+                              ct (container-type last-child)
                               continue-fn (get blocks ct)]
                           (case (continue-fn state)
-                            0 (recur (get-last-child container)) ;; recur
-                            1 [(parent container)] ;; recur
-                            2 (recur (get-last-child container))
-                            (throw (ex-info "continue returned illegal value, must be 0, 1 or 2" {}))
-                            ))))]
+                            0 (recur (get-last-child last-child)) ;; recur
+                            1 [(parent last-child)] ;; recur
+                            2 (recur (get-last-child last-child))
+                            (throw (ex-info "continue returned illegal value, must be 0, 1 or 2" {}))))
+                        [last-child]))
+        state (assoc state
+                     :all-closed (= container (:old-tip state))
+                     :last-matched-container container
+                     )
+        matched-leaf (and (not= :paragraph (:type container))
+                          (:accepts-lines (get blocks (:type container))))
+        starts (:block-starts state) ;; https"//github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L788"
+        starts-len (count starts)
+        [state container] (loop [state state
+                                 container container]
+                            (if (:matched-leaf state)
+                              (let [{:keys [indented next-nonspace] :as state} (find-next-nonspace state)]
+                                (if (and (not indented)
+                                         (not (re-find re-maybe-special (subs line next-nonspace))))
+                                  [(advance-next-nonspace state) container]
+                                  (loop [idx 0]
+                                    (if (< idx starts-len)
+                                      (let [res ((nth starts idx) state container)]
+                                        (cond (= 1 res)
+                                              [state (:tip state)]
+                                              (= 2 res)
+                                              [(assoc state :matched-leaf true)
+                                               (:tip state)]))
+                                      (recur (inc idx))))))
+                              [state container]))
+        ]
+    ;; TODO more work
+
     )
   )
 

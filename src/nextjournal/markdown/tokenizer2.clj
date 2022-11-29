@@ -8,7 +8,7 @@
 
 (def code-indent 4)
 
-(defn find-next-non-space [{:keys [line offset column]}]
+(defn find-next-non-space [{:keys [line offset column] :as state}]
   (let [[c idx cols]
         (loop [idx offset
                cols column
@@ -21,13 +21,14 @@
               (recur (inc idx) (+ cols (- 4 (mod cols 4))))
               [(str c) idx cols])))
         indent (- cols column)]
-    {:blank (or (= "\n" c)
-                (= "\r" c)
-                (= "" c))
-     :next-non-space idx
-     :next-non-space-col cols
-     :indent indent
-     :indented (>= indent code-indent)}))
+    (assoc state
+           :blank (or (= "\n" c)
+                      (= "\r" c)
+                      (= "" c))
+           :next-non-space idx
+           :next-non-space-col cols
+           :indent indent
+           :indented (>= indent code-indent))))
 
 (comment
   (find-next-non-space {:line "hello there" :offset 0 :column 0})
@@ -135,8 +136,7 @@
         [container] (loop [container last-child]
                       (if (open? last-child)
                         ;; TODO, what do to with the result of find-next-non-space?
-                        (let [next-non-space-state (find-next-non-space {:line line :offset offset :column column})
-                              state (merge state next-non-space-state)
+                        (let [state (find-next-non-space (assoc state :line current-line :offset offset :column column))
                               ct (container-type container)
                               continue-fn (get blocks ct)]
                           (case (continue-fn state)

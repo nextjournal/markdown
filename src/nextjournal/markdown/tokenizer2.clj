@@ -207,13 +207,24 @@
                                       [(advance-next-nonspace state) container]
                                       (recur state container matched-leaf)))))
                               [state container]))
-        [state] (if (and (not (:all-closed state))
-                         (not (:blank state))
-                         (= :paragraph (-> state :tip :type)))
-                  [(add-line state)]
-                  ;; https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L833
-                  (let [state (close-unmatched-blocks state)])
-                  )]
+        [state container] (if (and (not (:all-closed state))
+                                   (not (:blank state))
+                                   (= :paragraph (-> state :tip :type)))
+                            [(add-line state) container]
+                            ;; https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L833
+                            (let [state (close-unmatched-blocks state)
+                                  container (if (and (:blank state)
+                                                     (:last-child container))
+                                              (let [last-child (:last-child container)
+                                                    last-child (assoc last-child :last-blank-line true)]
+                                                (assoc container :last-child last-child))
+                                              container)
+                                  ;; https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L842
+                                  t (:type container)]
+                              [state container])
+                            )
+        
+        ]
     ;; TODO more work
 
     )

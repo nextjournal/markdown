@@ -24,7 +24,9 @@
 
   :test
   {:extra-paths ["test"]
-   :extra-deps {nubank/matcher-combinators {:mvn/version "3.5.0"}}
+   :extra-deps {nubank/matcher-combinators {:mvn/version "3.5.0"}
+                hiccup/hiccup {:mvn/version "2.0.0-alpha2"}
+                markdown-clj/markdown-clj {:mvn/version "1.11.4"}}
    :exec-fn test-runner/run}
 
   :cljs-test

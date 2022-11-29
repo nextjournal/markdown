@@ -15,10 +15,12 @@
                         (filter (fn [[_ v]] (if (string? v)
                                               (not (str/blank? v))
                                               (some? v))))
-                        (dissoc x
-                                ;; TODO
-                                :meta :hidden :attrs :map :nesting
-                                :block :level))
+                        (-> x
+                            (select-keys [:type, :content, :children, :attrs :meta])
+                            ;; TODO
+                            (dissoc x
+                                    :meta :attrs
+                                    )))
                   :else x))
               tokenized))
 
@@ -52,4 +54,22 @@ second paragraph")]
 
 
 second paragraph")]
+      (is (match? expected actual))))
+  (testing "paragraphs with multiple lines"
+    (let [[expected actual] (compare-tokenize "first paragraph
+first paragraph sentence two
+
+
+second paragraph
+second paragraph sentence two")]
       (is (match? expected actual)))))
+
+;;;; Scratch
+
+(comment
+  (require '[hiccup2.core :refer [html]])
+  (str (html (m/->hiccup "hello
+there")))
+  (m/parse "hello
+there")
+  )

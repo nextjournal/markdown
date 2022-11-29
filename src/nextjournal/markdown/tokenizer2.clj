@@ -135,21 +135,20 @@
 
 (defn incorporate-line [{:keys [doc tip line-number line] :as state}] ;; https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L738
   (let [container doc
-        all-matched true
-        old-tip tip
-        offset 0
-        column 0
-        blank false
-        partially-consumed-tab false
-        line-number (inc line-number)
+        state (assoc state
+                     :old-tip tip
+                     :offset 0
+                     :column 0
+                     :blank false
+                     :partially-consumed-tab false
+                     :line-number (inc line-number)
+                     :line line)
         ;; TODO: https://github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L750
-
-        current-line line
         last-child (get-last-child container)
         [container] (loop [last-child last-child]
                       (if (open? last-child)
                         ;; TODO, what do to with the result of find-next-nonspace?
-                        (let [state (find-next-nonspace (assoc state :line current-line :offset offset :column column))
+                        (let [state (find-next-nonspace state)
                               ct (container-type last-child)
                               continue-fn (get blocks ct)]
                           (case (continue-fn state)
@@ -162,27 +161,34 @@
                      :all-closed (= container (:old-tip state))
                      :last-matched-container container
                      )
-        matched-leaf (and (not= :paragraph (:type container))
-                          (:accepts-lines (get blocks (:type container))))
         starts (:block-starts state) ;; https"//github.com/commonmark/commonmark.js/blob/9a16ff4fb8111bc0f71e03206f5e3bdbf7c69e8d/lib/blocks.js#L788"
         starts-len (count starts)
         [state container] (loop [state state
-                                 container container]
-                            (if (:matched-leaf state)
+                                 container container
+                                 matched-leaf (and (not= :paragraph (:type container))
+                                                   (:accepts-lines (get blocks (:type container))))]
+                            (if matched-leaf
                               (let [{:keys [indented next-nonspace] :as state} (find-next-nonspace state)]
                                 (if (and (not indented)
                                          (not (re-find re-maybe-special (subs line next-nonspace))))
                                   [(advance-next-nonspace state) container]
-                                  (loop [idx 0]
-                                    (if (< idx starts-len)
-                                      (let [res ((nth starts idx) state container)]
-                                        (cond (= 1 res)
-                                              [state (:tip state)]
-                                              (= 2 res)
-                                              [(assoc state :matched-leaf true)
-                                               (:tip state)]))
-                                      (recur (inc idx))))))
+                                  (let [[state container idx matched-leaf]
+                                        (loop [idx 0]
+                                          (if (< idx starts-len)
+                                            (let [res ((nth starts idx) state container)]
+                                              (cond (= 1 res)
+                                                    [state (:tip state) idx matched-leaf]
+                                                    (= 2 res)
+                                                    [state
+                                                     (:tip state)
+                                                     idx
+                                                     true]))
+                                            (recur (inc idx))))]
+                                    (if (= starts-len idx)
+                                      [(advance-next-nonspace state) container]
+                                      (recur state container matched-leaf)))))
                               [state container]))
+        
         ]
     ;; TODO more work
 

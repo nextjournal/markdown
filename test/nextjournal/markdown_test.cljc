@@ -2,6 +2,7 @@
   (:require #?(:clj [clojure.test :refer :all]
                :cljs [cljs.test :refer (deftest testing is)])
             [matcher-combinators.test]
+            [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
             [nextjournal.markdown.transform :as md.transform]))
 
@@ -25,7 +26,7 @@ $$\\int_a^bf(t)dt$$
 
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"
-    (is (= {:type :doc
+    (is (match? {:type :doc
             :title "Hello"
             :content [{:content [{:text "Hello"
                                   :type :text}]
@@ -79,7 +80,7 @@ $$\\int_a^bf(t)dt$$
 
 
   (testing "parses internal links / plays well with todo lists"
-    (is (= {:toc {:type :toc}
+    (is (match? {:toc {:type :toc}
             :type :doc
             :content [{:type :paragraph
                        :content [{:text "a "
@@ -90,7 +91,7 @@ $$\\int_a^bf(t)dt$$
                                   :type :text}]}]}
            (md/parse "a [[wikistyle]] link")))
 
-    (is (= {:type :doc
+    (is (match? {:type :doc
             :title "a wikistyle link in title"
             :content [{:heading-level 1
                        :type :heading
@@ -112,7 +113,7 @@ $$\\int_a^bf(t)dt$$
                               :path [:content 0]}]}}
            (md/parse "# a [[wikistyle]] link in title")))
 
-    (is (= {:type :doc
+    (is (match? {:type :doc
             :toc {:type :toc}
             :content [{:type :todo-list
                        :attrs {:has-todos true}
@@ -195,7 +196,7 @@ $$\\int_a^bf(t)dt$$
           data (md/parse md)
           hiccup (md.transform/->hiccup data)]
 
-      (is (= {:type :doc
+      (is (match? {:type :doc
               :title "Title"
               :content [{:content [{:text "Title"
                                     :type :text}]
@@ -313,7 +314,7 @@ $$\\int_a^bf(t)dt$$
 
 (deftest tags-text
   (testing "parsing tags"
-    (is (= {:type :doc
+    (is (match? {:type :doc
             :title "Hello Tags"
             :content [{:content [{:text "Hello Tags"
                                   :type :text}]
@@ -402,6 +403,23 @@ par with #really_nice #useful-123 tags
 
   inner paragraph
 * two")))))
+
+(deftest unique-heading-ids
+  (is (match? {:content (m/embeds [{:type :heading :id "introduction"}
+                                   {:type :heading :id "quantum_physics"}
+                                   {:type :heading :id "references"}
+                                   {:type :heading :id "quantum_physics_1"}])}
+
+              (md/parse "
+## Introduction
+Lorem ipsum et cetera.
+### Quantum Physics
+Dolor sit and so on.
+## References
+It's important to cite your references!
+### Quantum Physics
+Particularly for quantum physics!
+"))))
 
 (comment
   (run-tests 'nextjournal.markdown-test))

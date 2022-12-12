@@ -43,7 +43,12 @@
 ;; region node operations
 ;; helpers
 (defn inc-last [path] (update path (dec (count path)) inc))
-(defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second #?(:clj read-string :cljs reader/read-string))))
+(defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second #?(:clj Integer/parseInt :cljs js/parseInt))))
+(defn ->slug [text]
+  (apply str
+         (map (comp str/lower-case
+                    (fn [c] (case c (\space \-) \_ c))) text)))
+#_(->slug "Hello There")
 
 ;; `parse-fence-info` ingests nextjournal, GFM, Pandoc and RMarkdown fenced code block info (any text following the leading 3 backticks) and returns a map
 ;;
@@ -133,6 +138,14 @@
 (def ppop (comp pop pop))
 (defn close-node [doc] (update doc ::path ppop))
 (defn update-current [{:as doc path ::path} fn & args] (apply update-in doc path fn args))
+
+(defn update-node-id [{:as doc ::keys [path] :keys [id->index slug-fn]}]
+  (let [id (when (ifn? slug-fn) (-> doc (get-in path) slug-fn))
+        id-count (id->index id)]
+    (cond-> doc
+      id
+      (-> (update-in path assoc :id (cond-> id id-count (str "_" (inc id-count))))
+          (update-in [:id->index id] (fnil inc -1))))))
 
 (comment                                                    ;; path after call
   (-> empty-doc                                             ;; [:content -1]
@@ -239,8 +252,13 @@ end"
 (defmethod apply-token "heading_open" [doc token] (open-node doc :heading {} {:heading-level (hlevel token)}))
 (defmethod apply-token "heading_close" [doc {doc-level :level}]
   (let [{:as doc ::keys [path]} (close-node doc)
-        heading (-> doc (get-in path) (assoc :path path))]
-    (cond-> doc (zero? doc-level) (-> (add-to-toc heading) (set-title-when-missing heading)))))
+        doc' (update-node-id doc)
+        heading (-> doc' (get-in path) (assoc :path path))]
+    (cond-> doc'
+      (zero? doc-level)
+      (-> (add-to-toc heading)
+          (set-title-when-missing heading)))))
+
 ;; for building the TOC we just care about headings at document top level (not e.g. nested under lists) ⬆
 
 (defmethod apply-token "paragraph_open" [doc {:as _token :keys [hidden]}] (open-node doc (if hidden :plain :paragraph)))
@@ -423,6 +441,8 @@ end"
 
 (def empty-doc {:type :doc
                 :content []
+                :id->index {}
+                :slug-fn (comp ->slug md.transform/->text)
                 :toc {:type :toc}
                 ::path [:content -1] ;; private
                 :text-tokenizers text-tokenizers})

@@ -31,12 +31,11 @@
                         (keep (partial ->hiccup (assoc ctx ::parent node)))
                         content)))
 
-(defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [content children]}]
+(defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [id content children]}]
   (let [toc-item (cond-> [:div]
                    (seq content)
-                   (conj (let [id (-> node ->text ->id)]
-                           [:a {:href (str "#" id) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
-                            (-> node heading-markup (into-markup ctx node))]))
+                   (conj [:a {:href (str "#" id) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
+                          (-> node heading-markup (into-markup ctx node))])
                    (seq children)
                    (conj (into [:ul] (map (partial ->hiccup (assoc ctx ::parent node))) children)))]
     (cond->> toc-item
@@ -60,12 +59,12 @@ a paragraph
       (->> (->hiccup (assoc default-hiccup-renderers
                             :toc (fn [ctx {:as node :keys [content children heading-level]}]
                                    (cond-> [:div]
-                                     (seq content) (conj [:span.title {:data-level heading-level} (-> node ->text ->id)])
+                                     (seq content) (conj [:span.title {:data-level heading-level} (:id node)])
                                      (seq children) (conj (into [:ul] (map (partial ->hiccup ctx)) children)))))))))
 
 (def default-hiccup-renderers
   {:doc (partial into-markup [:div])
-   :heading (fn [ctx node] (-> (heading-markup node) (conj {:id (-> node ->text ->id)}) (into-markup ctx node)))
+   :heading (fn [ctx {:as node :keys [id]}] (-> (heading-markup node) (conj {:id id}) (into-markup ctx node)))
    :paragraph (partial into-markup [:p])
    :plain (partial into-markup [:<>])
    :text (fn [_ {:keys [text]}] text)

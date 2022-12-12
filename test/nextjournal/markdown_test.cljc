@@ -143,7 +143,7 @@ $$\\int_a^bf(t)dt$$
 (deftest ->hiccup-test
   "ingests markdown returns hiccup"
   (is (= [:div
-          [:h1 {:id "Hello"} "Hello"]
+          [:h1 {:id "hello"} "Hello"]
           [:p
            "some "
            [:strong
@@ -240,10 +240,10 @@ $$\\int_a^bf(t)dt$$
 
       (is (match? [:div
                    [:h1
-                    {:id "Title"}
+                    {:id "title"}
                     "Title"]
                    [:h2
-                    {:id "Section%201"}
+                    {:id "section_1"}
                     "Section 1"]
                    [:div.toc
                     [:div
@@ -251,41 +251,41 @@ $$\\int_a^bf(t)dt$$
                       [:li.toc-item
                        [:div
                         [:a
-                         {:href "#Title"}
+                         {:href "#title"}
                          [:h1
                           "Title"]]
                         [:ul
                          [:li.toc-item
                           [:div
                            [:a
-                            {:href "#Section%201"}
+                            {:href "#section_1"}
                             [:h2
                              "Section 1"]]]]
                          [:li.toc-item
                           [:div
                            [:a
-                            {:href "#Section%202"}
+                            {:href "#section_2"}
                             [:h2
                              "Section 2"]]
                            [:ul
                             [:li.toc-item
                              [:div
                               [:a
-                               {:href "#Section%202.1"}
+                               {:href "#section_2.1"}
                                [:h3
                                 "Section 2.1"]]]]]]]]]]]]]
                    [:h2
-                    {:id "Section%202"}
+                    {:id "section_2"}
                     "Section 2"]
                    [:h3
-                    {:id "Section%202.1"}
+                    {:id "section_2.1"}
                     "Section 2.1"]]
                   hiccup)))))
 
 (deftest todo-lists
   (testing "todo lists"
     (is (= [:div
-            [:h1 {:id "Todos"} "Todos"]
+            [:h1 {:id "todos"} "Todos"]
             [:ul.contains-task-list
              [:li
               [:input
@@ -343,7 +343,7 @@ par with #really_nice #useful-123 tags
 
   (testing "rendering tags"
     (is (= [:div
-            [:h1 {:id "Hello%20Tags"} "Hello Tags"]
+            [:h1 {:id "hello_tags"} "Hello Tags"]
             [:p
              "par with "
              [:a.tag

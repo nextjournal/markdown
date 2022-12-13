@@ -43,7 +43,14 @@
 ;; region node operations
 ;; helpers
 (defn inc-last [path] (update path (dec (count path)) inc))
-(defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second #?(:clj read-string :cljs reader/read-string))))
+(defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second #?(:clj Integer/parseInt :cljs js/parseInt))))
+(defn ->slug [text]
+  (apply str
+         (map (comp str/lower-case (fn [c] (case c (\space \_) \- c)))
+              text)))
+
+#_(->slug "Hello There")
+#_(->slug "Hello_There")
 
 ;; `parse-fence-info` ingests nextjournal, GFM, Pandoc and RMarkdown fenced code block info (any text following the leading 3 backticks) and returns a map
 ;;
@@ -115,11 +122,17 @@
 (defn empty-text-node? [{text :text t :type}] (and (= :text t) (empty? text)))
 
 (defn push-node [{:as doc ::keys [path]} node]
-  (cond-> doc
-    (not (empty-text-node? node)) ;; ⬅ mdit produces empty text tokens at mark boundaries, see edge cases below
-    (-> #_doc
-        (update ::path inc-last)
-        (update-in (pop path) conj node))))
+  (try
+    (cond-> doc
+      ;; ⬇ mdit produces empty text tokens at mark boundaries, see edge cases below
+      (not (empty-text-node? node))
+      (-> #_doc
+       (update ::path inc-last)
+       (update-in (pop path) conj node)))
+    (catch #?(:clj Exception :cljs js/Error) e
+      (throw (ex-info (str "nextjournal.markdown cannot add node: " node " at path: " path)
+                      {:doc doc :node node} e)))))
+
 (def push-nodes (partial reduce push-node))
 
 (defn open-node
@@ -133,6 +146,14 @@
 (def ppop (comp pop pop))
 (defn close-node [doc] (update doc ::path ppop))
 (defn update-current [{:as doc path ::path} fn & args] (apply update-in doc path fn args))
+
+(defn update-node-id [{:as doc ::keys [id->index path] :keys [slug-fn]}]
+  (let [id (when (ifn? slug-fn) (-> doc (get-in path) slug-fn))
+        id-count (when id (get id->index id))]
+    (cond-> doc
+      id
+      (-> (assoc-in (conj path :attrs :id) (cond-> id id-count (str "-" (inc id-count))))
+          (update-in [::id->index id] (fnil inc 0))))))
 
 (comment                                                    ;; path after call
   (-> empty-doc                                             ;; [:content -1]
@@ -239,8 +260,13 @@ end"
 (defmethod apply-token "heading_open" [doc token] (open-node doc :heading {} {:heading-level (hlevel token)}))
 (defmethod apply-token "heading_close" [doc {doc-level :level}]
   (let [{:as doc ::keys [path]} (close-node doc)
-        heading (-> doc (get-in path) (assoc :path path))]
-    (cond-> doc (zero? doc-level) (-> (add-to-toc heading) (set-title-when-missing heading)))))
+        doc' (update-node-id doc)
+        heading (-> doc' (get-in path) (assoc :path path))]
+    (cond-> doc'
+      (zero? doc-level)
+      (-> (add-to-toc heading)
+          (set-title-when-missing heading)))))
+
 ;; for building the TOC we just care about headings at document top level (not e.g. nested under lists) ⬆
 
 (defmethod apply-token "paragraph_open" [doc {:as _token :keys [hidden]}] (open-node doc (if hidden :plain :paragraph)))
@@ -423,6 +449,10 @@ end"
 
 (def empty-doc {:type :doc
                 :content []
+                ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
+                ::id->index {}
+                ;; Node -> String, dissoc from context to opt-out of ids
+                :slug-fn (comp ->slug md.transform/->text)
                 :toc {:type :toc}
                 ::path [:content -1] ;; private
                 :text-tokenizers text-tokenizers})

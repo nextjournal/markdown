@@ -1,12 +1,10 @@
 (ns nextjournal.markdown.transform
   "transform markdown data as returned by `nextjournal.markdown/parse` into other formats, currently:
-     * hiccup"
-  (:require [lambdaisland.uri.normalize :as uri.normalize]))
+     * hiccup")
 
 ;; helpers
 (defn guard [pred val] (when (pred val) val))
 (defn ->text [{:as _node :keys [text content]}] (or text (apply str (map ->text content))))
-(def ->id uri.normalize/normalize-fragment)
 
 (defn hydrate-toc
   "Scans doc contents and replaces toc node placeholder with the toc node accumulated during parse."
@@ -31,12 +29,12 @@
                         (keep (partial ->hiccup (assoc ctx ::parent node)))
                         content)))
 
-(defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [content children]}]
-  (let [toc-item (cond-> [:div]
+(defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [attrs content children]}]
+  (let [id (:id attrs)
+        toc-item (cond-> [:div]
                    (seq content)
-                   (conj (let [id (-> node ->text ->id)]
-                           [:a {:href (str "#" id) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
-                            (-> node heading-markup (into-markup ctx node))]))
+                   (conj [:a {:href (str "#" id) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
+                          (-> node heading-markup (into-markup ctx node))])
                    (seq children)
                    (conj (into [:ul] (map (partial ->hiccup (assoc ctx ::parent node))) children)))]
     (cond->> toc-item
@@ -60,12 +58,12 @@ a paragraph
       (->> (->hiccup (assoc default-hiccup-renderers
                             :toc (fn [ctx {:as node :keys [content children heading-level]}]
                                    (cond-> [:div]
-                                     (seq content) (conj [:span.title {:data-level heading-level} (-> node ->text ->id)])
+                                     (seq content) (conj [:span.title {:data-level heading-level} (:id node)])
                                      (seq children) (conj (into [:ul] (map (partial ->hiccup ctx)) children)))))))))
 
 (def default-hiccup-renderers
   {:doc (partial into-markup [:div])
-   :heading (fn [ctx node] (-> (heading-markup node) (conj {:id (-> node ->text ->id)}) (into-markup ctx node)))
+   :heading (fn [ctx {:as node :keys [attrs]}] (-> (heading-markup node) (conj attrs) (into-markup ctx node)))
    :paragraph (partial into-markup [:p])
    :plain (partial into-markup [:<>])
    :text (fn [_ {:keys [text]}] text)

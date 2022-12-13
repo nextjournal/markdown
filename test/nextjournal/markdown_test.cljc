@@ -1,9 +1,27 @@
 (ns nextjournal.markdown-test
-  (:require #?(:clj [clojure.test :refer :all]
-               :cljs [cljs.test :refer (deftest testing is)])
-            [matcher-combinators.test]
+  (:require [clojure.test :as t :refer [deftest testing is]]
+            [matcher-combinators.test :refer [match?]]
+            [matcher-combinators.standalone :as standalone]
+            [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
             [nextjournal.markdown.transform :as md.transform]))
+
+#?(:cljs
+   ;; FIXME: in matcher-combinators (should probably use a simple `:fail` dispatch instead of `:matcher-combinators/mismatch`)
+   ;; mismatch are currently ignored by shadow both browser and node tests
+   (defmethod t/report [:cljs-test-display.core/default :matcher-combinators/mismatch] [m]
+     ;; Shadow browser tests
+     (when (exists? js/document)
+       (cljs-test-display.core/add-fail-node! m))
+
+     (t/inc-report-counter! :fail)
+     (println "\nFAIL in" (t/testing-vars-str m))
+     (when (seq (:testing-contexts (t/get-current-env)))
+       (println (t/testing-contexts-str)))
+     (when-let [message (:message m)]
+       (println message))
+     (println "mismatch:")
+     (println (:markup m))))
 
 (def markdown-text
   "# Hello
@@ -25,11 +43,12 @@ $$\\int_a^bf(t)dt$$
 
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"
-    (is (= {:type :doc
+    (is (match? {:type :doc
             :title "Hello"
             :content [{:content [{:text "Hello"
                                   :type :text}]
                        :heading-level 1
+                       :attrs {:id "hello"}
                        :type :heading}
                       {:content [{:text "some "
                                   :type :text}
@@ -79,7 +98,7 @@ $$\\int_a^bf(t)dt$$
 
 
   (testing "parses internal links / plays well with todo lists"
-    (is (= {:toc {:type :toc}
+    (is (match? {:toc {:type :toc}
             :type :doc
             :content [{:type :paragraph
                        :content [{:text "a "
@@ -90,7 +109,7 @@ $$\\int_a^bf(t)dt$$
                                   :type :text}]}]}
            (md/parse "a [[wikistyle]] link")))
 
-    (is (= {:type :doc
+    (is (match? {:type :doc
             :title "a wikistyle link in title"
             :content [{:heading-level 1
                        :type :heading
@@ -112,7 +131,7 @@ $$\\int_a^bf(t)dt$$
                               :path [:content 0]}]}}
            (md/parse "# a [[wikistyle]] link in title")))
 
-    (is (= {:type :doc
+    (is (match? {:type :doc
             :toc {:type :toc}
             :content [{:type :todo-list
                        :attrs {:has-todos true}
@@ -142,7 +161,7 @@ $$\\int_a^bf(t)dt$$
 (deftest ->hiccup-test
   "ingests markdown returns hiccup"
   (is (= [:div
-          [:h1 {:id "Hello"} "Hello"]
+          [:h1 {:id "hello"} "Hello"]
           [:p
            "some "
            [:strong
@@ -195,7 +214,7 @@ $$\\int_a^bf(t)dt$$
           data (md/parse md)
           hiccup (md.transform/->hiccup data)]
 
-      (is (= {:type :doc
+      (is (match? {:type :doc
               :title "Title"
               :content [{:content [{:text "Title"
                                     :type :text}]
@@ -239,10 +258,10 @@ $$\\int_a^bf(t)dt$$
 
       (is (match? [:div
                    [:h1
-                    {:id "Title"}
+                    {:id "title"}
                     "Title"]
                    [:h2
-                    {:id "Section%201"}
+                    {:id "section-1"}
                     "Section 1"]
                    [:div.toc
                     [:div
@@ -250,41 +269,41 @@ $$\\int_a^bf(t)dt$$
                       [:li.toc-item
                        [:div
                         [:a
-                         {:href "#Title"}
+                         {:href "#title"}
                          [:h1
                           "Title"]]
                         [:ul
                          [:li.toc-item
                           [:div
                            [:a
-                            {:href "#Section%201"}
+                            {:href "#section-1"}
                             [:h2
                              "Section 1"]]]]
                          [:li.toc-item
                           [:div
                            [:a
-                            {:href "#Section%202"}
+                            {:href "#section-2"}
                             [:h2
                              "Section 2"]]
                            [:ul
                             [:li.toc-item
                              [:div
                               [:a
-                               {:href "#Section%202.1"}
+                               {:href "#section-2.1"}
                                [:h3
                                 "Section 2.1"]]]]]]]]]]]]]
                    [:h2
-                    {:id "Section%202"}
+                    {:id "section-2"}
                     "Section 2"]
                    [:h3
-                    {:id "Section%202.1"}
+                    {:id "section-2.1"}
                     "Section 2.1"]]
                   hiccup)))))
 
 (deftest todo-lists
   (testing "todo lists"
     (is (= [:div
-            [:h1 {:id "Todos"} "Todos"]
+            [:h1 {:id "todos"} "Todos"]
             [:ul.contains-task-list
              [:li
               [:input
@@ -313,7 +332,7 @@ $$\\int_a^bf(t)dt$$
 
 (deftest tags-text
   (testing "parsing tags"
-    (is (= {:type :doc
+    (is (match? {:type :doc
             :title "Hello Tags"
             :content [{:content [{:text "Hello Tags"
                                   :type :text}]
@@ -342,7 +361,7 @@ par with #really_nice #useful-123 tags
 
   (testing "rendering tags"
     (is (= [:div
-            [:h1 {:id "Hello%20Tags"} "Hello Tags"]
+            [:h1 {:id "hello-tags"} "Hello Tags"]
             [:p
              "par with "
              [:a.tag
@@ -402,6 +421,23 @@ par with #really_nice #useful-123 tags
 
   inner paragraph
 * two")))))
+
+(deftest unique-heading-ids
+  (is (match? {:content (m/embeds [{:type :heading :attrs {:id "introduction"}}
+                                   {:type :heading :attrs {:id "quantum-physics"}}
+                                   {:type :heading :attrs {:id "references"}}
+                                   {:type :heading :attrs {:id "quantum-physics-2"}}])}
+
+              (md/parse "
+## Introduction
+Lorem ipsum et cetera.
+### Quantum Physics
+Dolor sit and so on.
+## References
+It's important to cite your references!
+### Quantum Physics
+Particularly for quantum physics!
+"))))
 
 (comment
   (run-tests 'nextjournal.markdown-test))

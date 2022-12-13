@@ -46,9 +46,11 @@
 (defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second #?(:clj Integer/parseInt :cljs js/parseInt))))
 (defn ->slug [text]
   (apply str
-         (map (comp str/lower-case
-                    (fn [c] (case c (\space \-) \_ c))) text)))
+         (map (comp str/lower-case (fn [c] (case c (\space \_) \- c)))
+              text)))
+
 #_(->slug "Hello There")
+#_(->slug "Hello_There")
 
 ;; `parse-fence-info` ingests nextjournal, GFM, Pandoc and RMarkdown fenced code block info (any text following the leading 3 backticks) and returns a map
 ;;
@@ -150,8 +152,8 @@
         id-count (when id (get id->index id))]
     (cond-> doc
       id
-      (-> (assoc-in (conj path :attrs :id) (cond-> id id-count (str "_" (inc id-count))))
-          (update-in [::id->index id] (fnil inc -1))))))
+      (-> (assoc-in (conj path :attrs :id) (cond-> id id-count (str "-" (inc id-count))))
+          (update-in [::id->index id] (fnil inc 0))))))
 
 (comment                                                    ;; path after call
   (-> empty-doc                                             ;; [:content -1]

@@ -244,7 +244,7 @@ $$\\int_a^bf(t)dt$$
                     {:id "title"}
                     "Title"]
                    [:h2
-                    {:id "section_1"}
+                    {:id "section-1"}
                     "Section 1"]
                    [:div.toc
                     [:div
@@ -259,27 +259,27 @@ $$\\int_a^bf(t)dt$$
                          [:li.toc-item
                           [:div
                            [:a
-                            {:href "#section_1"}
+                            {:href "#section-1"}
                             [:h2
                              "Section 1"]]]]
                          [:li.toc-item
                           [:div
                            [:a
-                            {:href "#section_2"}
+                            {:href "#section-2"}
                             [:h2
                              "Section 2"]]
                            [:ul
                             [:li.toc-item
                              [:div
                               [:a
-                               {:href "#section_2.1"}
+                               {:href "#section-2.1"}
                                [:h3
                                 "Section 2.1"]]]]]]]]]]]]]
                    [:h2
-                    {:id "section_2"}
+                    {:id "section-2"}
                     "Section 2"]
                    [:h3
-                    {:id "section_2.1"}
+                    {:id "section-2.1"}
                     "Section 2.1"]]
                   hiccup)))))
 
@@ -344,7 +344,7 @@ par with #really_nice #useful-123 tags
 
   (testing "rendering tags"
     (is (= [:div
-            [:h1 {:id "hello_tags"} "Hello Tags"]
+            [:h1 {:id "hello-tags"} "Hello Tags"]
             [:p
              "par with "
              [:a.tag
@@ -407,9 +407,9 @@ par with #really_nice #useful-123 tags
 
 (deftest unique-heading-ids
   (is (match? {:content (m/embeds [{:type :heading :attrs {:id "introduction"}}
-                                   {:type :heading :attrs {:id "quantum_physics"}}
+                                   {:type :heading :attrs {:id "quantum-physics"}}
                                    {:type :heading :attrs {:id "references"}}
-                                   {:type :heading :attrs {:id "quantum_physics_1"}}])}
+                                   {:type :heading :attrs {:id "quantum-physics-2"}}])}
 
               (md/parse "
 ## Introduction

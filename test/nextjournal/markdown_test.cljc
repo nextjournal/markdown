@@ -1,10 +1,27 @@
 (ns nextjournal.markdown-test
-  (:require #?(:clj [clojure.test :refer :all]
-               :cljs [cljs.test :refer (deftest testing is)])
-            [matcher-combinators.test]
+  (:require [clojure.test :as t :refer [deftest testing is]]
+            [matcher-combinators.test :refer [match?]]
+            [matcher-combinators.standalone :as standalone]
             [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
             [nextjournal.markdown.transform :as md.transform]))
+
+#?(:cljs
+   ;; FIXME: in matcher-combinators (should probably use a simple `:fail` dispatch instead of `:matcher-combinators/mismatch`)
+   ;; mismatch are currently ignored by shadow both browser and node tests
+   (defmethod t/report [:cljs-test-display.core/default :matcher-combinators/mismatch] [m]
+     ;; Shadow browser tests
+     (when (exists? js/document)
+       (cljs-test-display.core/add-fail-node! m))
+
+     (t/inc-report-counter! :fail)
+     (println "\nFAIL in" (t/testing-vars-str m))
+     (when (seq (:testing-contexts (t/get-current-env)))
+       (println (t/testing-contexts-str)))
+     (when-let [message (:message m)]
+       (println message))
+     (println "mismatch:")
+     (println (:markup m))))
 
 (def markdown-text
   "# Hello

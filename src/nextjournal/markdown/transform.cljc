@@ -30,9 +30,10 @@
                         content)))
 
 (defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [attrs content children]}]
-  (let [toc-item (cond-> [:div]
+  (let [id (:id attrs)
+        toc-item (cond-> [:div]
                    (seq content)
-                   (conj [:a {:href (str "#" (:id attrs)) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
+                   (conj [:a {:href (str "#" id) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
                           (-> node heading-markup (into-markup ctx node))])
                    (seq children)
                    (conj (into [:ul] (map (partial ->hiccup (assoc ctx ::parent node))) children)))]

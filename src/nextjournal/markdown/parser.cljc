@@ -129,7 +129,7 @@
       (-> #_doc
        (update ::path inc-last)
        (update-in (pop path) conj node)))
-    (catch Exception e
+    (catch #?(:clj Exception :cljs js/Error) e
       (throw (ex-info (str "nextjournal.markdown cannot add node: " node " at path: " path)
                       {:doc doc :node node} e)))))
 

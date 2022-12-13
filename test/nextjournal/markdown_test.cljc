@@ -24,7 +24,7 @@
      (println (:markup m))))
 
 (def markdown-text
-  "# Hello
+  "# 🎱 Hello
 
 some **strong** _assertion_ and a [link] and a $\\pi$ formula
 
@@ -44,11 +44,12 @@ $$\\int_a^bf(t)dt$$
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"
     (is (match? {:type :doc
-            :title "Hello"
-            :content [{:content [{:text "Hello"
+            :title "🎱 Hello"
+            :content [{:content [{:text "🎱 Hello"
                                   :type :text}]
                        :heading-level 1
                        :attrs {:id "hello"}
+                       :emoji "🎱"
                        :type :heading}
                       {:content [{:text "some "
                                   :type :text}
@@ -88,7 +89,7 @@ $$\\int_a^bf(t)dt$$
                                              :type :paragraph}]
                                   :type :list-item}]
                        :type :bullet-list}]
-            :toc {:children [{:content [{:text "Hello"
+            :toc {:children [{:content [{:text "🎱 Hello"
                                          :type :text}]
                               :heading-level 1
                               :path [:content 0]
@@ -161,7 +162,7 @@ $$\\int_a^bf(t)dt$$
 (deftest ->hiccup-test
   "ingests markdown returns hiccup"
   (is (= [:div
-          [:h1 {:id "hello"} "Hello"]
+          [:h1 {:id "hello"} "🎱 Hello"]
           [:p
            "some "
            [:strong
@@ -424,20 +425,22 @@ par with #really_nice #useful-123 tags
 
 (deftest unique-heading-ids
   (is (match? {:content (m/embeds [{:type :heading :attrs {:id "introduction"}}
-                                   {:type :heading :attrs {:id "quantum-physics"}}
+                                   {:type :heading :attrs {:id "quantum-physics"} :emoji "👩‍🔬"}
                                    {:type :heading :attrs {:id "references"}}
-                                   {:type :heading :attrs {:id "quantum-physics-2"}}])}
+                                   {:type :heading :attrs {:id "quantum-physics-2"} :emoji "⚛"}])}
 
               (md/parse "
 ## Introduction
 Lorem ipsum et cetera.
-### Quantum Physics
+### 👩‍🔬 Quantum Physics
 Dolor sit and so on.
 ## References
 It's important to cite your references!
-### Quantum Physics
+### ⚛ Quantum Physics
 Particularly for quantum physics!
 "))))
 
 (comment
-  (run-tests 'nextjournal.markdown-test))
+  (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
+  (run-tests 'nextjournal.markdown-test)
+  (run-test unique-heading-ids))

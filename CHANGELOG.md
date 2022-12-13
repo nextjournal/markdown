@@ -1,7 +1,7 @@
 # Changelog
 
-## Unreleased
-* Produce unique ids in attrs for headers node
+## 0.4.130
+* Produce unique ids in attrs for header nodes
 * Drop lambdaisland.uri dependency
 
 ## 0.4.126

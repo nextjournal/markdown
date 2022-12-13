@@ -1,12 +1,10 @@
 (ns nextjournal.markdown.transform
   "transform markdown data as returned by `nextjournal.markdown/parse` into other formats, currently:
-     * hiccup"
-  (:require [lambdaisland.uri.normalize :as uri.normalize]))
+     * hiccup")
 
 ;; helpers
 (defn guard [pred val] (when (pred val) val))
 (defn ->text [{:as _node :keys [text content]}] (or text (apply str (map ->text content))))
-(def ->id uri.normalize/normalize-fragment)
 
 (defn hydrate-toc
   "Scans doc contents and replaces toc node placeholder with the toc node accumulated during parse."

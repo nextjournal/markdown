@@ -120,11 +120,17 @@
 (defn empty-text-node? [{text :text t :type}] (and (= :text t) (empty? text)))
 
 (defn push-node [{:as doc ::keys [path]} node]
-  (cond-> doc
-    (not (empty-text-node? node)) ;; ⬅ mdit produces empty text tokens at mark boundaries, see edge cases below
-    (-> #_doc
-        (update ::path inc-last)
-        (update-in (pop path) conj node))))
+  (try
+    (cond-> doc
+      ;; ⬇ mdit produces empty text tokens at mark boundaries, see edge cases below
+      (not (empty-text-node? node))
+      (-> #_doc
+       (update ::path inc-last)
+       (update-in (pop path) conj node)))
+    (catch Exception e
+      (throw (ex-info (str "nextjournal.markdown cannot add node: " node " at path: " path)
+                      {:doc doc :node node} e)))))
+
 (def push-nodes (partial reduce push-node))
 
 (defn open-node
@@ -139,13 +145,13 @@
 (defn close-node [doc] (update doc ::path ppop))
 (defn update-current [{:as doc path ::path} fn & args] (apply update-in doc path fn args))
 
-(defn update-node-id [{:as doc ::keys [path] :keys [id->index slug-fn]}]
+(defn update-node-id [{:as doc ::keys [id->index path] :keys [slug-fn]}]
   (let [id (when (ifn? slug-fn) (-> doc (get-in path) slug-fn))
-        id-count (id->index id)]
+        id-count (when id (get id->index id))]
     (cond-> doc
       id
-      (-> (update-in path assoc :id (cond-> id id-count (str "_" (inc id-count))))
-          (update-in [:id->index id] (fnil inc -1))))))
+      (-> (assoc-in (conj path :attrs :id) (cond-> id id-count (str "_" (inc id-count))))
+          (update-in [::id->index id] (fnil inc -1))))))
 
 (comment                                                    ;; path after call
   (-> empty-doc                                             ;; [:content -1]
@@ -441,7 +447,9 @@ end"
 
 (def empty-doc {:type :doc
                 :content []
-                :id->index {}
+                ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
+                ::id->index {}
+                ;; Node -> String, dissoc from context to opt-out of ids
                 :slug-fn (comp ->slug md.transform/->text)
                 :toc {:type :toc}
                 ::path [:content -1] ;; private

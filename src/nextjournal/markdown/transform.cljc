@@ -29,10 +29,10 @@
                         (keep (partial ->hiccup (assoc ctx ::parent node)))
                         content)))
 
-(defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [id content children]}]
+(defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [attrs content children]}]
   (let [toc-item (cond-> [:div]
                    (seq content)
-                   (conj [:a {:href (str "#" id) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
+                   (conj [:a {:href (str "#" (:id attrs)) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
                           (-> node heading-markup (into-markup ctx node))])
                    (seq children)
                    (conj (into [:ul] (map (partial ->hiccup (assoc ctx ::parent node))) children)))]
@@ -62,7 +62,7 @@ a paragraph
 
 (def default-hiccup-renderers
   {:doc (partial into-markup [:div])
-   :heading (fn [ctx {:as node :keys [id]}] (-> (heading-markup node) (conj {:id id}) (into-markup ctx node)))
+   :heading (fn [ctx {:as node :keys [attrs]}] (-> (heading-markup node) (conj attrs) (into-markup ctx node)))
    :paragraph (partial into-markup [:p])
    :plain (partial into-markup [:<>])
    :text (fn [_ {:keys [text]}] text)

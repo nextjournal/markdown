@@ -31,6 +31,7 @@ $$\\int_a^bf(t)dt$$
             :content [{:content [{:text "Hello"
                                   :type :text}]
                        :heading-level 1
+                       :attrs {:id "hello"}
                        :type :heading}
                       {:content [{:text "some "
                                   :type :text}
@@ -405,10 +406,10 @@ par with #really_nice #useful-123 tags
 * two")))))
 
 (deftest unique-heading-ids
-  (is (match? {:content (m/embeds [{:type :heading :id "introduction"}
-                                   {:type :heading :id "quantum_physics"}
-                                   {:type :heading :id "references"}
-                                   {:type :heading :id "quantum_physics_1"}])}
+  (is (match? {:content (m/embeds [{:type :heading :attrs {:id "introduction"}}
+                                   {:type :heading :attrs {:id "quantum_physics"}}
+                                   {:type :heading :attrs {:id "references"}}
+                                   {:type :heading :attrs {:id "quantum_physics_1"}}])}
 
               (md/parse "
 ## Introduction

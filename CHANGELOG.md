@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+* Produce unique ids in attrs for headers node
+* Drop lambdaisland.uri dependency
+
 ## 0.4.126
 * Add `deps.cljs` to classpath
 

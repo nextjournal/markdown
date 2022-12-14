@@ -426,7 +426,7 @@ par with #really_nice #useful-123 tags
 (deftest unique-heading-ids
   (is (match? {:content (m/embeds [{:type :heading :attrs {:id "introduction"}}
                                    {:type :heading :attrs {:id "quantum-physics"} :emoji "👩‍🔬"}
-                                   {:type :heading :attrs {:id "references"}}
+                                   {:type :heading :attrs {:id "references-📕"}}
                                    {:type :heading :attrs {:id "quantum-physics-2"} :emoji "⚛"}])}
 
               (md/parse "
@@ -434,7 +434,7 @@ par with #really_nice #useful-123 tags
 Lorem ipsum et cetera.
 ### 👩‍🔬 Quantum Physics
 Dolor sit and so on.
-## References
+## References 📕
 It's important to cite your references!
 ### ⚛ Quantum Physics
 Particularly for quantum physics!

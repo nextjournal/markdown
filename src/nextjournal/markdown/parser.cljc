@@ -58,6 +58,7 @@
 #_(split-by-emoji "🤚🏽Stop")
 #_(split-by-emoji "  🤚🏽   Stop")
 #_(split-by-emoji "😀 Stop")
+#_(split-by-emoji "Should not 🙁️ Split")
 #_(split-by-emoji "⬇ Stop")
 
 (defn text->id+emoji [text]

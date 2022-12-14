@@ -54,17 +54,20 @@
 
 #_(split-by-emoji " Stop")
 #_(split-by-emoji "🤚🏽 Stop")
-#_(split-by-emoji "🤚🏽🤚🏽 Stop")
+#_(split-by-emoji "🤚🏽🤚 Stop")
 #_(split-by-emoji "🤚🏽Stop")
-#_(split-by-emoji "  🤚🏽   Stop")
+#_(split-by-emoji "🤚🏽   Stop")
 #_(split-by-emoji "😀 Stop")
-#_(split-by-emoji "Should not 🙁️ Split")
+#_(split-by-emoji "⚛️ Stop")
+#_(split-by-emoji "⚛ Stop")
 #_(split-by-emoji "⬇ Stop")
+#_(split-by-emoji "Should not 🙁️ Split")
 
 (defn text->id+emoji [text]
-  (let [[emoji text'] (split-by-emoji text)]
-    (cond-> {:id (apply str (map (comp str/lower-case (fn [c] (case c (\space \_) \- c))) text'))}
-      emoji (assoc :emoji emoji))))
+  (when (string? text)
+    (let [[emoji text'] (split-by-emoji (str/trim text))]
+      (cond-> {:id (apply str (map (comp str/lower-case (fn [c] (case c (\space \_) \- c))) text'))}
+        emoji (assoc :emoji emoji)))))
 
 #_(text->id+emoji "Hello There")
 #_(text->id+emoji "Hello_There")

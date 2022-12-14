@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.132
+* Extract and assign leading emoji from heading nodes
+
 ## 0.4.130
 * Produce unique ids in attrs for header nodes
 * Drop lambdaisland.uri dependency

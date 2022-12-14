@@ -21,6 +21,7 @@
 (ns nextjournal.markdown.parser
   (:require [clojure.string :as str]
             [nextjournal.markdown.transform :as md.transform]
+            [nextjournal.markdown.parser.emoji :as emoji]
             #?@(:cljs [[applied-science.js-interop :as j]
                        [cljs.reader :as reader]])))
 
@@ -44,13 +45,33 @@
 ;; helpers
 (defn inc-last [path] (update path (dec (count path)) inc))
 (defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second #?(:clj Integer/parseInt :cljs js/parseInt))))
-(defn ->slug [text]
-  (apply str
-         (map (comp str/lower-case (fn [c] (case c (\space \_) \- c)))
-              text)))
 
-#_(->slug "Hello There")
-#_(->slug "Hello_There")
+(defn split-by-emoji [s]
+  (let [[match start end] (first (re-idx-seq emoji/regex s))]
+    (if match
+      [(subs s start end) (str/trim (subs s end))]
+      [nil s])))
+
+#_(split-by-emoji " Stop")
+#_(split-by-emoji "🤚🏽 Stop")
+#_(split-by-emoji "🤚🏽🤚 Stop")
+#_(split-by-emoji "🤚🏽Stop")
+#_(split-by-emoji "🤚🏽   Stop")
+#_(split-by-emoji "😀 Stop")
+#_(split-by-emoji "⚛️ Stop")
+#_(split-by-emoji "⚛ Stop")
+#_(split-by-emoji "⬇ Stop")
+#_(split-by-emoji "Should not 🙁️ Split")
+
+(defn text->id+emoji [text]
+  (when (string? text)
+    (let [[emoji text'] (split-by-emoji (str/trim text))]
+      (cond-> {:id (apply str (map (comp str/lower-case (fn [c] (case c (\space \_) \- c))) text'))}
+        emoji (assoc :emoji emoji)))))
+
+#_(text->id+emoji "Hello There")
+#_(text->id+emoji "Hello_There")
+#_(text->id+emoji "👩‍🔬 Quantum Physics")
 
 ;; `parse-fence-info` ingests nextjournal, GFM, Pandoc and RMarkdown fenced code block info (any text following the leading 3 backticks) and returns a map
 ;;
@@ -147,13 +168,17 @@
 (defn close-node [doc] (update doc ::path ppop))
 (defn update-current [{:as doc path ::path} fn & args] (apply update-in doc path fn args))
 
-(defn update-node-id [{:as doc ::keys [id->index path] :keys [slug-fn]}]
-  (let [id (when (ifn? slug-fn) (-> doc (get-in path) slug-fn))
+(defn assign-node-id+emoji [{:as doc ::keys [id->index path] :keys [text->id+emoji-fn]}]
+  (let [{:keys [id emoji]} (when (ifn? text->id+emoji-fn) (-> doc (get-in path) text->id+emoji-fn))
         id-count (when id (get id->index id))]
     (cond-> doc
       id
-      (-> (assoc-in (conj path :attrs :id) (cond-> id id-count (str "-" (inc id-count))))
-          (update-in [::id->index id] (fnil inc 0))))))
+      (update-in [::id->index id] (fnil inc 0))
+      (or id emoji)
+      (update-in path (fn [node]
+                        (cond-> node
+                          id (assoc-in [:attrs :id] (cond-> id id-count (str "-" (inc id-count))))
+                          emoji (assoc :emoji emoji)))))))
 
 (comment                                                    ;; path after call
   (-> empty-doc                                             ;; [:content -1]
@@ -260,7 +285,7 @@ end"
 (defmethod apply-token "heading_open" [doc token] (open-node doc :heading {} {:heading-level (hlevel token)}))
 (defmethod apply-token "heading_close" [doc {doc-level :level}]
   (let [{:as doc ::keys [path]} (close-node doc)
-        doc' (update-node-id doc)
+        doc' (assign-node-id+emoji doc)
         heading (-> doc' (get-in path) (assoc :path path))]
     (cond-> doc'
       (zero? doc-level)
@@ -451,8 +476,8 @@ end"
                 :content []
                 ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
                 ::id->index {}
-                ;; Node -> String, dissoc from context to opt-out of ids
-                :slug-fn (comp ->slug md.transform/->text)
+                ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
+                :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
                 :toc {:type :toc}
                 ::path [:content -1] ;; private
                 :text-tokenizers text-tokenizers})
@@ -467,7 +492,7 @@ end"
 
 (comment
 
- (-> "# Markdown Data
+ (-> "# 🎱 Markdown Data
 
 some _emphatic_ **strong** [link](https://foo.com)
 

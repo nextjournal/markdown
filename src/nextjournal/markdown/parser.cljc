@@ -323,9 +323,9 @@ end"
       (open-node :code)
       (push-node (text-node c))
       close-node))
-(defmethod apply-token "fence" [doc {:as _token i :info c :content}]
+(defmethod apply-token "fence" [doc {:as _token i :info c :content m :map}]
   (-> doc
-      (open-node :code {} (assoc (parse-fence-info i) :info i))
+      (open-node :code {} (assoc (parse-fence-info i) :info i :map m))
       (push-node (text-node c))
       close-node))
 

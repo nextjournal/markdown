@@ -77,7 +77,8 @@ $$\\int_a^bf(t)dt$$
                       {:content [{:text "(+ 1 2 3)\n" :type :text}]
                        :info "clojure"
                        :language "clojure"
-                       :type :code}
+                       :type :code
+                       :map [4 7]}
                       {:text "\\int_a^bf(t)dt"
                        :type :block-formula}
                       {:content [{:content [{:content [{:text "one"

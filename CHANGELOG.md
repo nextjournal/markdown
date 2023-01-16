@@ -1,5 +1,8 @@
 # Changelog
 
+## unreleased
+* node-to-text transformation interprets softbreaks as spaces
+
 ## 0.4.132
 * Extract and assign leading emoji from heading nodes
 

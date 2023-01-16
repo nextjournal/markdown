@@ -440,6 +440,15 @@ It's important to cite your references!
 Particularly for quantum physics!
 "))))
 
+(deftest per-node-text-transform
+
+  (is (= "Should ignore marks and interpret softbreaks as spaces"
+         (-> (md/parse "Should **ignore** marks
+and _interpret_
+softbreaks as
+spaces")
+             md.transform/->text))))
+
 (comment
   (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
   (run-tests 'nextjournal.markdown-test)

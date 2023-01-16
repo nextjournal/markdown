@@ -1,6 +1,6 @@
 # Changelog
 
-## unreleased
+## 0.4.135
 * node-to-text transformation interprets softbreaks as spaces
 
 ## 0.4.132

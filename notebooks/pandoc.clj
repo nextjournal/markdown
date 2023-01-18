@@ -1,5 +1,5 @@
 ;; # 🏳️‍🌈 Pandoc
-(ns  pandoc
+(ns pandoc
   {:nextjournal.clerk/visibility {:code :hide}
    :nextjournal.clerk/toc :collapsed
    :nextjournal.clerk/no-cache true}

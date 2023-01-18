@@ -1,6 +1,7 @@
 ;; # 🏳️‍🌈 Pandoc
-^{:nextjournal.clerk/visibility {:code :hide} :nextjournal.clerk/toc :collapsed}
-(ns ^:nextjournal.clerk/no-cache pandoc
+(ns pandoc
+  {:nextjournal.clerk/toc :collapsed
+   :nextjournal.clerk/no-cache true}
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
@@ -23,7 +24,7 @@
 ;; ## 📤 Export
 ;;
 ;; this is a list of supported output formats as of Pandoc v2.18 (API version 1.22.2):
-^{::clerk/visibility :hide}
+^{::clerk/visibility {:code :hide}}
 (clerk/html
  [:div.overflow-y-auto.shadow-lg {:style {:height "200px" :width "85%"}}
   (into [:ul]
@@ -31,8 +32,10 @@
         (str/split-lines (:out (shell/sh "pandoc" "--list-output-formats"))))])
 
 ;; Let's define a map of transform functions indexed by (a subset of) our markdown types
-^{::clerk/visibility :hide}
+
+^{::clerk/visibility {:code :hide :result :hide}}
 (declare md->pandoc)
+^{::clerk/visibility {:result :hide}}
 (def md-type->transform
   {:doc (fn [{:keys [content]}]
           {:blocks (into [] (map md->pandoc) content)
@@ -56,6 +59,7 @@
    :text (fn [{:keys [text]}] {:t "Str" :c text})})
 
 ;; along with a dispatch function
+^{::clerk/visibility {:result :hide}}
 (defn md->pandoc
   [{:as node :keys [type]}]
   (if-some [xf (get md-type->transform type)]
@@ -63,13 +67,16 @@
     (throw (ex-info (str "Not implemented: '" type "'.") node))))
 
 ;; and a conversion function.
+^{::clerk/visibility {:result :hide}}
 (defn pandoc-> [pandoc-data format]
   (let [{:keys [exit out err]} (shell/sh "pandoc" "-f" "json" "-t" format
                                          :in (json/write-str pandoc-data))]
     (if (zero? exit) out err)))
 
 ;; Now take a piece of `markdown-text`
-^{::clerk/visibility :hide ::clerk/viewer {:transform-fn #(v/html [:pre @(::clerk/var-from-def (v/->value %))])}}
+^{::clerk/visibility {:code :hide}
+  ::clerk/viewer {:var-from-def? true
+                  :transform-fn #(v/html [:pre @(::clerk/var-from-def (v/->value %))])}}
 (def markdown-text "# Hello
 
 ## Sub _Section_
@@ -91,7 +98,7 @@ this _is_ a
 ;; once we've turned it into Pandoc's JSON format
 (def pandoc-data (-> markdown-text md/parse md->pandoc))
 
-^{::clerk/visibility :hide ::clerk/viewer :hide-result}
+^{::clerk/visibility {:result :hide}}
 (def verbatim (partial clerk/with-viewer {:transform-fn #(v/html [:pre (v/->value %)])}))
 
 ;; then we can convert it to whatever supported format. Say **Org Mode**
@@ -110,16 +117,18 @@ this _is_ a
 ;; ## 📥 Import
 ;;
 ;; Import works same same. This is a list of supported input formats:
-^{::clerk/visibility :hide}
+^{::clerk/visibility {:code :hide}}
 (clerk/html
  [:div.overflow-y-auto.shadow-lg {:style {:height "200px" :width "85%"}}
   (into [:ul]
         (map (partial vector :li))
         (str/split-lines (:out (shell/sh "pandoc" "--list-input-formats"))))])
 
+^{::clerk/visibility {:result :hide}}
 (declare pandoc->md)
+^{::clerk/visibility {:result :hide}}
 (defn node+content [type pd-node] {:type type :content (keep pandoc->md (:c pd-node))})
-
+^{::clerk/visibility {:result :hide}}
 (def pandoc-type->transform
   {:Space (constantly {:type :text :text " "})
    :Str (fn [node] {:type :text :text (:c node)})
@@ -167,6 +176,7 @@ this _is_ a
                   (and (vector? c) (= "latex" (first c)))
                   (md.parser/formula (second c))))})
 
+^{::clerk/visibility {:result :hide}}
 (defn pandoc->md [{:as node :keys [t pandoc-api-version blocks]}]
   (if pandoc-api-version
     {:type :doc :content (keep pandoc->md blocks)}
@@ -174,6 +184,7 @@ this _is_ a
       (xf node)
       (throw (ex-info (str "Not Implemented '" t "'.") node)))))
 
+^{::clerk/visibility {:result :hide}}
 (defn pandoc<- [input format]
   (-> (shell/sh "pandoc" "-f" format "-t" "json" :in input)
       :out (json/read-str :key-fn keyword)))
@@ -194,6 +205,7 @@ this _is_ a
    (-> (io/input-stream "https://raw.githubusercontent.com/erikriverson/org-mode-R-tutorial/master/org-mode-R-tutorial.org")
        (pandoc<- "org")
        pandoc->md
+       (update :content #(take 24 %))
        v/md)]])
 
 ;; We also might want to test that our functions are invertible:
@@ -212,9 +224,10 @@ this _is_ a
 ;; this brief experiment shows how Pandoc AST makes for an interesting format for Clerk to potentially
 ;; interact with formats other than markdown and clojure.
 
-^{::clerk/visibility :hide ::clerk/viewer :hide-result}
+^{::clerk/visibility {:result :hide :code :hide}}
 (comment
   (clerk/serve! {:port 9999})
+  (clerk/clear-cache!)
   (-> *e ex-cause ex-data)
   (json/read-str
    (:out

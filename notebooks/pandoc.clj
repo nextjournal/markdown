@@ -224,7 +224,7 @@ this _is_ a
 ;; this brief experiment shows how Pandoc AST makes for an interesting format for Clerk to potentially
 ;; interact with formats other than markdown and clojure.
 
-^{::clerk/visibility {:result :hide}}
+^{::clerk/visibility {:result :hide :code :hide}}
 (comment
   (clerk/serve! {:port 9999})
   (clerk/clear-cache!)

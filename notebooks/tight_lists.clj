@@ -1,6 +1,7 @@
 ;; # Tight Lists
-(ns ^:nextjournal.clerk/no-cache tight-lists
-  {:nextjournal.clerk/toc :collapsed}
+(ns tight-lists
+  {:nextjournal.clerk/toc :collapsed
+   :nextjournal.clerk/no-cache true}
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]

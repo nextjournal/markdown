@@ -352,6 +352,10 @@ end"
                       (fn [node cs] (assoc node :content (vec cs)))
                       doc))
 
+(defn footnote->sidenote [{:keys [ref content]}]
+  ;; this assumes the footnote container is a paragraph, won't work for lists
+  (node :sidenote (-> content first :content) {:ref ref} nil))
+
 (defn insert-sidenotes [{:as doc :keys [footnotes]}]
   (if-not (seq footnotes)
     doc
@@ -362,7 +366,7 @@ end"
           (recur (z/next (if-not (= :sidenote-ref type)
                            loc
                            (-> loc
-                               (z/insert-right (assoc (get footnotes ref) :type :sidenote))
+                               (z/insert-right (footnote->sidenote (get footnotes ref)))
                                z/next)))))))))
 
 (comment
@@ -371,7 +375,7 @@ end"
 And what
 
 [^note1]: the _what_
-[^note2]: bla
+[^note2]: bla _with_ [nice](/links)
 "
       nextjournal.markdown/tokenize
       parse

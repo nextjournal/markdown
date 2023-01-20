@@ -333,7 +333,8 @@ end"
 (defmethod apply-token "footnote_ref" [doc token] (push-node doc (sidenote-ref (get-in* token [:meta :id]))))
 (defmethod apply-token "footnote_anchor" [doc token] doc)
 (defmethod apply-token "footnote_open" [doc token] (let [ref (get-in* token [:meta :id])]
-                                                     (open-node doc :sidenote {:ref ref} {:ref ref})))
+                                                     ;; TODO: put ref only at toplevel, fix clerk consumption first
+                                                     (open-node doc :footnote {:ref ref} {:ref ref})))
 (defmethod apply-token "footnote_close" [doc token] (close-node doc))
 (defmethod apply-token "footnote_block_open" [doc token] (assoc doc :footnotes [] ::path [:footnotes -1]))
 (defmethod apply-token "footnote_block_close" [doc token] (assoc doc ::path [:content -1]))

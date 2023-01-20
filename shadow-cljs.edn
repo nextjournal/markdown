@@ -1,5 +1,6 @@
 {:source-paths ["src" "test"]
  :dev-http {8021 "out/sci" 8022 "out/test"}
+ :nrepl {:cider false}
  :builds
  {:test
   {:target :node-test

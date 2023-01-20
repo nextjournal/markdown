@@ -131,7 +131,7 @@
 (defn tag-node [text] {:type :hashtag :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
-(defn sidenote-ref [ref] {:type :sidenote-ref :content [(text-node (str (inc ref)))]})
+(defn sidenote-ref [ref] {:type :sidenote-ref :ref ref :content [(text-node (str (inc ref)))]})
 
 ;; node constructors
 (defn node
@@ -332,10 +332,24 @@ end"
 ;; footnotes
 (defmethod apply-token "footnote_ref" [doc token] (push-node doc (sidenote-ref (get-in* token [:meta :id]))))
 (defmethod apply-token "footnote_anchor" [doc token] doc)
-(defmethod apply-token "footnote_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
+(defmethod apply-token "footnote_open" [doc token] (let [ref (get-in* token [:meta :id])]
+                                                     (open-node doc :sidenote {:ref ref} {:ref ref})))
 (defmethod apply-token "footnote_close" [doc token] (close-node doc))
-(defmethod apply-token "footnote_block_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
-(defmethod apply-token "footnote_block_close" [doc token] (close-node doc))
+(defmethod apply-token "footnote_block_open" [doc token] (assoc doc :footnotes [] ::path [:footnotes -1]))
+(defmethod apply-token "footnote_block_close" [doc token] (assoc doc ::path [:content -1]))
+
+(comment
+  (-> "_hello_ what and foo[^note1] and[^note2].
+
+And what
+
+[^note1]: the _what_
+[^note2]: bla
+"
+      nextjournal.markdown/tokenize
+      parse
+
+      ))
 
 ;; tables
 ;; table data tokens might have {:style "text-align:right|left"} attrs, maybe better nested node > :attrs > :style ?

@@ -343,7 +343,7 @@ end"
 
 (defn ->zip [doc]
   (clojure.zip/zipper (every-pred map? :type) :content
-                      (fn [node cs] (assoc node :content cs))
+                      (fn [node cs] (assoc node :content (vec cs)))
                       doc))
 
 (defn insert-sidenotes [{:as doc :keys [footnotes]}]

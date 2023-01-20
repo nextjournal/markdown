@@ -333,13 +333,19 @@ end"
 ;; footnotes
 (defmethod apply-token "footnote_ref" [doc token] (push-node doc (sidenote-ref (get-in* token [:meta :id]))))
 (defmethod apply-token "footnote_anchor" [doc token] doc)
-(defmethod apply-token "footnote_open" [doc token] (let [ref (get-in* token [:meta :id])]
-                                                     ;; TODO: put ref only at toplevel, fix clerk consumption first
-                                                     (open-node doc :footnote {:ref ref} {:ref ref})))
+(defmethod apply-token "footnote_open" [doc token]
+  (let [ref (get-in* token [:meta :id])]
+    ;; TODO: put ref only at toplevel, fix clerk consumption first
+    (open-node doc :footnote {:ref ref} {:ref ref})))
 (defmethod apply-token "footnote_close" [doc token] (close-node doc))
-(defmethod apply-token "footnote_block_open" [doc token] (assoc doc :footnotes [] ::path [:footnotes -1]))
-(defmethod apply-token "footnote_block_close" [doc token] (assoc doc ::path [:content -1]))
 
+(defmethod apply-token "footnote_block_open" [{:as doc ::keys [path]} token]
+  ;; consider just adding to :footnotes + having a ref offset
+  (assoc doc :footnotes [] ::path [:footnotes -1] ::path-to-restore path))
+
+(defmethod apply-token "footnote_block_close"
+  [{:as doc ::keys [path-to-restore]} token]
+  (-> doc (assoc ::path path-to-restore) (dissoc ::path-to-restore)))
 
 (defn ->zip [doc]
   (clojure.zip/zipper (every-pred map? :type) :content

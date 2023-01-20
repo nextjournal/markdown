@@ -20,6 +20,7 @@
 ;; - `:attrs` attributes as passed by markdown-it tokens (e.g `{:style "some style info"}`)
 (ns nextjournal.markdown.parser
   (:require [clojure.string :as str]
+            [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.parser.emoji :as emoji]
             #?@(:cljs [[applied-science.js-interop :as j]
@@ -339,6 +340,25 @@ end"
 (defmethod apply-token "footnote_block_open" [doc token] (assoc doc :footnotes [] ::path [:footnotes -1]))
 (defmethod apply-token "footnote_block_close" [doc token] (assoc doc ::path [:content -1]))
 
+
+(defn ->zip [doc]
+  (clojure.zip/zipper (every-pred map? :type) :content
+                      (fn [node cs] (assoc node :content cs))
+                      doc))
+
+(defn insert-sidenotes [{:as doc :keys [footnotes]}]
+  (if-not (seq footnotes)
+    doc
+    (loop [loc (->zip doc)]
+      (if (z/end? loc)
+        (assoc (z/root loc) :sidenotes? true)
+        (let [{:keys [type ref]} (z/node loc)]
+          (recur (z/next (if-not (= :sidenote-ref type)
+                           loc
+                           (-> loc
+                               (z/insert-right (assoc (get footnotes ref) :type :sidenote))
+                               z/next)))))))))
+
 (comment
   (-> "_hello_ what and foo[^note1] and[^note2].
 
@@ -349,8 +369,7 @@ And what
 "
       nextjournal.markdown/tokenize
       parse
-
-      ))
+      insert-sidenotes))
 
 ;; tables
 ;; table data tokens might have {:style "text-align:right|left"} attrs, maybe better nested node > :attrs > :style ?

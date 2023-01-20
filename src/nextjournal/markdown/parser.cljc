@@ -330,12 +330,12 @@ end"
       close-node))
 
 ;; footnotes
-(defmethod apply-token "footnote_ref" [doc token] (push-node doc (sidenote-ref (get-in* token [:meta :id]))))
-(defmethod apply-token "footnote_anchor" [doc token] doc)
-(defmethod apply-token "footnote_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
-(defmethod apply-token "footnote_close" [doc token] (close-node doc))
-(defmethod apply-token "footnote_block_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
-(defmethod apply-token "footnote_block_close" [doc token] (close-node doc))
+(defmethod apply-token "sidenote_ref" [doc token] (push-node doc (sidenote-ref (get-in* token [:meta :id]))))
+(defmethod apply-token "sidenote_anchor" [doc token] doc)
+(defmethod apply-token "sidenote_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
+(defmethod apply-token "sidenote_close" [doc token] (close-node doc))
+(defmethod apply-token "sidenote_block_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
+(defmethod apply-token "sidenote_block_close" [doc token] (close-node doc))
 
 ;; tables
 ;; table data tokens might have {:style "text-align:right|left"} attrs, maybe better nested node > :attrs > :style ?

@@ -411,7 +411,7 @@ end"
         (= :footnote-ref (:type (z/node loc)))
         (recur (z/next (z/edit loc assoc :type :sidenote-ref)))
 
-        (= :paragraph (:type (z/node loc)))
+        (contains? #{:plain :paragraph} (:type (z/node loc)))
         (recur (z/next
                 (if-some [refs (seq (paragraph-footnote-refs (z/node loc)))]
                   (z/append-child loc {:type :sidenote-column

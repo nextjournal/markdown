@@ -372,23 +372,48 @@ end"
                                (z/insert-right (footnote->sidenote (get footnotes ref)))
                                z/next)))))))))
 
-(comment
-  (-> "_hello_ what and foo[^note1] and[^note2].
+(defn get-paragraph-footnote-refs [p-node]
+  (loop [l (->zip p-node) refs []]
+    (if (z/end? l)
+      refs
+      (let [{:keys [type ref]} (z/node l)]
+        (recur (z/next l) (cond-> refs (= :footnote-ref type) (conj ref)))))))
 
-And what
+(defn insert-sidenote-columns [{:as doc :keys [footnotes]}]
+  (if-not (seq footnotes)
+    doc
+    (loop [loc (->zip doc)]
+      (cond
+        (z/end? loc)
+        (assoc (z/root loc) :sidenotes? true)
+
+        (= :footnote-ref (:type (z/node loc)))
+        (recur (z/next (z/edit loc assoc :type :sidenote-ref)))
+
+        (= :paragraph (:type (z/node loc)))
+        (recur (z/next
+                (if-some [refs (get-paragraph-footnote-refs (z/node loc))]
+                  (z/append-child loc {:type :sidenote-column
+                                       :content (mapv (comp footnote->sidenote #(get footnotes %)) refs)})
+                  loc)))
+
+        'else
+        (recur (z/next loc))))))
+
+(comment
+  (-> "_hello_ what and foo[^note1] and^[some other note].
+
+And what.
 
 [^note1]: the _what_
-[^note2]: bla _with_ [nice](/links)
 
-# Section 2
+and new text[^endnote] at the end.
 
-and again[^note3].
-
-[^note3]: close with this
+[^endnote]: conclusion.
 "
       nextjournal.markdown/tokenize
       parse
-      insert-sidenotes))
+      insert-sidenote-columns))
 
 ;; tables
 ;; table data tokens might have {:style "text-align:right|left"} attrs, maybe better nested node > :attrs > :style ?

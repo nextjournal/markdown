@@ -571,7 +571,7 @@ c[^note3] d.
 
   (testing "Turning footnotes into sidenotes"
 
-    (let [parse+insert-sidenotes (-> "Text[^note1] and^[inline _note_ here].
+    (let [parsed+sidenotes (-> "Text[^note1] and^[inline _note_ here].
 
 Par.
 
@@ -617,8 +617,21 @@ Again[^note2]
                                  {:type :sidenote-ref, :ref 2, :label "note2"}
                                  {:type :sidenote, :content [{:type :text, :text "Explain 2"}] :ref 2}]}],
             :type :doc}
-             parse+insert-sidenotes)))))
+             parsed+sidenotes))
 
+      (is (= [:div
+              [:p "Text"
+               [:sup.sidenote-ref {:data-label "note1"} "1"]
+               [:span.sidenote [:sup {:style {:margin-right "3px"}} "1"] "Explain 1"]
+               " and"
+               [:sup.sidenote-ref {:data-label nil} "2"]
+               [:span.sidenote [:sup {:style {:margin-right "3px"}} "2"] "inline " [:em "note"] " here"]
+               "."]
+              [:p "Par."]
+              [:p "Again"
+               [:sup.sidenote-ref {:data-label "note2"} "3"]
+               [:span.sidenote [:sup {:style {:margin-right "3px"}} "3"] "Explain 2"]]]
+             (md.transform/->hiccup parsed+sidenotes))))))
 
 (comment
   (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))

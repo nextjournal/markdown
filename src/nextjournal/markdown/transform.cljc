@@ -109,12 +109,11 @@ a paragraph
    :table-data (fn [ctx {:as node :keys [attrs]}] (into-markup [:td {:style (table-alignment attrs)}] ctx node))
 
    ;; footnotes & sidenodes
-   :footnote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
    :sidenote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
-   :sidenote (fn [ctx {:as node :keys [attrs]}]
-               (into-markup [:span.sidenote [:sup {:style {:margin-right "3px"}} (-> attrs :ref inc)]]
-                            ctx node))
+   :sidenote (fn [ctx {:as node :keys [ref]}]
+               (into-markup [:span.sidenote [:sup {:style {:margin-right "3px"}} (str (inc ref))]] ctx node))
 
+   :footnote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
    ;; NOTE: there's no default footnote placement (see n.markdown.parser/insert-sidenotes)
    :footnote (fn [ctx {:as node :keys [ref label]}]
                (into-markup [:div.footnote [:span.footnote-label {:data-ref ref} label]] ctx node))

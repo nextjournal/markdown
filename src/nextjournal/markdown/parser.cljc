@@ -169,6 +169,11 @@
 (defn close-node [doc] (update doc ::path ppop))
 (defn update-current [{:as doc path ::path} fn & args] (apply update-in doc path fn args))
 
+(defn ->zip [doc]
+  (z/zipper (every-pred map? :type) :content
+            (fn [node cs] (assoc node :content (vec cs)))
+            doc))
+
 (defn assign-node-id+emoji [{:as doc ::keys [id->index path] :keys [text->id+emoji-fn]}]
   (let [{:keys [id emoji]} (when (ifn? text->id+emoji-fn) (-> doc (get-in path) text->id+emoji-fn))
         id-count (when id (get id->index id))]
@@ -331,28 +336,33 @@ end"
       close-node))
 
 ;; footnotes
-(defmethod apply-token "footnote_ref" [doc token]
-  (push-node doc (footnote-ref (get-in* token [:meta :id])
+(defmethod apply-token "footnote_ref" [{:as doc :keys [footnotes]} token]
+  (push-node doc (footnote-ref (+ (count footnotes) (get-in* token [:meta :id]))
                                (get-in* token [:meta :label]))))
+
 (defmethod apply-token "footnote_anchor" [doc token] doc)
-(defmethod apply-token "footnote_open" [doc token]
-  (let [ref (get-in* token [:meta :id])
+
+(defmethod apply-token "footnote_open" [{:as doc ::keys [footnote-offset]} token]
+  ;; footnote tokens always follow footnote_block_open
+  (let [ref (+ (get-in* token [:meta :id]) footnote-offset)
         label (get-in* token [:meta :label])]
     (open-node doc :footnote nil (cond-> {:ref ref} label (assoc :label label)))))
+
 (defmethod apply-token "footnote_close" [doc token] (close-node doc))
 
-(defmethod apply-token "footnote_block_open" [{:as doc ::keys [path]} token]
+(defmethod apply-token "footnote_block_open" [{:as doc :keys [footnotes] ::keys [path]} _token]
   ;; consider just adding to :footnotes + having a ref offset
-  (assoc doc :footnotes [] ::path [:footnotes -1] ::path-to-restore path))
+  (let [footnote-offset (count footnotes)]
+    (-> doc
+        (assoc ::path [:footnotes (dec footnote-offset)]
+               ::footnote-offset footnote-offset
+               ::path-to-restore path))))
 
 (defmethod apply-token "footnote_block_close"
-  [{:as doc ::keys [path-to-restore]} token]
-  (-> doc (assoc ::path path-to-restore) (dissoc ::path-to-restore)))
-
-(defn ->zip [doc]
-  (clojure.zip/zipper (every-pred map? :type) :content
-                      (fn [node cs] (assoc node :content (vec cs)))
-                      doc))
+  [{:as doc ::keys [path-to-restore]} _token]
+  (-> doc
+      (assoc ::path path-to-restore)
+      (dissoc ::path-to-restore ::footnote-offset)))
 
 (defn footnote->sidenote [{:keys [ref label content]}]
   ;; this assumes the footnote container is a paragraph, won't work for lists
@@ -392,7 +402,7 @@ end"
 
         (= :paragraph (:type (z/node loc)))
         (recur (z/next
-                (if-some [refs (get-paragraph-footnote-refs (z/node loc))]
+                (if-some [refs (seq (get-paragraph-footnote-refs (z/node loc)))]
                   (z/append-child loc {:type :sidenote-column
                                        :content (mapv (comp footnote->sidenote #(get footnotes %)) refs)})
                   loc)))
@@ -413,6 +423,16 @@ and new text[^endnote] at the end.
 "
       nextjournal.markdown/tokenize
       parse
+      #_ flatten-tokens
+      insert-sidenote-columns)
+
+  (-> empty-doc
+      (update :text-tokenizers (partial map normalize-tokenizer))
+      (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
+      insert-sidenote-columns
+      (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
+      insert-sidenote-columns
+      (apply-tokens (nextjournal.markdown/tokenize "is^[this thing]"))
       insert-sidenote-columns))
 
 ;; tables
@@ -557,6 +577,7 @@ and new text[^endnote] at the end.
                 ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
                 :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
                 :toc {:type :toc}
+                :footnotes []
                 ::path [:content -1] ;; private
                 :text-tokenizers text-tokenizers})
 

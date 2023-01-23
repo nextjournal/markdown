@@ -132,7 +132,7 @@
 (defn tag-node [text] {:type :hashtag :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
-(defn sidenote-ref [ref label] {:type :sidenote-ref :ref ref :label label})
+(defn footnote-ref [ref label] {:type :sidenote-ref :ref ref :label label})
 
 ;; node constructors
 (defn node
@@ -332,7 +332,7 @@ end"
 
 ;; footnotes
 (defmethod apply-token "footnote_ref" [doc token]
-  (push-node doc (sidenote-ref (get-in* token [:meta :id])
+  (push-node doc (footnote-ref (get-in* token [:meta :id])
                                (get-in* token [:meta :label]))))
 (defmethod apply-token "footnote_anchor" [doc token] doc)
 (defmethod apply-token "footnote_open" [doc token]

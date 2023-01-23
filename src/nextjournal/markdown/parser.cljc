@@ -368,7 +368,12 @@ end"
   ;; this assumes the footnote container is a paragraph, won't work for lists
   (node :sidenote (-> content first :content) nil (cond-> {:ref ref} label (assoc :label label))))
 
-(defn insert-sidenotes [{:as doc :keys [footnotes]}]
+(defn insert-sidenotes
+  "Handles footnotes as sidenotes.
+
+  Takes and returns a parsed document. Inserts a `:sidenote` node to the right of every `:footnote-ref` node found.
+  Renames type `:footnote-ref` to `:sidenote-ref."
+  [{:as doc :keys [footnotes]}]
   (if-not (seq footnotes)
     doc
     (loop [loc (->zip doc)]
@@ -382,14 +387,20 @@ end"
                                (z/insert-right (footnote->sidenote (get footnotes ref)))
                                z/next)))))))))
 
-(defn get-paragraph-footnote-refs [p-node]
+(defn paragraph-footnote-refs [p-node]
   (loop [l (->zip p-node) refs []]
     (if (z/end? l)
       refs
       (let [{:keys [type ref]} (z/node l)]
         (recur (z/next l) (cond-> refs (= :footnote-ref type) (conj ref)))))))
 
-(defn insert-sidenote-columns [{:as doc :keys [footnotes]}]
+(defn insert-sidenote-columns
+  "Handles footnotes as sidenotes.
+
+   Takes and returns a parsed document. When the document has footnotes, appends a `:sidenote-column` child-node to every
+   paragraph which contains footnote references. Such new nodes contain `:sidenote` nodes.
+   Renames type `:footnote-ref` to `:sidenote-ref."
+  [{:as doc :keys [footnotes]}]
   (if-not (seq footnotes)
     doc
     (loop [loc (->zip doc)]
@@ -402,7 +413,7 @@ end"
 
         (= :paragraph (:type (z/node loc)))
         (recur (z/next
-                (if-some [refs (seq (get-paragraph-footnote-refs (z/node loc)))]
+                (if-some [refs (seq (paragraph-footnote-refs (z/node loc)))]
                   (z/append-child loc {:type :sidenote-column
                                        :content (mapv (comp footnote->sidenote #(get footnotes %)) refs)})
                   loc)))

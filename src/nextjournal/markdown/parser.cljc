@@ -354,9 +354,9 @@ end"
                       (fn [node cs] (assoc node :content (vec cs)))
                       doc))
 
-(defn footnote->sidenote [{:keys [ref content]}]
+(defn footnote->sidenote [{:keys [ref label content]}]
   ;; this assumes the footnote container is a paragraph, won't work for lists
-  (node :sidenote (-> content first :content) {:ref ref} nil))
+  (node :sidenote (-> content first :content) nil (cond-> {:ref ref} label (assoc :label label))))
 
 (defn insert-sidenotes [{:as doc :keys [footnotes]}]
   (if-not (seq footnotes)

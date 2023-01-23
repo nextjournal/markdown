@@ -602,20 +602,20 @@ Again[^note2]
             :content [{:type :paragraph,
                        :content [{:type :text, :text "Text"}
                                  {:type :sidenote-ref, :ref 0, :label "note1"}
-                                 {:type :sidenote, :content [{:type :text, :text "Explain 1"}], :attrs {:ref 0}}
+                                 {:type :sidenote, :content [{:type :text, :text "Explain 1"}] :ref 0}
                                  {:type :text, :text " and"}
                                  {:type :sidenote-ref, :ref 1}
                                  {:type :sidenote,
                                   :content [{:type :text, :text "inline "}
                                             {:type :em, :content [{:type :text, :text "note"}]}
                                             {:type :text, :text " here"}],
-                                  :attrs {:ref 1}}
+                                  :ref 1}
                                  {:type :text, :text "."}]}
                       {:type :paragraph, :content [{:type :text, :text "Par."}]}
                       {:type :paragraph,
                        :content [{:type :text, :text "Again"}
                                  {:type :sidenote-ref, :ref 2, :label "note2"}
-                                 {:type :sidenote, :content [{:type :text, :text "Explain 2"}], :attrs {:ref 2}}]}],
+                                 {:type :sidenote, :content [{:type :text, :text "Explain 2"}] :ref 2}]}],
             :type :doc}
              parse+insert-sidenotes)))))
 

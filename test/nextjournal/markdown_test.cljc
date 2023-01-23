@@ -466,7 +466,7 @@ spaces")
                                        :type :text}
                                       {:label "when"
                                        :ref 0
-                                       :type :sidenote-ref}
+                                       :type :footnote-ref}
                                       {:text " ago."
                                        :type :text}]
                             :type :paragraph}]
@@ -501,12 +501,12 @@ Long _long_ long time[^when] ago.
                                   :type :text}
                                  {:label "note1"
                                   :ref 0
-                                  :type :sidenote-ref}
+                                  :type :footnote-ref}
                                  {:text " and b"
                                   :type :text}
                                  {:label "note2"
                                   :ref 1
-                                  :type :sidenote-ref}
+                                  :type :footnote-ref}
                                  {:text " c."
                                   :type :text}]
                        :type :paragraph}
@@ -519,7 +519,7 @@ Long _long_ long time[^when] ago.
                                   :type :text}
                                  {:label "note3"
                                   :ref 2
-                                  :type :sidenote-ref}
+                                  :type :footnote-ref}
                                  {:text " d."
                                   :type :text}]
                        :type :paragraph}]
@@ -556,7 +556,7 @@ c[^note3] d.
                                        :type :text}
                                       {:label nil
                                        :ref 0
-                                       :type :sidenote-ref}
+                                       :type :footnote-ref}
                                       {:text "?"
                                        :type :text}]
                             :type :paragraph}]
@@ -592,7 +592,7 @@ Again[^note2]
                                   :type :text}
                                  {:label "note1"
                                   :ref 0
-                                  :type :sidenote-ref}
+                                  :type :footnote-ref}
                                  {:attrs {:ref 0}
                                   :content [{:text "Explain 1"
                                              :type :text}]
@@ -601,7 +601,7 @@ Again[^note2]
                                   :type :text}
                                  {:label nil
                                   :ref 1
-                                  :type :sidenote-ref}
+                                  :type :footnote-ref}
                                  {:attrs {:ref 1}
                                   :content [{:text "inline "
                                              :type :text}
@@ -621,7 +621,7 @@ Again[^note2]
                                   :type :text}
                                  {:label "note2"
                                   :ref 2
-                                  :type :sidenote-ref}
+                                  :type :footnote-ref}
                                  {:attrs {:ref 2}
                                   :content [{:text "Explain 2"
                                              :type :text}]

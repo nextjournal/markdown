@@ -132,7 +132,7 @@
 (defn tag-node [text] {:type :hashtag :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
-(defn footnote-ref [ref label] {:type :sidenote-ref :ref ref :label label})
+(defn footnote-ref [ref label] {:type :footnote-ref :ref ref :label label})
 
 ;; node constructors
 (defn node
@@ -365,7 +365,7 @@ end"
       (if (z/end? loc)
         (assoc (z/root loc) :sidenotes? true)
         (let [{:keys [type ref]} (z/node loc)]
-          (recur (z/next (if-not (= :sidenote-ref type)
+          (recur (z/next (if-not (= :footnote-ref type)
                            loc
                            (-> loc
                                (z/insert-right (footnote->sidenote (get footnotes ref)))

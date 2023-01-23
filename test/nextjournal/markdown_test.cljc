@@ -470,8 +470,7 @@ spaces")
                                       {:text " ago."
                                        :type :text}]
                             :type :paragraph}]
-                 :footnotes [{:attrs {:ref 0}
-                              :content [{:content [{:text "Around "
+                 :footnotes [{:content [{:content [{:text "Around "
                                                     :type :text}
                                                    {:content [{:text "20000"
                                                                :type :text}]
@@ -486,6 +485,7 @@ spaces")
                                                     :type :text}]
                                          :type :paragraph}]
                               :ref 0
+                              :label "when"
                               :type :footnote}]
                  :title "Footnotes"
                  :type :doc}
@@ -523,20 +523,17 @@ Long _long_ long time[^when] ago.
                                  {:text " d."
                                   :type :text}]
                        :type :paragraph}]
-            :footnotes [{:attrs {:ref 0}
-                         :content [{:content [{:text "good"
+            :footnotes [{:content [{:content [{:text "good"
                                                :type :text}]
                                     :type :paragraph}]
                          :ref 0
                          :type :footnote}
-                        {:attrs {:ref 1}
-                         :content [{:content [{:text "bad"
+                        {:content [{:content [{:text "bad"
                                                :type :text}]
                                     :type :paragraph}]
                          :ref 1
                          :type :footnote}
-                        {:attrs {:ref 2}
-                         :content [{:content [{:text "closing"
+                        {:content [{:content [{:text "closing"
                                                :type :text}]
                                     :type :paragraph}]
                          :ref 2
@@ -554,14 +551,12 @@ c[^note3] d.
   (testing "inline footnotes"
     (is (match? {:content [{:content [{:text "what would"
                                        :type :text}
-                                      {:label nil
-                                       :ref 0
+                                      {:ref 0
                                        :type :footnote-ref}
                                       {:text "?"
                                        :type :text}]
                             :type :paragraph}]
-                 :footnotes [{:attrs {:ref 0}
-                              :content [{:content [{:text "this "
+                 :footnotes [{:content [{:content [{:text "this "
                                                     :type :text}
                                                    {:content [{:text "really"
                                                                :type :text}]
@@ -588,75 +583,45 @@ Again[^note2]
                                      md/parse
                                      md.parser/insert-sidenotes)]
       (is (match?
-           {:content [{:content [{:text "Text"
-                                  :type :text}
-                                 {:label "note1"
-                                  :ref 0
-                                  :type :sidenote-ref}
-                                 {:attrs {:ref 0}
-                                  :content [{:text "Explain 1"
-                                             :type :text}]
-                                  :type :sidenote}
-                                 {:text " and"
-                                  :type :text}
-                                 {:label nil
-                                  :ref 1
-                                  :type :sidenote-ref}
-                                 {:attrs {:ref 1}
-                                  :content [{:text "inline "
-                                             :type :text}
-                                            {:content [{:text "note"
-                                                        :type :text}]
-                                             :type :em}
-                                            {:text " here"
-                                             :type :text}]
-                                  :type :sidenote}
-                                 {:text "."
-                                  :type :text}]
-                       :type :paragraph}
-                      {:content [{:text "Par."
-                                  :type :text}]
-                       :type :paragraph}
-                      {:content [{:text "Again"
-                                  :type :text}
-                                 {:label "note2"
-                                  :ref 2
-                                  :type :sidenote-ref}
-                                 {:attrs {:ref 2}
-                                  :content [{:text "Explain 2"
-                                             :type :text}]
-                                  :type :sidenote}]
-                       :type :paragraph}]
-            :footnotes [{:attrs {:ref 0}
-                         :content [{:content [{:text "Explain 1"
-                                               :type :text}]
-                                    :type :paragraph}]
-                         :ref 0
-                         :type :footnote}
-                        {:attrs {:ref 1}
-                         :content [{:content [{:text "inline "
-                                               :type :text}
-                                              {:content [{:text "note"
-                                                          :type :text}]
-                                               :type :em}
-                                              {:text " here"
-                                               :type :text}]
-                                    :type :paragraph}]
-                         :ref 1
-                         :type :footnote}
-                        {:attrs {:ref 2}
-                         :content [{:content [{:text "Explain 2"
-                                               :type :text}]
-                                    :type :paragraph}]
-                         :ref 2
-                         :type :footnote}]
-            :sidenotes? true
+           {:toc {:type :toc},
+            :footnotes [{:type :footnote,
+                         :content [{:type :paragraph, :content [{:type :text, :text "Explain 1"}]}],
+                         :ref 0,
+                         :label "note1"}
+                        {:type :footnote,
+                         :content [{:type :paragraph,
+                                    :content [{:type :text, :text "inline "}
+                                              {:type :em, :content [{:type :text, :text "note"}]}
+                                              {:type :text, :text " here"}]}],
+                         :ref 1}
+                        {:type :footnote,
+                         :content [{:type :paragraph, :content [{:type :text, :text "Explain 2"}]}],
+                         :ref 2,
+                         :label "note2"}],
+            :sidenotes? true,
+            :content [{:type :paragraph,
+                       :content [{:type :text, :text "Text"}
+                                 {:type :sidenote-ref, :ref 0, :label "note1"}
+                                 {:type :sidenote, :content [{:type :text, :text "Explain 1"}], :attrs {:ref 0}}
+                                 {:type :text, :text " and"}
+                                 {:type :sidenote-ref, :ref 1}
+                                 {:type :sidenote,
+                                  :content [{:type :text, :text "inline "}
+                                            {:type :em, :content [{:type :text, :text "note"}]}
+                                            {:type :text, :text " here"}],
+                                  :attrs {:ref 1}}
+                                 {:type :text, :text "."}]}
+                      {:type :paragraph, :content [{:type :text, :text "Par."}]}
+                      {:type :paragraph,
+                       :content [{:type :text, :text "Again"}
+                                 {:type :sidenote-ref, :ref 2, :label "note2"}
+                                 {:type :sidenote, :content [{:type :text, :text "Explain 2"}], :attrs {:ref 2}}]}],
             :type :doc}
-             parse+insert-sidenotes
-             )))))
+             parse+insert-sidenotes)))))
 
 
 (comment
   (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
+  (clojure.test/run-tests)
   (run-tests 'nextjournal.markdown-test)
   (run-test unique-heading-ids))

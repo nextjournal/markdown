@@ -132,7 +132,7 @@
 (defn tag-node [text] {:type :hashtag :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
-(defn footnote-ref [ref label] {:type :footnote-ref :ref ref :label label})
+(defn footnote-ref [ref label] (cond-> {:type :footnote-ref :ref ref} label (assoc :label label)))
 
 ;; node constructors
 (defn node
@@ -336,9 +336,9 @@ end"
                                (get-in* token [:meta :label]))))
 (defmethod apply-token "footnote_anchor" [doc token] doc)
 (defmethod apply-token "footnote_open" [doc token]
-  (let [ref (get-in* token [:meta :id])]
-    ;; TODO: put ref only at toplevel, fix clerk consumption first
-    (open-node doc :footnote {:ref ref} {:ref ref})))
+  (let [ref (get-in* token [:meta :id])
+        label (get-in* token [:meta :label])]
+    (open-node doc :footnote nil (cond-> {:ref ref} label (assoc :label label)))))
 (defmethod apply-token "footnote_close" [doc token] (close-node doc))
 
 (defmethod apply-token "footnote_block_open" [{:as doc ::keys [path]} token]

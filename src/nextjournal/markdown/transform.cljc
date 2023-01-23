@@ -108,8 +108,9 @@ a paragraph
    :table-header (fn [ctx {:as node :keys [attrs]}] (into-markup [:th {:style (table-alignment attrs)}] ctx node))
    :table-data (fn [ctx {:as node :keys [attrs]}] (into-markup [:td {:style (table-alignment attrs)}] ctx node))
 
-   ;; sidenodes
+   ;; footnotes & sidenodes
    :footnote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
+   :sidenote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
    :sidenote (fn [ctx {:as node :keys [attrs]}]
                (into-markup [:span.sidenote [:sup {:style {:margin-right "3px"}} (-> attrs :ref inc)]]
                             ctx node))

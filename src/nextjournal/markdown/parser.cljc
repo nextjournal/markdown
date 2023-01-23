@@ -368,6 +368,7 @@ end"
           (recur (z/next (if-not (= :footnote-ref type)
                            loc
                            (-> loc
+                               (z/edit assoc :type :sidenote-ref)
                                (z/insert-right (footnote->sidenote (get footnotes ref)))
                                z/next)))))))))
 
@@ -378,6 +379,12 @@ And what
 
 [^note1]: the _what_
 [^note2]: bla _with_ [nice](/links)
+
+# Section 2
+
+and again[^note3].
+
+[^note3]: close with this
 "
       nextjournal.markdown/tokenize
       parse

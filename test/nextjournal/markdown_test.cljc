@@ -592,7 +592,7 @@ Again[^note2]
                                   :type :text}
                                  {:label "note1"
                                   :ref 0
-                                  :type :footnote-ref}
+                                  :type :sidenote-ref}
                                  {:attrs {:ref 0}
                                   :content [{:text "Explain 1"
                                              :type :text}]
@@ -601,7 +601,7 @@ Again[^note2]
                                   :type :text}
                                  {:label nil
                                   :ref 1
-                                  :type :footnote-ref}
+                                  :type :sidenote-ref}
                                  {:attrs {:ref 1}
                                   :content [{:text "inline "
                                              :type :text}
@@ -621,7 +621,7 @@ Again[^note2]
                                   :type :text}
                                  {:label "note2"
                                   :ref 2
-                                  :type :footnote-ref}
+                                  :type :sidenote-ref}
                                  {:attrs {:ref 2}
                                   :content [{:text "Explain 2"
                                              :type :text}]

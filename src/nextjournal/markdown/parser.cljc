@@ -387,12 +387,14 @@ end"
                                (z/insert-right (footnote->sidenote (get footnotes ref)))
                                z/next)))))))))
 
-(defn paragraph-footnote-refs [p-node]
+(defn node-with-sidenote-refs [p-node]
   (loop [l (->zip p-node) refs []]
     (if (z/end? l)
-      refs
+      {:node (z/root l) :refs refs}
       (let [{:keys [type ref]} (z/node l)]
-        (recur (z/next l) (cond-> refs (= :footnote-ref type) (conj ref)))))))
+        (if (= :footnote-ref type)
+          (recur (z/next (z/edit l assoc :type :sidenote-ref)) (conj refs ref))
+          (recur (z/next l) refs))))))
 
 (defn insert-sidenote-columns
   "Handles footnotes as sidenotes.
@@ -408,15 +410,15 @@ end"
         (z/end? loc)
         (assoc (z/root loc) :sidenotes? true)
 
-        (= :footnote-ref (:type (z/node loc)))
-        (recur (z/next (z/edit loc assoc :type :sidenote-ref)))
-
+        #_ (contains? #{:bullet-list :plain :paragraph :blockquote} (:type (z/node loc)))
         (contains? #{:plain :paragraph} (:type (z/node loc)))
         (recur (z/next
-                (if-some [refs (seq (paragraph-footnote-refs (z/node loc)))]
-                  (z/append-child loc {:type :sidenote-column
-                                       :content (mapv (comp footnote->sidenote #(get footnotes %)) refs)})
-                  loc)))
+                (let [{:keys [node refs]} (node-with-sidenote-refs (z/node loc))]
+                  (if (seq refs)
+                    (-> loc (z/replace node)
+                        (z/append-child {:type :sidenote-column
+                                         :content (mapv (comp footnote->sidenote #(get footnotes %)) refs)}))
+                    loc))))
 
         'else
         (recur (z/next loc))))))
@@ -428,7 +430,9 @@ And what.
 
 [^note1]: the _what_
 
-and new text[^endnote] at the end.
+* and new text[^endnote] at the end.
+* the
+* hell
 
 [^endnote]: conclusion.
 "

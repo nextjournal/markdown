@@ -4,6 +4,7 @@
             [matcher-combinators.standalone :as standalone]
             [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
+            [nextjournal.markdown.parser :as md.parser]
             [nextjournal.markdown.transform :as md.transform]))
 
 #?(:cljs
@@ -449,7 +450,261 @@ softbreaks as
 spaces")
              md.transform/->text))))
 
+(deftest footnotes
+  (testing "foonotes via references"
+    (is (match? {:content [{:attrs {:id "footnotes"}
+                            :content [{:text "Footnotes"
+                                       :type :text}]
+                            :heading-level 1
+                            :type :heading}
+                           {:content [{:text "Long "
+                                       :type :text}
+                                      {:content [{:text "long"
+                                                  :type :text}]
+                                       :type :em}
+                                      {:text " long time"
+                                       :type :text}
+                                      {:label "when"
+                                       :ref 0
+                                       :type :footnote-ref}
+                                      {:text " ago."
+                                       :type :text}]
+                            :type :paragraph}]
+                 :footnotes [{:content [{:content [{:text "Around "
+                                                    :type :text}
+                                                   {:content [{:text "20000"
+                                                               :type :text}]
+                                                    :type :strong}
+                                                   {:text " years Ago. See "
+                                                    :type :text}
+                                                   {:attrs {:href "https://en.wikipedia.org/wiki/Pleistocene"}
+                                                    :content [{:text "Pleistocene"
+                                                               :type :text}]
+                                                    :type :link}
+                                                   {:text "."
+                                                    :type :text}]
+                                         :type :paragraph}]
+                              :ref 0
+                              :label "when"
+                              :type :footnote}]
+                 :title "Footnotes"
+                 :type :doc}
+                (md/parse "# Footnotes
+Long _long_ long time[^when] ago.
+
+[^when]: Around **20000** years Ago. See [Pleistocene](https://en.wikipedia.org/wiki/Pleistocene).
+"))))
+
+  (testing "Doc resuming _after_ footnotes definitions"
+
+    (is (match? {:content [{:content [{:text "text"
+                                  :type :text}
+                                 {:label "note1"
+                                  :ref 0
+                                  :type :footnote-ref}
+                                 {:text " and b"
+                                  :type :text}
+                                 {:label "note2"
+                                  :ref 1
+                                  :type :footnote-ref}
+                                 {:text " c."
+                                  :type :text}]
+                       :type :paragraph}
+                      {:attrs {:id "t"}
+                       :content [{:text "T"
+                                  :type :text}]
+                       :heading-level 1
+                       :type :heading}
+                      {:content [{:text "c"
+                                  :type :text}
+                                 {:label "note3"
+                                  :ref 2
+                                  :type :footnote-ref}
+                                 {:text " d."
+                                  :type :text}]
+                       :type :paragraph}]
+            :footnotes [{:content [{:content [{:text "good"
+                                               :type :text}]
+                                    :type :paragraph}]
+                         :ref 0
+                         :type :footnote}
+                        {:content [{:content [{:text "bad"
+                                               :type :text}]
+                                    :type :paragraph}]
+                         :ref 1
+                         :type :footnote}
+                        {:content [{:content [{:text "closing"
+                                               :type :text}]
+                                    :type :paragraph}]
+                         :ref 2
+                         :type :footnote}]
+            :type :doc}
+           (md/parse "text[^note1] and b[^note2] c.
+[^note1]: good
+[^note2]: bad
+
+# T
+c[^note3] d.
+
+[^note3]: closing"))))
+
+  (testing "inline footnotes"
+    (is (match? {:content [{:content [{:text "what would"
+                                       :type :text}
+                                      {:ref 0
+                                       :type :footnote-ref}
+                                      {:text "?"
+                                       :type :text}]
+                            :type :paragraph}]
+                 :footnotes [{:content [{:content [{:text "this "
+                                                    :type :text}
+                                                   {:content [{:text "really"
+                                                               :type :text}]
+                                                    :type :em}
+                                                   {:text " look like"
+                                                    :type :text}]
+                                         :type :paragraph}]
+                              :ref 0
+                              :type :footnote}]
+                 :type :doc}
+           (md/parse "what would^[this _really_ look like]?"))))
+
+  (testing "Turning footnotes into sidenotes"
+
+    (let [parsed+sidenotes (-> "Text[^note1] and^[inline _note_ here].
+
+Par.
+
+- again[^note2]
+- here
+
+[^note1]: Explain 1
+[^note2]: Explain 2
+"
+                                     md/parse
+                                     md.parser/insert-sidenote-containers)]
+      (is (match? {:type :doc
+                   :sidenotes? true
+                   :content [{:type :sidenote-container
+                              :content [{:type :paragraph
+                                         :content [{:text "Text"
+                                                    :type :text}
+                                                   {:label "note1"
+                                                    :ref 0
+                                                    :type :sidenote-ref}
+                                                   {:text " and"
+                                                    :type :text}
+                                                   {:ref 1
+                                                    :type :sidenote-ref}
+                                                   {:text "."
+                                                    :type :text}]}
+                                        {:type :sidenote-column
+                                         :content [{:type :sidenote
+                                                    :ref 0
+                                                    :content [{:text "Explain 1" :type :text}]
+                                                    :label "note1"}
+                                                   {:type :sidenote
+                                                    :ref 1
+                                                    :content [{:text "inline " :type :text}
+                                                              {:content [{:text "note"
+                                                                          :type :text}]
+                                                               :type :em}
+                                                              {:text " here"
+                                                               :type :text}]}]}]}
+                             { :type :paragraph
+                              :content [{:text "Par." :type :text}]}
+                             {:type :sidenote-container
+                              :content [{:type :bullet-list
+                                         :content [{:type :list-item
+                                                    :content [{:type :plain
+                                                               :content [{:text "again"
+                                                                          :type :text}
+                                                                         {:label "note2"
+                                                                          :ref 2
+                                                                          :type :sidenote-ref}]}]}
+                                                   {:type :list-item
+                                                    :content [{:content [{:text "here" :type :text}]
+                                                               :type :plain}]}]}
+                                        {:type :sidenote-column
+                                         :content [{:type :sidenote
+                                                    :ref 2
+                                                    :content [{:text "Explain 2"
+                                                               :type :text}]
+                                                    :label "note2"}]}]}]
+                   :footnotes [{:content [{:content [{:text "Explain 1"
+                                                      :type :text}]
+                                           :type :paragraph}]
+                                :label "note1"
+                                :ref 0
+                                :type :footnote}
+                               {:content [{:content [{:text "inline "
+                                                      :type :text}
+                                                     {:content [{:text "note"
+                                                                 :type :text}]
+                                                      :type :em}
+                                                     {:text " here"
+                                                      :type :text}]
+                                           :type :paragraph}]
+                                :ref 1
+                                :type :footnote}
+                               {:content [{:content [{:text "Explain 2"
+                                                      :type :text}]
+                                           :type :paragraph}]
+                                :label "note2"
+                                :ref 2
+                                :type :footnote}]}
+
+             parsed+sidenotes))
+
+      (is (= [:div
+              [:div.sidenote-container
+               [:p
+                "Text"
+                [:sup.sidenote-ref
+                 {:data-label "note1"}
+                 "1"]
+                " and"
+                [:sup.sidenote-ref
+                 {:data-label nil}
+                 "2"]
+                "."]
+               [:div.sidenote-column
+                [:span.sidenote
+                 [:sup
+                  {:style {:margin-right "3px"}}
+                  "1"]
+                 "Explain 1"]
+                [:span.sidenote
+                 [:sup
+                  {:style {:margin-right "3px"}}
+                  "2"]
+                 "inline "
+                 [:em
+                  "note"]
+                 " here"]]]
+              [:p
+               "Par."]
+              [:div.sidenote-container
+               [:ul
+                [:li
+                 [:<>
+                  "again"
+                  [:sup.sidenote-ref
+                   {:data-label "note2"}
+                   "3"]]]
+                [:li
+                 [:<>
+                  "here"]]]
+               [:div.sidenote-column
+                [:span.sidenote
+                 [:sup
+                  {:style {:margin-right "3px"}}
+                  "3"]
+                 "Explain 2"]]]]
+             (md.transform/->hiccup parsed+sidenotes))))))
+
 (comment
   (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
+  (clojure.test/run-tests)
   (run-tests 'nextjournal.markdown-test)
   (run-test unique-heading-ids))

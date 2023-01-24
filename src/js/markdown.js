@@ -10,8 +10,8 @@ MD.use(blockImage)
 let mdToc = require("markdown-it-toc-done-right")
 MD.use(mdToc)
 
-let sidenotes = require("markdown-it-sidenote")
-MD.use(sidenotes)
+let footnotes = require("markdown-it-footnote")
+MD.use(footnotes)
 
 function todoListPlugin(md, opts) {
   const startsWithTodoSequence = (text) => {

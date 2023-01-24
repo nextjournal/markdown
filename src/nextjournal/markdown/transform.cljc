@@ -108,12 +108,18 @@ a paragraph
    :table-header (fn [ctx {:as node :keys [attrs]}] (into-markup [:th {:style (table-alignment attrs)}] ctx node))
    :table-data (fn [ctx {:as node :keys [attrs]}] (into-markup [:td {:style (table-alignment attrs)}] ctx node))
 
-   ;; sidenodes
-   :sidenote-ref (partial into-markup [:sup.sidenote-ref])
-   :sidenote (fn [ctx {:as node :keys [attrs]}]
-               (into-markup [:span.sidenote [:sup {:style {:margin-right "3px"}} (-> attrs :ref inc)]]
-                            ctx
-                            node))
+   ;; footnotes & sidenodes
+   :sidenote-container (partial into-markup [:div.sidenote-container])
+   :sidenote-column (partial into-markup [:div.sidenote-column])
+   :sidenote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
+   :sidenote (fn [ctx {:as node :keys [ref]}]
+               (into-markup [:span.sidenote [:sup {:style {:margin-right "3px"}} (str (inc ref))]] ctx node))
+
+   :footnote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
+   ;; NOTE: there's no default footnote placement (see n.markdown.parser/insert-sidenotes)
+   :footnote (fn [ctx {:as node :keys [ref label]}]
+               (into-markup [:div.footnote [:span.footnote-label {:data-ref ref} label]] ctx node))
+
    ;; TOC
    :toc toc->hiccup
 

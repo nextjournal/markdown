@@ -20,6 +20,7 @@
 ;; - `:attrs` attributes as passed by markdown-it tokens (e.g `{:style "some style info"}`)
 (ns nextjournal.markdown.parser
   (:require [clojure.string :as str]
+            [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.parser.emoji :as emoji]
             #?@(:cljs [[applied-science.js-interop :as j]
@@ -131,7 +132,7 @@
 (defn tag-node [text] {:type :hashtag :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
-(defn sidenote-ref [ref] {:type :sidenote-ref :content [(text-node (str (inc ref)))]})
+(defn footnote-ref [ref label] (cond-> {:type :footnote-ref :ref ref} label (assoc :label label)))
 
 ;; node constructors
 (defn node
@@ -167,6 +168,11 @@
 (def ppop (comp pop pop))
 (defn close-node [doc] (update doc ::path ppop))
 (defn update-current [{:as doc path ::path} fn & args] (apply update-in doc path fn args))
+
+(defn ->zip [doc]
+  (z/zipper (every-pred map? :type) :content
+            (fn [node cs] (assoc node :content (vec cs)))
+            doc))
 
 (defn assign-node-id+emoji [{:as doc ::keys [id->index path] :keys [text->id+emoji-fn]}]
   (let [{:keys [id emoji]} (when (ifn? text->id+emoji-fn) (-> doc (get-in path) text->id+emoji-fn))
@@ -330,12 +336,101 @@ end"
       close-node))
 
 ;; footnotes
-(defmethod apply-token "sidenote_ref" [doc token] (push-node doc (sidenote-ref (get-in* token [:meta :id]))))
-(defmethod apply-token "sidenote_anchor" [doc token] doc)
-(defmethod apply-token "sidenote_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
-(defmethod apply-token "sidenote_close" [doc token] (close-node doc))
-(defmethod apply-token "sidenote_block_open" [doc token] (-> doc (assoc :sidenotes? true) (open-node :sidenote {:ref (get-in* token [:meta :id])})))
-(defmethod apply-token "sidenote_block_close" [doc token] (close-node doc))
+(defmethod apply-token "footnote_ref" [{:as doc :keys [footnotes]} token]
+  (push-node doc (footnote-ref (+ (count footnotes) (get-in* token [:meta :id]))
+                               (get-in* token [:meta :label]))))
+
+(defmethod apply-token "footnote_anchor" [doc token] doc)
+
+(defmethod apply-token "footnote_open" [{:as doc ::keys [footnote-offset]} token]
+  ;; consider an offset in case we're parsing multiple inputs into the same context
+  (let [ref (+ (get-in* token [:meta :id]) footnote-offset)
+        label (get-in* token [:meta :label])]
+    (open-node doc :footnote nil (cond-> {:ref ref} label (assoc :label label)))))
+
+(defmethod apply-token "footnote_close" [doc token] (close-node doc))
+
+(defmethod apply-token "footnote_block_open" [{:as doc :keys [footnotes] ::keys [path]} _token]
+  ;; store footnotes at a top level `:footnote` key
+  (let [footnote-offset (count footnotes)]
+    (-> doc
+        (assoc ::path [:footnotes (dec footnote-offset)]
+               ::footnote-offset footnote-offset
+               ::path-to-restore path))))
+
+(defmethod apply-token "footnote_block_close"
+  ;; restores path for addding new tokens
+  [{:as doc ::keys [path-to-restore]} _token]
+  (-> doc
+      (assoc ::path path-to-restore)
+      (dissoc ::path-to-restore ::footnote-offset)))
+
+(defn footnote->sidenote [{:keys [ref label content]}]
+  ;; this assumes the footnote container is a paragraph, won't work for lists
+  (node :sidenote (-> content first :content) nil (cond-> {:ref ref} label (assoc :label label))))
+
+(defn node-with-sidenote-refs [p-node]
+  (loop [l (->zip p-node) refs []]
+    (if (z/end? l)
+      (when (seq refs)
+        {:node (z/root l) :refs refs})
+      (let [{:keys [type ref]} (z/node l)]
+        (if (= :footnote-ref type)
+          (recur (z/next (z/edit l assoc :type :sidenote-ref)) (conj refs ref))
+          (recur (z/next l) refs))))))
+
+(defn insert-sidenote-containers
+  "Handles footnotes as sidenotes.
+
+   Takes and returns a parsed document. When the document has footnotes, wraps every top-level block which contains footnote references
+   with a `:footnote-container` node, into each of such nodes, adds a `:sidenote-column` node containing a `:sidenote` node for each found ref.
+   Renames type `:footnote-ref` to `:sidenote-ref."
+  [{:as doc ::keys [path] :keys [footnotes]}]
+  (if-not (seq footnotes)
+    doc
+    (let [root (->zip doc)]
+      (loop [loc (z/down root) parent root]
+        (cond
+          (nil? loc)
+          (-> parent z/node (assoc :sidenotes? true))
+          (contains? #{:plain :paragraph :blockquote :numbered-list :bullet-list :todo-list :heading :table}
+                     (:type (z/node loc)))
+          (if-some [{:keys [node refs]} (node-with-sidenote-refs (z/node loc))]
+            (let [new-loc (-> loc (z/replace {:type :sidenote-container :content []})
+                              (z/append-child node)
+                              (z/append-child {:type :sidenote-column
+                                               :content (mapv #(footnote->sidenote (get footnotes %)) refs)}))]
+              (recur (z/right new-loc) (z/up new-loc)))
+            (recur (z/right loc) parent))
+          :else
+          (recur (z/right loc) parent))))))
+
+(comment
+  (-> "_hello_ what and foo[^note1] and^[some other note].
+
+And what.
+
+[^note1]: the _what_
+
+* and new text[^endnote] at the end.
+* the
+  * hell^[that warm place]
+
+[^endnote]: conclusion.
+"
+      nextjournal.markdown/tokenize
+      parse
+      #_ flatten-tokens
+      insert-sidenote-containers)
+
+  (-> empty-doc
+      (update :text-tokenizers (partial map normalize-tokenizer))
+      (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
+      insert-sidenote-columns
+      (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
+      insert-sidenote-columns
+      (apply-tokens (nextjournal.markdown/tokenize "is^[this thing]"))
+      insert-sidenote-columns))
 
 ;; tables
 ;; table data tokens might have {:style "text-align:right|left"} attrs, maybe better nested node > :attrs > :style ?
@@ -479,6 +574,7 @@ end"
                 ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
                 :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
                 :toc {:type :toc}
+                :footnotes []
                 ::path [:content -1] ;; private
                 :text-tokenizers text-tokenizers})
 
@@ -596,3 +692,13 @@ some final par"
     (section-at [:content 9])                         ;; ⬅ paths are stored in TOC sections
     nextjournal.markdown.transform/->hiccup))
 ;; endregion
+
+
+;; ## 🔧 Debug
+;; A view on flattened tokens to better inspect tokens
+(defn flatten-tokens [tokens]
+  (into []
+        (comp
+         (mapcat (partial tree-seq (comp seq :children) :children))
+         (map #(select-keys % [:type :content :hidden :level :info :meta])))
+        tokens))

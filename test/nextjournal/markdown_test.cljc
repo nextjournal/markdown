@@ -575,62 +575,132 @@ c[^note3] d.
 
 Par.
 
-Again[^note2]
+- again[^note2]
+- here
 
 [^note1]: Explain 1
 [^note2]: Explain 2
 "
                                      md/parse
-                                     md.parser/insert-sidenotes)]
-      (is (match?
-           {:toc {:type :toc},
-            :footnotes [{:type :footnote,
-                         :content [{:type :paragraph, :content [{:type :text, :text "Explain 1"}]}],
-                         :ref 0,
-                         :label "note1"}
-                        {:type :footnote,
-                         :content [{:type :paragraph,
-                                    :content [{:type :text, :text "inline "}
-                                              {:type :em, :content [{:type :text, :text "note"}]}
-                                              {:type :text, :text " here"}]}],
-                         :ref 1}
-                        {:type :footnote,
-                         :content [{:type :paragraph, :content [{:type :text, :text "Explain 2"}]}],
-                         :ref 2,
-                         :label "note2"}],
-            :sidenotes? true,
-            :content [{:type :paragraph,
-                       :content [{:type :text, :text "Text"}
-                                 {:type :sidenote-ref, :ref 0, :label "note1"}
-                                 {:type :sidenote, :content [{:type :text, :text "Explain 1"}] :ref 0}
-                                 {:type :text, :text " and"}
-                                 {:type :sidenote-ref, :ref 1}
-                                 {:type :sidenote,
-                                  :content [{:type :text, :text "inline "}
-                                            {:type :em, :content [{:type :text, :text "note"}]}
-                                            {:type :text, :text " here"}],
-                                  :ref 1}
-                                 {:type :text, :text "."}]}
-                      {:type :paragraph, :content [{:type :text, :text "Par."}]}
-                      {:type :paragraph,
-                       :content [{:type :text, :text "Again"}
-                                 {:type :sidenote-ref, :ref 2, :label "note2"}
-                                 {:type :sidenote, :content [{:type :text, :text "Explain 2"}] :ref 2}]}],
-            :type :doc}
+                                     md.parser/insert-sidenote-containers)]
+      (is (match? {:type :doc
+                   :sidenotes? true
+                   :content [{:type :sidenote-container
+                              :content [{:type :paragraph
+                                         :content [{:text "Text"
+                                                    :type :text}
+                                                   {:label "note1"
+                                                    :ref 0
+                                                    :type :sidenote-ref}
+                                                   {:text " and"
+                                                    :type :text}
+                                                   {:ref 1
+                                                    :type :sidenote-ref}
+                                                   {:text "."
+                                                    :type :text}]}
+                                        {:type :sidenote-column
+                                         :content [{:type :sidenote
+                                                    :ref 0
+                                                    :content [{:text "Explain 1" :type :text}]
+                                                    :label "note1"}
+                                                   {:type :sidenote
+                                                    :ref 1
+                                                    :content [{:text "inline " :type :text}
+                                                              {:content [{:text "note"
+                                                                          :type :text}]
+                                                               :type :em}
+                                                              {:text " here"
+                                                               :type :text}]}]}]}
+                             { :type :paragraph
+                              :content [{:text "Par." :type :text}]}
+                             {:type :sidenote-container
+                              :content [{:type :bullet-list
+                                         :content [{:type :list-item
+                                                    :content [{:type :plain
+                                                               :content [{:text "again"
+                                                                          :type :text}
+                                                                         {:label "note2"
+                                                                          :ref 2
+                                                                          :type :sidenote-ref}]}]}
+                                                   {:type :list-item
+                                                    :content [{:content [{:text "here" :type :text}]
+                                                               :type :plain}]}]}
+                                        {:type :sidenote-column
+                                         :content [{:type :sidenote
+                                                    :ref 2
+                                                    :content [{:text "Explain 2"
+                                                               :type :text}]
+                                                    :label "note2"}]}]}]
+                   :footnotes [{:content [{:content [{:text "Explain 1"
+                                                      :type :text}]
+                                           :type :paragraph}]
+                                :label "note1"
+                                :ref 0
+                                :type :footnote}
+                               {:content [{:content [{:text "inline "
+                                                      :type :text}
+                                                     {:content [{:text "note"
+                                                                 :type :text}]
+                                                      :type :em}
+                                                     {:text " here"
+                                                      :type :text}]
+                                           :type :paragraph}]
+                                :ref 1
+                                :type :footnote}
+                               {:content [{:content [{:text "Explain 2"
+                                                      :type :text}]
+                                           :type :paragraph}]
+                                :label "note2"
+                                :ref 2
+                                :type :footnote}]}
+
              parsed+sidenotes))
 
       (is (= [:div
-              [:p "Text"
-               [:sup.sidenote-ref {:data-label "note1"} "1"]
-               [:span.sidenote [:sup {:style {:margin-right "3px"}} "1"] "Explain 1"]
-               " and"
-               [:sup.sidenote-ref {:data-label nil} "2"]
-               [:span.sidenote [:sup {:style {:margin-right "3px"}} "2"] "inline " [:em "note"] " here"]
-               "."]
-              [:p "Par."]
-              [:p "Again"
-               [:sup.sidenote-ref {:data-label "note2"} "3"]
-               [:span.sidenote [:sup {:style {:margin-right "3px"}} "3"] "Explain 2"]]]
+              [:div.sidenote-container
+               [:p
+                "Text"
+                [:sup.sidenote-ref
+                 {:data-label "note1"}
+                 "1"]
+                " and"
+                [:sup.sidenote-ref
+                 {:data-label nil}
+                 "2"]
+                "."]
+               [:div.sidenote-column
+                [:span.sidenote
+                 [:sup
+                  {:style {:margin-right "3px"}}
+                  "1"]
+                 "Explain 1"]
+                [:span.sidenote
+                 [:sup
+                  {:style {:margin-right "3px"}}
+                  "2"]
+                 "inline "
+                 [:em
+                  "note"]
+                 " here"]]]
+              [:p
+               "Par."]
+              [:div.sidenote-container
+               [:ul
+                [:li
+                 [:<>
+                  "again"
+                  [:sup.sidenote-ref
+                   {:data-label "note2"}
+                   "3"]]]
+                [:li
+                 [:<>
+                  "here"]]]
+               [:div.sidenote-column
+                [:span.sidenote
+                 [:sup
+                  {:style {:margin-right "3px"}}
+                  "3"]
+                 "Explain 2"]]]]
              (md.transform/->hiccup parsed+sidenotes))))))
 
 (comment

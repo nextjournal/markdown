@@ -109,6 +109,8 @@ a paragraph
    :table-data (fn [ctx {:as node :keys [attrs]}] (into-markup [:td {:style (table-alignment attrs)}] ctx node))
 
    ;; footnotes & sidenodes
+   :sidenote-container (partial into-markup [:div.sidenote-container])
+   :sidenote-column (partial into-markup [:div.sidenote-column])
    :sidenote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
    :sidenote (fn [ctx {:as node :keys [ref]}]
                (into-markup [:span.sidenote [:sup {:style {:margin-right "3px"}} (str (inc ref))]] ctx node))

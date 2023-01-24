@@ -343,7 +343,7 @@ end"
 (defmethod apply-token "footnote_anchor" [doc token] doc)
 
 (defmethod apply-token "footnote_open" [{:as doc ::keys [footnote-offset]} token]
-  ;; footnote tokens always follow footnote_block_open
+  ;; consider an offset in case we're parsing multiple inputs into the same context
   (let [ref (+ (get-in* token [:meta :id]) footnote-offset)
         label (get-in* token [:meta :label])]
     (open-node doc :footnote nil (cond-> {:ref ref} label (assoc :label label)))))
@@ -351,7 +351,7 @@ end"
 (defmethod apply-token "footnote_close" [doc token] (close-node doc))
 
 (defmethod apply-token "footnote_block_open" [{:as doc :keys [footnotes] ::keys [path]} _token]
-  ;; consider just adding to :footnotes + having a ref offset
+  ;; store footnotes at a top level `:footnote` key
   (let [footnote-offset (count footnotes)]
     (-> doc
         (assoc ::path [:footnotes (dec footnote-offset)]
@@ -359,6 +359,7 @@ end"
                ::path-to-restore path))))
 
 (defmethod apply-token "footnote_block_close"
+  ;; restores path for addding new tokens
   [{:as doc ::keys [path-to-restore]} _token]
   (-> doc
       (assoc ::path path-to-restore)
@@ -367,25 +368,6 @@ end"
 (defn footnote->sidenote [{:keys [ref label content]}]
   ;; this assumes the footnote container is a paragraph, won't work for lists
   (node :sidenote (-> content first :content) nil (cond-> {:ref ref} label (assoc :label label))))
-
-(defn insert-sidenotes
-  "Handles footnotes as sidenotes.
-
-  Takes and returns a parsed document. Inserts a `:sidenote` node to the right of every `:footnote-ref` node found.
-  Renames type `:footnote-ref` to `:sidenote-ref."
-  [{:as doc :keys [footnotes]}]
-  (if-not (seq footnotes)
-    doc
-    (loop [loc (->zip doc)]
-      (if (z/end? loc)
-        (assoc (z/root loc) :sidenotes? true)
-        (let [{:keys [type ref]} (z/node loc)]
-          (recur (z/next (if-not (= :footnote-ref type)
-                           loc
-                           (-> loc
-                               (z/edit assoc :type :sidenote-ref)
-                               (z/insert-right (footnote->sidenote (get footnotes ref)))
-                               z/next)))))))))
 
 (defn node-with-sidenote-refs [p-node]
   (loop [l (->zip p-node) refs []]
@@ -397,34 +379,13 @@ end"
           (recur (z/next (z/edit l assoc :type :sidenote-ref)) (conj refs ref))
           (recur (z/next l) refs))))))
 
-(defn insert-sidenote-columns
+(defn insert-sidenote-containers
   "Handles footnotes as sidenotes.
 
-   Takes and returns a parsed document. When the document has footnotes, appends a `:sidenote-column` child-node to every
-   paragraph which contains footnote references. Such new nodes contain `:sidenote` nodes.
+   Takes and returns a parsed document. When the document has footnotes, wraps every top-level block which contains footnote references
+   with a `:footnote-container` node, into each of such nodes, adds a `:sidenote-column` node containing a `:sidenote` node for each found ref.
    Renames type `:footnote-ref` to `:sidenote-ref."
-  [{:as doc :keys [footnotes]}]
-  (if-not (seq footnotes)
-    doc
-    (loop [loc (->zip doc)]
-      (cond
-        (z/end? loc)
-        (assoc (z/root loc) :sidenotes? true)
-
-        #_ (contains? #{:bullet-list :plain :paragraph :blockquote} (:type (z/node loc)))
-        (contains? #{:plain :paragraph} (:type (z/node loc)))
-        (recur (z/next
-                (let [{:keys [node refs]} (node-with-sidenote-refs (z/node loc))]
-                  (if (seq refs)
-                    (-> loc (z/replace node)
-                        (z/append-child {:type :sidenote-column
-                                         :content (mapv (comp footnote->sidenote #(get footnotes %)) refs)}))
-                    loc))))
-
-        'else
-        (recur (z/next loc))))))
-
-(defn insert-sidenote-containers [{:as doc ::keys [path] :keys [footnotes]}]
+  [{:as doc ::keys [path] :keys [footnotes]}]
   (if-not (seq footnotes)
     doc
     (let [root (->zip doc)]

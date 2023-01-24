@@ -390,7 +390,8 @@ end"
 (defn node-with-sidenote-refs [p-node]
   (loop [l (->zip p-node) refs []]
     (if (z/end? l)
-      {:node (z/root l) :refs refs}
+      (when (seq refs)
+        {:node (z/root l) :refs refs})
       (let [{:keys [type ref]} (z/node l)]
         (if (= :footnote-ref type)
           (recur (z/next (z/edit l assoc :type :sidenote-ref)) (conj refs ref))
@@ -423,6 +424,26 @@ end"
         'else
         (recur (z/next loc))))))
 
+(defn insert-sidenote-containers [{:as doc ::keys [path] :keys [footnotes]}]
+  (if-not (seq footnotes)
+    doc
+    (let [root (->zip doc)]
+      (loop [loc (z/down root) parent root]
+        (cond
+          (nil? loc)
+          (-> parent z/node (assoc :sidenotes? true))
+          (contains? #{:plain :paragraph :blockquote :numbered-list :bullet-list :todo-list}
+                     (:type (z/node loc)))
+          (if-some [{:keys [node refs]} (node-with-sidenote-refs (z/node loc))]
+            (let [new-loc (-> loc (z/replace {:type :sidenote-container :content []})
+                              (z/append-child node)
+                              (z/append-child {:type :sidenote-column
+                                               :content (mapv #(footnote->sidenote (get footnotes %)) refs)}))]
+              (recur (z/right new-loc) (z/up new-loc)))
+            (recur (z/right loc) parent))
+          :else
+          (recur (z/right loc) parent))))))
+
 (comment
   (-> "_hello_ what and foo[^note1] and^[some other note].
 
@@ -432,14 +453,14 @@ And what.
 
 * and new text[^endnote] at the end.
 * the
-* hell
+  * hell^[that warm place]
 
 [^endnote]: conclusion.
 "
       nextjournal.markdown/tokenize
       parse
       #_ flatten-tokens
-      insert-sidenote-columns)
+      insert-sidenote-containers)
 
   (-> empty-doc
       (update :text-tokenizers (partial map normalize-tokenizer))

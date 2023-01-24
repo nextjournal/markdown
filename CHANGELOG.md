@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.138
+* Uses the official markdown-it/footnote plugin 
+* Adds optional (post-parse) handling of footnotes as sidenotes
+
 ## 0.4.135
 * node-to-text transformation interprets softbreaks as spaces
 

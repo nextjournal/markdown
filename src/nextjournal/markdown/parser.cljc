@@ -432,7 +432,7 @@ end"
         (cond
           (nil? loc)
           (-> parent z/node (assoc :sidenotes? true))
-          (contains? #{:plain :paragraph :blockquote :numbered-list :bullet-list :todo-list}
+          (contains? #{:plain :paragraph :blockquote :numbered-list :bullet-list :todo-list :heading :table}
                      (:type (z/node loc)))
           (if-some [{:keys [node refs]} (node-with-sidenote-refs (z/node loc))]
             (let [new-loc (-> loc (z/replace {:type :sidenote-container :content []})

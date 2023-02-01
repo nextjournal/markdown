@@ -8,7 +8,7 @@
   ::clerk/viewer {:render-fn '(fn [_]
                                 (v/html
                                  (reagent/with-let
-                                  [init-text "# 👋️ Hello Markdown
+                                  [init-text "# 👋 Hello Markdown
 
 ```clojure id=xxyyzzww
 (reduce + [1 2 3])

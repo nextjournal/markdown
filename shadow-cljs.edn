@@ -1,5 +1,6 @@
 {:source-paths ["src" "test"]
  :dev-http {8021 "out/sci" 8022 "out/test"}
+ :nrepl {:cider false}
  :builds
  {:test
   {:target :node-test
@@ -16,11 +17,11 @@
    :js-options {:output-feature-set :es8}}
 
   :sci
-  {:target :browser
+  {:target :esm
+   :runtime :browser
    :output-dir "out/sci"
    :output-to "out/sci/viewer.js"
    :release {:output-dir "public/build/js"}
-   :modules {:viewer {:entries [nextjournal.clerk.sci-viewer
-                                nextjournal.devcards.main
-                                nextjournal.clerk.static-app
-                                nextjournal.clerk.sci-ext]}}}}}
+   :js-options {:output-feature-set :es8}
+   :modules {:viewer {:entries [nextjournal.clerk.sci-ext
+                                nextjournal.clerk.static-app]}}}}}

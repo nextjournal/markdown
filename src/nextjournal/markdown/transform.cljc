@@ -1,14 +1,15 @@
 (ns nextjournal.markdown.transform
   "transform markdown data as returned by `nextjournal.markdown/parse` into other formats, currently:
-     * hiccup"
-  {:nextjournal.clerk/visibility {:code :hide :result :hide}}
-  (:require [lambdaisland.uri.normalize :as uri.normalize]
-            [clojure.string :as str]))
+     * hiccup
+     * markdown"
+  (:require [clojure.string :as str]))
 
 ;; helpers
 (defn guard [pred val] (when (pred val) val))
-(defn ->text [{:as _node :keys [text content]}] (or text (apply str (map ->text content))))
-(def ->id uri.normalize/normalize-fragment)
+(defn ->text [{:as _node :keys [type text content]}]
+  (or (when (= :softbreak type) " ")
+      text
+      (apply str (map ->text content))))
 
 (defn hydrate-toc
   "Scans doc contents and replaces toc node placeholder with the toc node accumulated during parse."
@@ -33,12 +34,12 @@
                         (keep (partial ->hiccup (assoc ctx ::parent node)))
                         content)))
 
-(defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [content children]}]
-  (let [toc-item (cond-> [:div]
+(defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [attrs content children]}]
+  (let [id (:id attrs)
+        toc-item (cond-> [:div]
                    (seq content)
-                   (conj (let [id (-> node ->text ->id)]
-                           [:a {:href (str "#" id) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
-                            (-> node heading-markup (into-markup ctx node))]))
+                   (conj [:a {:href (str "#" id) #?@(:cljs [:on-click #(when-some [el (.getElementById js/document id)] (.preventDefault %) (.scrollIntoViewIfNeeded el))])}
+                          (-> node heading-markup (into-markup ctx node))])
                    (seq children)
                    (conj (into [:ul] (map (partial ->hiccup (assoc ctx ::parent node))) children)))]
     (cond->> toc-item
@@ -62,12 +63,12 @@ a paragraph
       (->> (->hiccup (assoc default-hiccup-renderers
                             :toc (fn [ctx {:as node :keys [content children heading-level]}]
                                    (cond-> [:div]
-                                     (seq content) (conj [:span.title {:data-level heading-level} (-> node ->text ->id)])
+                                     (seq content) (conj [:span.title {:data-level heading-level} (:id node)])
                                      (seq children) (conj (into [:ul] (map (partial ->hiccup ctx)) children)))))))))
 
 (def default-hiccup-renderers
   {:doc (partial into-markup [:div])
-   :heading (fn [ctx node] (-> (heading-markup node) (conj {:id (-> node ->text ->id)}) (into-markup ctx node)))
+   :heading (fn [ctx {:as node :keys [attrs]}] (-> (heading-markup node) (conj attrs) (into-markup ctx node)))
    :paragraph (partial into-markup [:p])
    :plain (partial into-markup [:<>])
    :text (fn [_ {:keys [text]}] text)
@@ -109,12 +110,18 @@ a paragraph
    :table-header (fn [ctx {:as node :keys [attrs]}] (into-markup [:th {:style (table-alignment attrs)}] ctx node))
    :table-data (fn [ctx {:as node :keys [attrs]}] (into-markup [:td {:style (table-alignment attrs)}] ctx node))
 
-   ;; sidenodes
-   :sidenote-ref (fn [_ {:keys [ref]}] [:sup.sidenote-ref (str (inc ref))])
+   ;; footnotes & sidenodes
+   :sidenote-container (partial into-markup [:div.sidenote-container])
+   :sidenote-column (partial into-markup [:div.sidenote-column])
+   :sidenote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
    :sidenote (fn [ctx {:as node :keys [ref]}]
-               (into-markup [:span.sidenote [:sup {:style {:margin-right "3px"}} (str (inc ref))]]
-                            ctx
-                            node))
+               (into-markup [:span.sidenote [:sup {:style {:margin-right "3px"}} (str (inc ref))]] ctx node))
+
+   :footnote-ref (fn [_ {:keys [ref label]}] [:sup.sidenote-ref {:data-label label} (str (inc ref))])
+   ;; NOTE: there's no default footnote placement (see n.markdown.parser/insert-sidenotes)
+   :footnote (fn [ctx {:as node :keys [ref label]}]
+               (into-markup [:div.footnote [:span.footnote-label {:data-ref ref} label]] ctx node))
+
    ;; TOC
    :toc toc->hiccup
 
@@ -250,12 +257,12 @@ par two"
     :bullet-list "* "
     :numbered-list (str item-number ". ")))
 
-(defn write-sidenote [ctx {:as node :keys [label]}]
-  (-> ctx (write "[^" label "]: ") (write-child-nodes node) (write new-line)))
+(defn write-footnote [ctx {:as node :keys [label ref]}]
+  (-> ctx (write "[^" (or label ref) "]: ") (write-child-nodes node) (write new-line)))
 
 (declare ->md)
 (defn process-table-cell [ctx node]
-  (-> node (select-keys [:attrs]) (assoc :text (str/trim (->md (dissoc ctx ::buf ::sidenotes) node)))))
+  (-> node (select-keys [:attrs]) (assoc :text (str/trim (->md (dissoc ctx ::buf) node)))))
 
 (defn write-row [col-widths ctx row]
   (as-> ctx c
@@ -352,8 +359,7 @@ par two"
                 (write "](" (:src attrs) ")")
                 (cond-> (top? ctx) (write block-end))))
 
-   :sidenote-ref (fn [ctx {:keys [label]}] (write ctx "[^" label "]"))
-   :sidenote (fn [ctx n] (update ctx ::sidenotes conj n))
+   :footnote-ref (fn [ctx {:keys [ref label]}] (write ctx "[^" (or label ref) "]"))
 
    ;; tables
    :table (fn [ctx n] (-> ctx (assoc ::table {:rows []}) (write-child-nodes n) write-table (dissoc ::table)))
@@ -366,11 +372,12 @@ par two"
 
 (defn ->md
   ([doc] (->md default-md-renderers doc))
-  ([ctx doc]
+  ([ctx {:as doc :keys [footnotes]}]
    (as-> ctx c
      (write-node c doc)
-     (reduce write-sidenote c (reverse (::sidenotes c)))
-     (str (str/trim (apply str (reverse (::buf c)))) "\n"))))
+     (reduce write-footnote c (reverse footnotes))
+     (str (str/trim (apply str (reverse (::buf c))))
+          "\n"))))
 
 #_ (->md (nextjournal.markdown/parse "# Ahoi
 this is *just* a __strong__ ~~text~~ with a $\\phi$ and a #hashtag

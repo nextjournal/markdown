@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.138
+* Uses the official markdown-it/footnote plugin 
+* Adds optional (post-parse) handling of footnotes as sidenotes
+
+## 0.4.135
+* node-to-text transformation interprets softbreaks as spaces
+
+## 0.4.132
+* Extract and assign leading emoji from heading nodes
+
+## 0.4.130
+* Produce unique ids in attrs for header nodes
+* Drop lambdaisland.uri dependency
+
 ## 0.4.126
 * Add `deps.cljs` to classpath
 

@@ -1,21 +1,21 @@
 # nextjournal markdown
 
-[![Clojars Project](https://img.shields.io/clojars/v/io.github.nextjournal/markdown.svg)](https://clojars.org/io.github.nextjournal/markdown) [![Notebooks](https://img.shields.io/static/v1?label=clerk&message=notebooks&color=rgb(155,187,157))](https://nextjournal.github.io/markdown/#/README.md)
+[![Clojars Project](https://img.shields.io/clojars/v/io.github.nextjournal/markdown.svg)](https://clojars.org/io.github.nextjournal/markdown) [![Notebooks](https://img.shields.io/static/v1?label=clerk&message=notebooks&color=rgb(155,187,157))](https://nextjournal.github.io/markdown)
 
 A cross-platform clojure library for [Markdown](https://en.wikipedia.org/wiki/Markdown) parsing and transformation.
 
 
-🚧 _ALPHA_ status, subject to frequent change. For a richer reading experience [read this readme as a clerk notebook](https://nextjournal.github.io/markdown/#/README.md).
+🚧 _ALPHA_ status, subject to frequent change. For a richer reading experience [read this readme as a clerk notebook](https://nextjournal.github.io/markdown/README).
 
 ## Features
 
-* _Focus on data_: parsing yields an AST ([à la Pandoc](https://nextjournal.github.io/markdown/#/notebooks/pandoc.clj)) of nested data representing a structured document.
+* _Focus on data_: parsing yields an AST ([à la Pandoc](https://nextjournal.github.io/markdown/notebooks/pandoc)) of nested data representing a structured document.
 * _Cross Platform_: clojurescript native, we target the JVM using [Graal's Polyglot Library](https://www.graalvm.org/22.1/reference-manual/js/JavaInteroperability/#polyglot-context).
 * _Configurable [Hiccup](https://github.com/weavejester/hiccup) conversion_.
 
 ## Try
 
-[Try it online](https://nextjournal.github.io/markdown/#/notebooks/try.clj).
+[Try it online](https://nextjournal.github.io/markdown/notebooks/try).
 
 ## Flavor
 
@@ -88,7 +88,7 @@ and transform that AST into `hiccup` syntax.
      [:p [:strong "Georges Perec"] ", " [:em "La Vie mode d'emploi"] "."]
      [:hr]]
 
-We've built hiccup transformation in for convenience, but the same approach can be used to target [more formats](https://nextjournal.github.io/markdown/#/notebooks/pandoc.clj).
+We've built hiccup transformation in for convenience, but the same approach can be used to target [more formats](https://nextjournal.github.io/markdown/notebooks/pandoc).
 
 This library is one of the building blocks of [Clerk](https://github.com/nextjournal/clerk) where it is used for rendering _literate fragments_.
 
@@ -116,4 +116,4 @@ The transformation of markdown node types can be customised like this:
 
 ## Extensibility
 
-We added minimal tooling for [extending markdown expressions](https://nextjournal.github.io/markdown/#/notebooks/parsing_extensibility.clj).
+We added minimal tooling for [extending markdown expressions](https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).

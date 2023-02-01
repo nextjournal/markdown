@@ -540,7 +540,11 @@ And what.
 (defmethod apply-token "inline" [doc {:as _token ts :children}] (apply-tokens doc ts))
 (defmethod apply-token "math_inline" [doc {text :content}] (push-node doc (formula text)))
 (defmethod apply-token "math_inline_double" [doc {text :content}] (push-node doc (formula text)))
+
+;; https://spec.commonmark.org/0.30/#softbreak
 (defmethod apply-token "softbreak" [doc _token] (push-node doc {:type :softbreak}))
+;; https://spec.commonmark.org/0.30/#hard-line-break
+(defmethod apply-token "hardbreak" [doc _token] (push-node doc {:type :hardbreak}))
 
 ;; images
 (defmethod apply-token "image" [doc {:keys [attrs children]}] (-> doc (open-node :image attrs) (apply-tokens children) close-node))

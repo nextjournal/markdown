@@ -83,9 +83,9 @@ a paragraph
    ;; code
    :code (partial into-markup [:pre.viewer-code.not-prose])
 
-   ;; softbreaks
-   ;; :softbreak (constantly [:br]) (treat as space)
+   ;; breaks
    :softbreak (constantly " ")
+   :hardbreak (constantly [:br])
 
    ;; formulas
    :formula (partial into-markup [:span.formula])

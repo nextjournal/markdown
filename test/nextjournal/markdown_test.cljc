@@ -205,6 +205,12 @@ $$\\int_a^bf(t)dt$$
 |    |  4 |
 "))))
 
+(deftest hard-breaks
+  (is (= [:div [:p "Please don't inter" [:br] "rupt me when I'm writing."]]
+         (md/->hiccup "Please don't inter  \nrupt me when I'm writing.")
+         (md/->hiccup "Please don't inter\\
+rupt me when I'm writing."))))
+
 (deftest set-title-when-missing
   (testing "sets title in document structure to the first heading of whatever level"
     (is (= "and some title"

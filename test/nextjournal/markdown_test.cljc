@@ -191,6 +191,20 @@ $$\\int_a^bf(t)dt$$
              "two"]]]]
          (md/->hiccup markdown-text))))
 
+(deftest table-with-empty-cells
+  (is (match? [:div [:table
+                     [:thead
+                      [:tr [:th "x"][:th "y"]]]
+                     [:tbody
+                      [:tr [:td "1"][:td "2"]]
+                      [:tr [:td][:td "4"]]]]]
+              (md/->hiccup "
+|  x |  y |
+|----|----|
+|  1 |  2 |
+|    |  4 |
+"))))
+
 (deftest set-title-when-missing
   (testing "sets title in document structure to the first heading of whatever level"
     (is (= "and some title"

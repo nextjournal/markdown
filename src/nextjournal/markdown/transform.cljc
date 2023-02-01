@@ -314,7 +314,11 @@ par two"
       (reduce (partial write-row column-widths) c body)
       (write c new-line))))
 
-;; md text renderers
+;; ## Markdown Text Renderers
+;; Dispatch on types, holds renderers
+;;
+;;    { Type : Ctx -> Node -> Ctx }
+;;
 (def default-md-renderers
   {:doc (block write-child-nodes)
    :toc (fn [ctx n] ctx)                              ;; ignore toc

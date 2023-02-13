@@ -1,9 +1,9 @@
 # Changelog
 
-## (Unreleased) 0.5.X
-* Disable parsing hashtags and internal links by default
-* Allow conditional application of custom tokenizers depending on parse context
-* Add arity 2 to `nextjournal.markdown/parse`
+## 0.5.144
+* Disable parsing hashtags and internal links by default (#14)
+* Allow conditional application of custom tokenizers depending on document state around the text location
+* Arity 2 to `nextjournal.markdown/parse` was added to customize parsing options (e.g. custom tokenizers) more conveniently.
 * Support hard-breaks
 * Fix conversion to hiccup for tables with empty cells (#13)
 

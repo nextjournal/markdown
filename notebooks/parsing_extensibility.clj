@@ -29,7 +29,7 @@
 
 ((:tokenizer-fn internal-link-tokenizer) "some [[set]] of [[wiki]] link")
 
-(md.parser/tokenize-text-node internal-link-tokenizer {:text "some [[set]] of [[wiki]] link"})
+(md.parser/tokenize-text-node internal-link-tokenizer {} {:text "some [[set]] of [[wiki]] link"})
 
 
 ;; In order to opt-in of the extra tokenization above, we need to configure the document context as follows:
@@ -83,7 +83,7 @@ existing [[links]] or #tags")
     :handler (fn [clj-data] {:type :losange
                              :data clj-data})}))
 
-(md.parser/tokenize-text-node losange-tokenizer {:text text})
+(md.parser/tokenize-text-node losange-tokenizer {} {:text text})
 
 ;; putting it all together and giving losange topmost priority wrt other tokens
 (md.parser/parse (update md.parser/empty-doc :text-tokenizers #(cons losange-tokenizer %))

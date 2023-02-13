@@ -376,6 +376,43 @@ rupt me when I'm writing."))))
 par with #really_nice #useful-123 tags
 "))))
 
+  (testing "Should not parse hashtags within link text"
+    (is (match? {:type :doc
+                 :content [{:attrs {:id "hello-fishes"}
+                       :content [{:text "Hello "
+                                  :type :text}
+                                 {:text "Fishes"
+                                  :type :hashtag}]
+                       :heading-level 1
+                       :type :heading}
+                      {:content [{:content [{:text "what about "
+                                             :type :text}
+                                            {:text "this"
+                                             :type :hashtag}
+                                            {:type :softbreak}
+                                            {:content [{:text "this "
+                                                        :type :text}
+                                                       {:text "should"
+                                                        :type :hashtag}
+                                                       {:text " be a tag"
+                                                        :type :text}]
+                                             :type :em}
+                                            {:text ", but this "
+                                             :type :text}
+                                            {:attrs {:href "/bar/"}
+                                             :content [{:content [{:text "actually #foo shouldnt"
+                                                                   :type :text}]
+                                                        :type :em}]
+                                             :type :link}
+                                            {:text " is not."
+                                             :type :text}]
+                                  :type :paragraph}]
+                       :type :blockquote}]}
+                (parse-hashtags
+                 "# Hello #Fishes
+> what about #this
+_this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."))))
+
   (testing "rendering tags"
     (is (= [:div
             [:h1 {:id "hello-tags"} "Hello Tags"]

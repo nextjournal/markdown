@@ -471,11 +471,13 @@ And what.
 ;;    TokenizerFn :: String -> [IndexedMatch]
 ;;    DocHandler :: Doc -> {:match :: Match} -> Doc
 
-(def text-tokenizers
-  [{:regex #"(^|\B)#[\w-]+"
-    :handler (fn [match] {:type :hashtag :text (subs (match 0) 1)})}
-   {:regex #"\[\[([^\]]+)\]\]"
-    :handler (fn [match] {:type :internal-link :text (match 1)})}])
+(def hashtag-tokenizer
+  {:regex #"(^|\B)#[\w-]+"
+   :handler (fn [match] {:type :hashtag :text (subs (match 0) 1)})})
+
+(def internal-link-tokenizer
+  {:regex #"\[\[([^\]]+)\]\]"
+   :handler (fn [match] {:type :internal-link :text (match 1)})})
 
 (defn normalize-tokenizer
   "Normalizes a map of regex and handler into a Tokenizer"
@@ -580,7 +582,7 @@ And what.
                 :toc {:type :toc}
                 :footnotes []
                 ::path [:content -1] ;; private
-                :text-tokenizers text-tokenizers})
+                :text-tokenizers []})
 
 (defn parse
   "Takes a doc and a collection of markdown-it tokens, applies tokens to doc. Uses an emtpy doc in arity 1."
@@ -588,7 +590,10 @@ And what.
   ([doc tokens] (-> doc
                     (update :text-tokenizers (partial map normalize-tokenizer))
                     (apply-tokens tokens)
-                    (dissoc ::path :text-tokenizers))))
+                    (dissoc ::path
+                            ::id->index
+                            :text-tokenizers
+                            :text->id+emoji-fn))))
 
 (comment
 

@@ -4,25 +4,12 @@
             [matcher-combinators.standalone :as standalone]
             [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
+            [matcher-combinators.ansi-color]
             [nextjournal.markdown.parser :as md.parser]
             [nextjournal.markdown.transform :as md.transform]))
 
-#?(:cljs
-   ;; FIXME: in matcher-combinators (should probably use a simple `:fail` dispatch instead of `:matcher-combinators/mismatch`)
-   ;; mismatch are currently ignored by shadow both browser and node tests
-   (defmethod t/report [:cljs-test-display.core/default :matcher-combinators/mismatch] [m]
-     ;; Shadow browser tests
-     (when (exists? js/document)
-       (cljs-test-display.core/add-fail-node! m))
-
-     (t/inc-report-counter! :fail)
-     (println "\nFAIL in" (t/testing-vars-str m))
-     (when (seq (:testing-contexts (t/get-current-env)))
-       (println (t/testing-contexts-str)))
-     (when-let [message (:message m)]
-       (println message))
-     (println "mismatch:")
-     (println (:markup m))))
+;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
+(matcher-combinators.ansi-color/disable!)
 
 (def markdown-text
   "# 🎱 Hello
@@ -41,6 +28,14 @@ $$\\int_a^bf(t)dt$$
 
 [link]:/path/to/something
 ")
+
+(defn parse-internal-links [text]
+  (md/parse (update md.parser/empty-doc :text-tokenizers conj md.parser/internal-link-tokenizer)
+            text))
+
+(defn parse-hashtags [text]
+  (md/parse (update md.parser/empty-doc :text-tokenizers conj md.parser/hashtag-tokenizer)
+            text))
 
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"
@@ -109,7 +104,7 @@ $$\\int_a^bf(t)dt$$
                                   :type :internal-link}
                                  {:text " link"
                                   :type :text}]}]}
-           (md/parse "a [[wikistyle]] link")))
+                (parse-internal-links "a [[wikistyle]] link")))
 
     (is (match? {:type :doc
             :title "a wikistyle link in title"
@@ -131,7 +126,7 @@ $$\\int_a^bf(t)dt$$
                                          :type :text}]
                               :heading-level 1
                               :path [:content 0]}]}}
-           (md/parse "# a [[wikistyle]] link in title")))
+                (parse-internal-links "# a [[wikistyle]] link in title")))
 
     (is (match? {:type :doc
             :toc {:type :toc}
@@ -156,7 +151,7 @@ $$\\int_a^bf(t)dt$$
                                   :content [{:type :plain
                                              :content [{:text "pending"
                                                         :type :text}]}]}]}]}
-           (md/parse "- [x] done [[linkme]] to
+           (parse-internal-links "- [x] done [[linkme]] to
 - [ ] pending
 - [ ] pending")))))
 
@@ -377,7 +372,7 @@ rupt me when I'm writing."))))
                                          :type :text}]
                               :heading-level 1
                               :path [:content 0]}]}}
-           (md/parse "# Hello Tags
+           (parse-hashtags "# Hello Tags
 par with #really_nice #useful-123 tags
 "))))
 
@@ -394,9 +389,10 @@ par with #really_nice #useful-123 tags
               {:href "/tags/useful-123"}
               "#useful-123"]
              " tags"]]
-           (md/->hiccup "# Hello Tags
+           (md.transform/->hiccup
+            (parse-hashtags "# Hello Tags
 par with #really_nice #useful-123 tags
-")))))
+"))))))
 
 
 (deftest tight-vs-loose-lists

@@ -37,11 +37,15 @@
                   :handler (fn [data] {:type :losange :data data})}]
                 reference-text))
 
-(parse [{:regex #"\{\{([^\{]+)\}\}"
-         :handler (fn [m] {:type :var :text (m 1)})}
-        {:tokenizer-fn parsing-extensibility/losange-tokenizer-fn
-         :handler (fn [data] {:type :losange :data data})}]
-       reference-text)
+;; With hashtags and internal links
+(time-ms
+ (parse [md.parser/hashtag-tokenizer
+         md.parser/internal-link-tokenizer
+         {:regex #"\{\{([^\{]+)\}\}"
+          :handler (fn [m] {:type :var :text (m 1)})}
+         {:tokenizer-fn parsing-extensibility/losange-tokenizer-fn
+          :handler (fn [data] {:type :losange :data data})}]
+        reference-text))
 
 ^{::clerk/visibility {:code :hide :result :hide}}
 (comment

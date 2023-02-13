@@ -13,6 +13,7 @@
    :exec-fn nextjournal.clerk/build-static-app!
    :exec-args {:git/url "https://github.com/nextjournal/markdown"
                :paths ["README.md"
+                       "CHANGELOG.md"
                        "notebooks/try.clj"
                        "notebooks/pandoc.clj"
                        "notebooks/parsing_extensibility.clj"
@@ -24,14 +25,14 @@
 
   :test
   {:extra-paths ["test"]
-   :extra-deps {nubank/matcher-combinators {:mvn/version "3.5.0"}}
+   :extra-deps {nubank/matcher-combinators {:mvn/version "3.8.3"}}
    :exec-fn test-runner/run}
 
   :cljs-test
   {:extra-paths ["test"]
    :main-opts ["-m" "shadow.cljs.devtools.cli"]
    :extra-deps {thheller/shadow-cljs {:mvn/version "2.18.0"}
-                nubank/matcher-combinators {:mvn/version "3.5.0"}}}
+                nubank/matcher-combinators {:mvn/version "3.8.3"}}}
 
   :sci
   {:extra-paths ["sci"]

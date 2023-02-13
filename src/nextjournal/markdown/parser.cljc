@@ -129,7 +129,6 @@
 
 ;; leaf nodes
 (defn text-node [text] {:type :text :text text})
-(defn tag-node [text] {:type :hashtag :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
 (defn footnote-ref [ref label] (cond-> {:type :footnote-ref :ref ref} label (assoc :label label)))
@@ -164,11 +163,29 @@
    (-> doc
        (push-node (node type [] attrs top-level))
        (update ::path into [:content -1]))))
+
 ;; after closing a node, document ::path will point at it
 (def ppop (comp pop pop))
 (defn close-node [doc] (update doc ::path ppop))
 (defn update-current [{:as doc path ::path} fn & args] (apply update-in doc path fn args))
 
+(defn current-parent-node
+  "Given an open parsing context `doc`, returns the parent of the node which was last parsed into the document."
+  [{:as doc ::keys [path]}]
+  (assert path "A path is needed in document context to retrieve the current node: `current-parent-node` cannot be called after `parse`.")
+  (get-in doc (ppop path)))
+
+(defn current-ancestor-nodes
+  "Given an open parsing context `doc`, returns the list of ancestors of the node last parsed into the document, up to but
+   not including the top document."
+  [{:as doc ::keys [path]}]
+  (assert path "A path is needed in document context to retrieve the current node: `current-ancestor-nodes` cannot be called after `parse`.")
+  (loop [p (ppop path) ancestors []]
+    (if (seq p)
+      (recur (ppop p) (conj ancestors (get-in doc p)))
+      ancestors)))
+
+;; TODO: consider rewriting parse in terms of this zipper
 (defn ->zip [doc]
   (z/zipper (every-pred map? :type) :content
             (fn [node cs] (assoc node :content (vec cs)))
@@ -471,25 +488,40 @@ And what.
 ;;    TokenizerFn :: String -> [IndexedMatch]
 ;;    DocHandler :: Doc -> {:match :: Match} -> Doc
 
-(def text-tokenizers
-  [{:regex #"(^|\B)#[\w-]+"
-    :handler (fn [match] {:type :hashtag :text (subs (match 0) 1)})}
-   {:regex #"\[\[([^\]]+)\]\]"
-    :handler (fn [match] {:type :internal-link :text (match 1)})}])
+(def hashtag-tokenizer
+  {:regex #"(^|\B)#[\w-]+"
+   :pred #(every? (complement #{:link}) (map :type (current-ancestor-nodes %)))
+   :handler (fn [match] {:type :hashtag :text (subs (match 0) 1)})})
+
+(def internal-link-tokenizer
+  {:regex #"\[\[([^\]]+)\]\]"
+   :pred #(every? (complement #{:link}) (map :type (current-ancestor-nodes %)))
+   :handler (fn [match] {:type :internal-link :text (match 1)})})
+
+(comment
+  (->> "# Hello #Fishes
+
+> what about #this
+
+_this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
+       nextjournal.markdown/tokenize
+       (parse (update empty-doc :text-tokenizers conj hashtag-tokenizer))))
+
 
 (defn normalize-tokenizer
   "Normalizes a map of regex and handler into a Tokenizer"
-  [{:as tokenizer :keys [doc-handler handler regex tokenizer-fn]}]
+  [{:as tokenizer :keys [doc-handler pred handler regex tokenizer-fn]}]
   (assert (and (or doc-handler handler) (or regex tokenizer-fn)))
   (cond-> tokenizer
     (not doc-handler) (assoc :doc-handler (fn [doc {:keys [match]}] (push-node doc (handler match))))
-    (not tokenizer-fn) (assoc :tokenizer-fn (partial re-idx-seq regex))))
+    (not tokenizer-fn) (assoc :tokenizer-fn (partial re-idx-seq regex))
+    (not pred) (assoc :pred (constantly true))))
 
-(defn tokenize-text-node [{:as tkz :keys [tokenizer-fn doc-handler]} {:as node :keys [text]}]
+(defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} doc {:as node :keys [text]}]
   ;; TokenizerFn -> HNode -> [HNode]
-  (assert (and (fn? tokenizer-fn) (fn? doc-handler) (string? text))
+  (assert (and (fn? tokenizer-fn) (fn? doc-handler) (fn? pred) (string? text))
           {:text text :tokenizer tkz})
-  (let [idx-seq (tokenizer-fn text)]
+  (let [idx-seq (when (pred doc) (tokenizer-fn text))]
     (if (seq idx-seq)
       (let [text-hnode (fn [s] (assoc (text-node s) :doc-handler push-node))
             {:keys [nodes remaining-text]}
@@ -514,24 +546,22 @@ And what.
           doc
           (reduce (fn [nodes tokenizer]
                     (mapcat (fn [{:as node :keys [type]}]
-                              (if (= :text type) (tokenize-text-node tokenizer node) [node]))
+                              (if (= :text type) (tokenize-text-node tokenizer doc node) [node]))
                             nodes))
                   [{:type :text :text content :doc-handler push-node}]
                   text-tokenizers)))
 
 (comment
   (def mustache (normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}" :handler (fn [m] {:type :eval :text (m 1)})}))
-  (tokenize-text-node mustache {:text "{{what}} the {{hellow}}"})
+  (tokenize-text-node mustache {} {:text "{{what}} the {{hellow}}"})
   (apply-token (assoc empty-doc :text-tokenizers [mustache])
                {:type "text" :content "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]] and {{eval}} me"})
-
-  (nextjournal.markdown/parse "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]]" )
 
   (parse (assoc empty-doc
                 :text-tokenizers
                 [(normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}"
-                                       :doc-handler (fn [doc {[_ meta] :match}]
-                                                      (update-in doc (pop (pop (::path ddoc))) assoc :meta meta))})])
+                                       :doc-handler (fn [{:as doc ::keys [path]} {[_ meta] :match}]
+                                                      (update-in doc (ppop path) assoc :meta meta))})])
          (nextjournal.markdown/tokenize "# Title {{id=heading}}
 * one
 * two")))
@@ -580,7 +610,7 @@ And what.
                 :toc {:type :toc}
                 :footnotes []
                 ::path [:content -1] ;; private
-                :text-tokenizers text-tokenizers})
+                :text-tokenizers []})
 
 (defn parse
   "Takes a doc and a collection of markdown-it tokens, applies tokens to doc. Uses an emtpy doc in arity 1."
@@ -588,7 +618,10 @@ And what.
   ([doc tokens] (-> doc
                     (update :text-tokenizers (partial map normalize-tokenizer))
                     (apply-tokens tokens)
-                    (dissoc ::path :text-tokenizers))))
+                    (dissoc ::path
+                            ::id->index
+                            :text-tokenizers
+                            :text->id+emoji-fn))))
 
 (comment
 

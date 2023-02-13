@@ -129,7 +129,6 @@
 
 ;; leaf nodes
 (defn text-node [text] {:type :text :text text})
-(defn tag-node [text] {:type :hashtag :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
 (defn footnote-ref [ref label] (cond-> {:type :footnote-ref :ref ref} label (assoc :label label)))

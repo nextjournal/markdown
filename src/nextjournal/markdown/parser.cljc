@@ -520,7 +520,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 
 (defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} doc {:as node :keys [text]}]
   ;; TokenizerFn -> HNode -> [HNode]
-  (assert (and (fn? tokenizer-fn) (fn? doc-handler) (string? text))
+  (assert (and (fn? tokenizer-fn) (fn? doc-handler) (fn? pred) (string? text))
           {:text text :tokenizer tkz})
   (let [idx-seq (when (pred doc) (tokenizer-fn text))]
     (if (seq idx-seq)

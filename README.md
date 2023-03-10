@@ -93,14 +93,14 @@ We've built hiccup transformation in for convenience, but the same approach can 
 This library is one of the building blocks of [Clerk](https://github.com/nextjournal/clerk) where it is used for rendering _literate fragments_.
 
 ```clojure
-^{:nextjournal.clerk/viewer :markdown}
+^{:nextjournal.clerk/viewer 'nextjournal.clerk.viewer/markdown-viewer}
 data
 ```
 
 The transformation of markdown node types can be customised like this:
 
 ```clojure
-^{:nextjournal.clerk/viewer :html}
+^{:nextjournal.clerk/viewer 'nextjournal.clerk.viewer/html-viewer}
 (md.transform/->hiccup
  (assoc md.transform/default-hiccup-renderers
         ;; :doc specify a custom container for the whole doc

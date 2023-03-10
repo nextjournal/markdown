@@ -45,7 +45,8 @@
 
 (defn parse
   "Turns a markdown string into a nested clojure structure."
-  [markdown-text] (-> markdown-text tokenize markdown.parser/parse))
+  ([markdown-text] (parse markdown.parser/empty-doc markdown-text))
+  ([doc markdown-text] (markdown.parser/parse doc (tokenize markdown-text))))
 
 (defn ->hiccup
   "Turns a markdown string into hiccup."

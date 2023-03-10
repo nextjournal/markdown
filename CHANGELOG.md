@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.144
+* Disable parsing hashtags and internal links by default (#14)
+* Allow conditional application of custom tokenizers depending on document state around the text location
+* Arity 2 to `nextjournal.markdown/parse` was added to customize parsing options (e.g. custom tokenizers) more conveniently.
+* Support hard-breaks
+* Fix conversion to hiccup for tables with empty cells (#13)
+
 ## 0.4.138
 * Uses the official markdown-it/footnote plugin 
 * Adds optional (post-parse) handling of footnotes as sidenotes

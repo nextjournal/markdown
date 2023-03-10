@@ -30,9 +30,9 @@
   [mkup ctx {:as node :keys [text content]}]
   (cond ;; formula nodes are leaves: have text and no contents
     text (conj mkup text)
-    (seq content) (into mkup
-                        (keep (partial ->hiccup (assoc ctx ::parent node)))
-                        content)))
+    content (into mkup
+                  (keep (partial ->hiccup (assoc ctx ::parent node)))
+                  content)))
 
 (defn toc->hiccup [{:as ctx ::keys [parent]} {:as node :keys [attrs content children]}]
   (let [id (:id attrs)
@@ -85,9 +85,9 @@ a paragraph
    ;; code
    :code (partial into-markup [:pre.viewer-code.not-prose])
 
-   ;; softbreaks
-   ;; :softbreak (constantly [:br]) (treat as space)
+   ;; breaks
    :softbreak (constantly " ")
+   :hardbreak (constantly [:br])
 
    ;; formulas
    :formula (partial into-markup [:span.formula])
@@ -107,8 +107,12 @@ a paragraph
    :table-head (partial into-markup [:thead])
    :table-body (partial into-markup [:tbody])
    :table-row (partial into-markup [:tr])
-   :table-header (fn [ctx {:as node :keys [attrs]}] (into-markup [:th {:style (table-alignment attrs)}] ctx node))
-   :table-data (fn [ctx {:as node :keys [attrs]}] (into-markup [:td {:style (table-alignment attrs)}] ctx node))
+   :table-header (fn [ctx {:as node :keys [attrs]}]
+                   (into-markup (let [ta (table-alignment attrs)] (cond-> [:th] ta (conj {:style ta})))
+                                ctx node))
+   :table-data (fn [ctx {:as node :keys [attrs]}]
+                 (into-markup (let [ta (table-alignment attrs)] (cond-> [:td] ta (conj {:style ta})))
+                              ctx node))
 
    ;; footnotes & sidenodes
    :sidenote-container (partial into-markup [:div.sidenote-container])

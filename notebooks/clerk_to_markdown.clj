@@ -23,7 +23,7 @@
 
 ;; now, to put everything together, parse this notebook with Clerk and emit markdown as follows.
 
-^{::clerk/viewer '(fn [s _] (v/html [:pre s]))}
+^{::clerk/viewer '(fn [s _] (nextjournal.clerk.viewer/html [:pre s]))}
 (def as-markdown
   (->> this-notebook
        (clerk.parser/parse-file {:doc? true})
@@ -40,7 +40,7 @@
                                  (str/split-lines (md.transform/->md doc))
                                  (repeat "\n")))))
 
-^{::clerk/viewer '(fn [s _] (v/html [:pre s]))}
+^{::clerk/viewer '(fn [s _] (nextjournal.clerk.viewer/html [:pre s]))}
 (->> (clerk.parser/parse-markdown-string {:doc? true} as-markdown)
      :blocks
      (map block->clj)

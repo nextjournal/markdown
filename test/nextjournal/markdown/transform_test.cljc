@@ -55,6 +55,9 @@ another
 | whatthasdasfd | hell                    |
 | this is       | insane as as as as as f |
 
+> * one
+> * two
+
 end
 
 [^sidenote]: Here a __description__
@@ -63,7 +66,6 @@ end
 
 (deftest ->md
   (let [doc (md/parse test-text)]
-
     (is (= doc
            (-> doc
                md.transform/->md

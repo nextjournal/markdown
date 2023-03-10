@@ -11,6 +11,7 @@
       text
       (apply str (map ->text content))))
 
+;; ## Hiccup Transform
 (defn hydrate-toc
   "Scans doc contents and replaces toc node placeholder with the toc node accumulated during parse."
   [{:as doc :keys [toc]}]
@@ -208,7 +209,7 @@ par two"
                      :paragraph (fn [{:as ctx d :default} node] [:div.p-container (d ctx node)]))))
   )
 
-;; Text Transform
+;; ## Text Transform
 (defn write [ctx & strs] (update ctx ::buf into strs))
 
 ;; ctx -> node -> ctx
@@ -256,10 +257,20 @@ par two"
       (write-child-nodes n)
       (cond-> (top? ctx) (write new-line))))
 
-(defn item-marker [{:as ctx ::keys [item-number]}]
-  (case (list-container ctx)
-    :bullet-list "* "
-    :numbered-list (str item-number ". ")))
+(defn item-marker [{:as ctx ::keys [item-number]} {:keys [type attrs]}]
+  (if (= :todo-item type)
+    (str "- [" (if (:checked attrs) "x" " ") "] ")
+    (case (list-container ctx)
+      :bullet-list "* "
+      :numbered-list (str item-number ". "))))
+
+(defn write-list-item [{:as ctx ::keys [item-number]} n]
+  (-> ctx
+      (cond-> item-number (update ::item-number inc))
+      (cond-> (quote? ctx) (write "> "))
+      write-list-padding
+      (write (item-marker ctx n))
+      (write-child-nodes n)))
 
 (defn write-footnote [ctx {:as node :keys [label ref]}]
   (-> ctx (write "[^" (or label ref) "]: ") (write-child-nodes node) (write new-line)))
@@ -302,7 +313,7 @@ par two"
 
 ;; md text renderers
 (def default-md-renderers
-  {:doc write-child-nodes
+  {:doc (block write-child-nodes)
    :toc (fn [ctx n] ctx)                              ;; ignore toc
    :text (fn [ctx {:keys [text]}] (write ctx text))
    :heading (block (prepend-to-child-nodes heading-marker))
@@ -316,7 +327,7 @@ par two"
                     (write new-line)
                     (cond-> (list-container ctx) (-> write-list-padding (write "  ")))
                     (cond-> (quote? ctx) (write "> "))))
-   :blockquote write-child-nodes
+   :blockquote (block write-child-nodes)
 
    :formula (fn [ctx {:keys [text]}] (write ctx (str "$" text "$")))
    :block-formula (block (fn [ctx {:keys [text]}] (write ctx (str "$$" (str/trim text) "$$"))))
@@ -344,17 +355,8 @@ par two"
                         (write-list n)
                         (dissoc ::item-number)))
    :todo-list write-list
-   :list-item (fn [{:as ctx ::keys [item-number]} n]
-                (-> ctx
-                    (cond-> item-number (update ::item-number inc))
-                    write-list-padding
-                    (write (item-marker ctx))
-                    (write-child-nodes n)))
-   :todo-item (fn [ctx {:as n :keys [attrs]}]
-                (-> ctx
-                    write-list-padding
-                    (write (str "- [" (if (:checked attrs) "x" " ") "] "))
-                    (write-child-nodes n)))
+   :list-item write-list-item
+   :todo-item write-list-item
 
    :image (fn [{:as ctx ::keys [parents]} {:as n :keys [attrs]}]
             (-> ctx

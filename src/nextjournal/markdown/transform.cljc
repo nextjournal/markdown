@@ -442,3 +442,31 @@ end
 [^sidenote]: Here a __description__
 [^sn2]: And some _other_
 "))
+
+
+(comment
+  ;; nested marks
+  (->md (nextjournal.markdown/parse "
+some *emph around a __strong__* bit"))
+
+
+  ;; preserving markup
+  (->md (nextjournal.markdown/parse "
+Preserve Markup
+---------------
+
+- this _should_ and *could*
+- look **the** __very same__
+"))
+
+  (nextjournal.markdown.parser/flatten-tokens (nextjournal.markdown/tokenize "
+```
+fence
+```
+
+1) one
+2) two
+
+- this _should_ and *could*
+- look **the** __very same__ and ~~why~~
+")))

@@ -6,8 +6,8 @@
 ^{::clerk/width :full
   ::clerk/visibility {:code :fold}
   ::clerk/viewer {:render-fn '(fn [_]
-                                (v/html
-                                 (reagent/with-let
+                                (nextjournal.clerk.viewer/html
+                                 (reagent.core/with-let
                                   [init-text "# 👋 Hello Markdown
 
 ```clojure id=xxyyzzww
@@ -19,13 +19,13 @@
 - [ ] _stuff_ here"
                                    text->state (fn [text] (as-> (md/parse text) parsed {:parsed parsed
                                                                                         :hiccup (md.transform/->hiccup md.demo/renderers parsed)}))
-                                   !state (reagent/atom (text->state init-text))
+                                   !state (reagent.core/atom (text->state init-text))
                                    text-update! (fn [text] (reset! !state (text->state text)))]
                                   [:div.grid.grid-cols-2.m-10
                                    [:div.m-2.p-2.text-xl.border-2.overflow-y-scroll.bg-slate-100 {:style {:height "20rem"}} [md.demo/editor {:doc-update text-update! :doc init-text}]]
                                    [:div.m-2.p-2.font-medium.overflow-y-scroll {:style {:height "20rem"}} [md.demo/inspect-expanded (:parsed @!state)]]
                                    [:div.m-2.p-2.overflow-x-scroll [md.demo/inspect-expanded (:hiccup @!state)]]
-                                   [:div.m-2.p-2.bg-slate-50.viewer-markdown [v/html (:hiccup @!state)]]])))}}
+                                   [:div.m-2.p-2.bg-slate-50.viewer-markdown [nextjournal.clerk.viewer/html (:hiccup @!state)]]])))}}
 (Object.)
 
 

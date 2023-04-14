@@ -135,10 +135,9 @@
 
 ;; node constructors
 (defn node
-  [type content attrs top-level]
+  [type content keyvals]
   (cond-> {:type type :content content}
-    (seq attrs) (assoc :attrs attrs)
-    (seq top-level) (merge top-level)))
+    (seq keyvals) (merge keyvals)))
 
 (defn empty-text-node? [{text :text t :type}] (and (= :text t) (empty? text)))
 
@@ -158,10 +157,9 @@
 
 (defn open-node
   ([doc type] (open-node doc type {}))
-  ([doc type attrs] (open-node doc type attrs {}))
-  ([doc type attrs top-level]
+  ([doc type keyvals]
    (-> doc
-       (push-node (node type [] attrs top-level))
+       (push-node (node type [] keyvals))
        (update ::path into [:content -1]))))
 
 ;; after closing a node, document ::path will point at it
@@ -305,7 +303,7 @@ end"
   doc)
 
 ;; blocks
-(defmethod apply-token "heading_open" [doc token] (open-node doc :heading {} {:heading-level (hlevel token)}))
+(defmethod apply-token "heading_open" [doc token] (open-node doc :heading (assoc (select-keys token [:markup]) :heading-level (hlevel token))))
 (defmethod apply-token "heading_close" [doc {doc-level :level}]
   (let [{:as doc ::keys [path]} (close-node doc)
         doc' (assign-node-id+emoji doc)
@@ -320,13 +318,13 @@ end"
 (defmethod apply-token "paragraph_open" [doc {:as _token :keys [hidden]}] (open-node doc (if hidden :plain :paragraph)))
 (defmethod apply-token "paragraph_close" [doc _token] (close-node doc))
 
-(defmethod apply-token "bullet_list_open" [doc {{:as attrs :keys [has-todos]} :attrs}] (open-node doc (if has-todos :todo-list :bullet-list) attrs))
+(defmethod apply-token "bullet_list_open" [doc {:as token :keys [attrs]}] (open-node doc (if (:has-todos attrs) :todo-list :bullet-list) (select-keys token [:attrs])))
 (defmethod apply-token "bullet_list_close" [doc _token] (close-node doc))
 
-(defmethod apply-token "ordered_list_open" [doc {:keys [attrs]}] (open-node doc :numbered-list attrs))
+(defmethod apply-token "ordered_list_open" [doc token] (open-node doc :numbered-list (select-keys token [:attrs])))
 (defmethod apply-token "ordered_list_close" [doc _token] (close-node doc))
 
-(defmethod apply-token "list_item_open" [doc {{:as attrs :keys [todo]} :attrs}] (open-node doc (if todo :todo-item :list-item) attrs))
+(defmethod apply-token "list_item_open" [doc {:as token :keys [attrs]}] (open-node doc (if (:todo attrs) :todo-item :list-item) (select-keys token [:attrs :markup])))
 (defmethod apply-token "list_item_close" [doc _token] (close-node doc))
 
 (defmethod apply-token "math_block" [doc {text :content}] (push-node doc (block-formula text)))
@@ -341,15 +339,17 @@ end"
 (defmethod apply-token "tocBody" [doc _token] doc) ;; ignore body
 (defmethod apply-token "tocClose" [doc _token] (-> doc close-node (update-current dissoc :content)))
 
-(defmethod apply-token "code_block" [doc {:as _token c :content}]
+(defmethod apply-token "code_block" [doc {:as token :keys [content]}]
   (-> doc
-      (open-node :code)
-      (push-node (text-node c))
+      (open-node :code (select-keys token [:markup]))
+      (push-node (text-node content))
       close-node))
-(defmethod apply-token "fence" [doc {:as _token i :info c :content}]
+(defmethod apply-token "fence" [doc {:as token :keys [info content]}]
   (-> doc
-      (open-node :code {} (assoc (parse-fence-info i) :info i))
-      (push-node (text-node c))
+      (open-node :code (-> (select-keys token [:markup])
+                           (assoc :info info)
+                           (merge (parse-fence-info info))))
+      (push-node (text-node content))
       close-node))
 
 ;; footnotes
@@ -363,7 +363,7 @@ end"
   ;; consider an offset in case we're parsing multiple inputs into the same context
   (let [ref (+ (get-in* token [:meta :id]) footnote-offset)
         label (get-in* token [:meta :label])]
-    (open-node doc :footnote nil (cond-> {:ref ref} label (assoc :label label)))))
+    (open-node doc :footnote (cond-> {:ref ref} label (assoc :label label)))))
 
 (defmethod apply-token "footnote_close" [doc token] (close-node doc))
 
@@ -384,7 +384,7 @@ end"
 
 (defn footnote->sidenote [{:keys [ref label content]}]
   ;; this assumes the footnote container is a paragraph, won't work for lists
-  (node :sidenote (-> content first :content) nil (cond-> {:ref ref} label (assoc :label label))))
+  (node :sidenote (-> content first :content) (cond-> {:ref ref} label (assoc :label label))))
 
 (defn node-with-sidenote-refs [p-node]
   (loop [l (->zip p-node) refs []]
@@ -457,11 +457,11 @@ And what.
 (defmethod apply-token "thead_close" [doc _token] (close-node doc))
 (defmethod apply-token "tr_open" [doc _token] (open-node doc :table-row))
 (defmethod apply-token "tr_close" [doc _token] (close-node doc))
-(defmethod apply-token "th_open" [doc token] (open-node doc :table-header (:attrs token)))
+(defmethod apply-token "th_open" [doc token] (open-node doc :table-header (select-keys token [:attrs])))
 (defmethod apply-token "th_close" [doc _token] (close-node doc))
 (defmethod apply-token "tbody_open" [doc _token] (open-node doc :table-body))
 (defmethod apply-token "tbody_close" [doc _token] (close-node doc))
-(defmethod apply-token "td_open" [doc token] (open-node doc :table-data (:attrs token)))
+(defmethod apply-token "td_open" [doc token] (open-node doc :table-data (select-keys token [:attrs])))
 (defmethod apply-token "td_close" [doc _token] (close-node doc))
 
 (comment
@@ -577,18 +577,25 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (defmethod apply-token "hardbreak" [doc _token] (push-node doc {:type :hardbreak}))
 
 ;; images
-(defmethod apply-token "image" [doc {:keys [attrs children]}] (-> doc (open-node :image attrs) (apply-tokens children) close-node))
+(defmethod apply-token "image" [doc {:as token :keys [children]}]
+  (-> doc
+      (open-node :image (select-keys token [:attrs]))
+      (apply-tokens children)
+      close-node))
 
 ;; marks
-(defmethod apply-token "em_open" [doc _token] (open-node doc :em))
+(defmethod apply-token "em_open" [doc token] (open-node doc :em (select-keys token [:markup])))
 (defmethod apply-token "em_close" [doc _token] (close-node doc))
-(defmethod apply-token "strong_open" [doc _token] (open-node doc :strong))
+(defmethod apply-token "strong_open" [doc token] (open-node doc :strong (select-keys token [:markup])))
 (defmethod apply-token "strong_close" [doc _token] (close-node doc))
-(defmethod apply-token "s_open" [doc _token] (open-node doc :strikethrough))
+(defmethod apply-token "s_open" [doc token] (open-node doc :strikethrough (select-keys token [:markup])))
 (defmethod apply-token "s_close" [doc _token] (close-node doc))
-(defmethod apply-token "link_open" [doc token] (open-node doc :link (:attrs token)))
+(defmethod apply-token "link_open" [doc token] (open-node doc :link (select-keys token [:attrs])))
 (defmethod apply-token "link_close" [doc _token] (close-node doc))
-(defmethod apply-token "code_inline" [doc {text :content}] (-> doc (open-node :monospace) (push-node (text-node text)) close-node))
+(defmethod apply-token "code_inline" [doc {:as token :keys [content]}]
+  (-> doc (open-node :monospace (select-keys token [:markup]))
+      (push-node (text-node content))
+      close-node))
 
 ;; html (ignored)
 (defmethod apply-token "html_inline" [doc _] doc)
@@ -737,5 +744,6 @@ some final par"
   (into []
         (comp
          (mapcat (partial tree-seq (comp seq :children) :children))
-         (map #(select-keys % [:type :content :hidden :level :info :meta])))
+         (map (comp #(into {} (filter (comp some? val)) %)
+                    #(select-keys % [:type :content :hidden :level :info :attrs :markup :meta]))))
         tokens))

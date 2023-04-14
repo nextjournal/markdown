@@ -7,7 +7,9 @@
 
 (extend-type Token
   ILookup
-  (-lookup [this key] (j/get this key)))
+  (-lookup
+    ([this key] (j/get this key))
+    ([this key not-found] (j/get this key not-found))))
 
 (def tokenize md/tokenize)
 

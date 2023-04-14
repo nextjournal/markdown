@@ -328,7 +328,13 @@ par two"
    :softbreak (fn [ctx _]
                 (-> ctx
                     (write new-line)
-                    (cond-> (list-container ctx) (-> write-list-padding (write "  ")))
+                    (cond-> (list-container ctx) (-> write-list-padding (write tab)))
+                    (cond-> (quote? ctx) (write "> "))))
+   :hardbreak (fn [ctx _]
+                (-> ctx
+                    (write "\\")
+                    (write new-line)
+                    (cond-> (list-container ctx) (-> write-list-padding (write tab)))
                     (cond-> (quote? ctx) (write "> "))))
    :blockquote (block write-child-nodes)
 

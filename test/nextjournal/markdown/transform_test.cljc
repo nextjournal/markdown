@@ -6,7 +6,7 @@
             [nextjournal.markdown.transform :as md.transform]))
 
 (def test-text "# Ahoi
-this is _just_ a **strong** ~~text~~ with a $\\phi$ and a #hashtag
+this is *just* a **strong** ~~text~~ with a $\\phi$ and a #hashtag
 
 this is an ![inline-image](/some/src) and a [_link_](/foo/bar)
 
@@ -20,8 +20,8 @@ $$\\int_a^b\\phi(t)dt$$
 
 * _this_
 
-  * sub1
-  * sub2 some bla
+  - sub1
+  - sub2 some bla
     bla bla
 
 * is not
@@ -43,8 +43,8 @@ $$\\int_a^b\\phi(t)dt$$
 > so what
 > is this
 
-1. one
-2. two
+1) one
+2) two
 
 ---
 
@@ -60,7 +60,7 @@ another
 
 end
 
-[^sidenote]: Here a _description_
+[^sidenote]: Here a __description__
 [^sn2]: And some _other_
 ")
 

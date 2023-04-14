@@ -230,6 +230,7 @@ par two"
 (def tab "indent unit" "  ")
 (defn heading-marker [_ {:keys [heading-level]}]
   (str (str/join (repeat heading-level "#")) " "))
+(defn node-markup [default] (fn [_ {:keys [markup]}] (or markup default)))
 
 ;; handler -> handler
 (defn ?->fn [m] (cond-> m (not (fn? m)) constantly))
@@ -244,7 +245,9 @@ par two"
 (defn prepend-to-child-nodes [bf] (before bf write-child-nodes))
 (defn append-to-child-nodes [af] (after af write-child-nodes))
 (defn wrap-child-nodes [bf af] (after af (before bf write-child-nodes)))
-(defn wrap-mark [m] (wrap-child-nodes m m))
+(defn wrap-mark [default-markup] (wrap-child-nodes
+                                  (node-markup default-markup)
+                                  (node-markup default-markup)))
 
 (def top? (comp #{:doc} peek ::parents))
 (defn quote? [{::keys [parents]}] (some #{:blockquote} parents))
@@ -257,12 +260,12 @@ par two"
       (write-child-nodes n)
       (cond-> (top? ctx) (write new-line))))
 
-(defn item-marker [{:as ctx ::keys [item-number]} {:keys [type attrs]}]
+(defn item-marker [{:as ctx ::keys [item-number]} {:keys [type markup attrs]}]
   (if (= :todo-item type)
     (str "- [" (if (:checked attrs) "x" " ") "] ")
     (case (list-container ctx)
-      :bullet-list "* "
-      :numbered-list (str item-number ". "))))
+      :bullet-list (str (or markup "*") " ")
+      :numbered-list (str item-number (or markup ".") " "))))
 
 (defn write-list-item [{:as ctx ::keys [item-number]} n]
   (-> ctx
@@ -457,6 +460,9 @@ Preserve Markup
 
 - this _should_ and *could*
 - look **the** __very same__
+
+1) one
+2) two
 "))
 
   (nextjournal.markdown.parser/flatten-tokens (nextjournal.markdown/tokenize "

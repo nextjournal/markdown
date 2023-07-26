@@ -6,7 +6,7 @@
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks"]
-   :extra-deps {io.github.nextjournal/clerk {:git/sha "e6b5d108bbcc00096b08b17f6468702dd62d36db"
+   :extra-deps {io.github.nextjournal/clerk {:git/sha "b8f04651a2739fea5a4f3ee62e9205f40ff53c6d"
                                              :exclusions [io.github.nextjournal/markdown]}}
    :jvm-opts ["-Dclojure.main.report=stderr"
               "-Dclerk.resource_manifest={\"/js/viewer.js\" \"js/viewer.js\"}"] ;;

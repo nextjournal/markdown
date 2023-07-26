@@ -136,7 +136,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v0.3.0
 
       - name: 🎨 Setup Tailwindcss
-        run: yarn add -D tailwindcss @tailwindcss/typography
+        run: npm install -D tailwindcss @tailwindcss/typography
 
       - name: 🏗 Build Clerk Notebooks with Bundled SCI Context
         run: bb build:notebooks ${{ github.sha }}

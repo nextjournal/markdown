@@ -6,7 +6,7 @@
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks"]
-   :extra-deps {io.github.nextjournal/clerk {:git/sha "b8f04651a2739fea5a4f3ee62e9205f40ff53c6d"
+   :extra-deps {io.github.nextjournal/clerk {:git/sha "9da9136a60a14864fd222ed3ec7b1f44c3947365"
                                              :exclusions [io.github.nextjournal/markdown]}}
    :jvm-opts ["-Dclojure.main.report=stderr"
               "-Dclerk.resource_manifest={\"/js/viewer.js\" \"js/viewer.js\"}"] ;;
@@ -41,7 +41,7 @@
    :main-opts ["-m" "shadow.cljs.devtools.cli"]
    :jvm-opts ["-Dclerk.resource_manifest={\"/js/viewer.js\" \"http://localhost:8021/viewer.js\"}"]
    :extra-deps {io.github.nextjournal/clerk.render {:git/url "https://github.com/nextjournal/clerk"
-                                                    :git/sha "e6b5d108bbcc00096b08b17f6468702dd62d36db"
+                                                    :git/sha "9da9136a60a14864fd222ed3ec7b1f44c3947365"
                                                     :deps/root "render"}}}
 
   :build

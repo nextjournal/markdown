@@ -101,14 +101,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🗝 maven cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.m2
             ~/.gitlibs
-          key: ${{ runner.os }}-maven-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+            ~/.deps.clj
+          key: ${{ runner.os }}-maven-${{ hashFiles('deps.edn') }}
 
       - name: 🗝 Clerk Cache
         uses: actions/cache@v2

@@ -6,7 +6,7 @@
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks"]
-   :extra-deps {io.github.nextjournal/clerk {:git/sha "376b4fad497c8b41584f4fc5ed04386235761cbc"
+   :extra-deps {io.github.nextjournal/clerk {:git/sha "40837352400848daa4908e2b5f1dc4891ded9164"
                                              :exclusions [io.github.nextjournal/markdown]}}
    :jvm-opts ["-Dclojure.main.report=stderr"
               "-Dclerk.resource_manifest={\"/js/viewer.js\" \"js/viewer.js\"}"] ;;
@@ -17,9 +17,9 @@
                :paths ["README.md"
                        "CHANGELOG.md"
                        "notebooks/try.clj"
-                       "notebooks/pandoc.clj"
+                       ;;"notebooks/pandoc.clj"
                        "notebooks/parsing_extensibility.clj"
-                       "notebooks/benchmarks.clj"
+                       ;;"notebooks/benchmarks.clj"
                        "notebooks/tight_lists.clj"]}}
 
   :quiet
@@ -41,7 +41,7 @@
    :main-opts ["-m" "shadow.cljs.devtools.cli"]
    :jvm-opts ["-Dclerk.resource_manifest={\"/js/viewer.js\" \"http://localhost:8021/viewer.js\"}"]
    :extra-deps {io.github.nextjournal/clerk.render {:git/url "https://github.com/nextjournal/clerk"
-                                                    :git/sha "376b4fad497c8b41584f4fc5ed04386235761cbc"
+                                                    :git/sha "40837352400848daa4908e2b5f1dc4891ded9164"
                                                     :deps/root "render"}}}
 
   :build

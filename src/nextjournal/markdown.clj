@@ -26,6 +26,20 @@
 
 (def ^Context ctx (.build context-builder))
 
+(def CTXLock (Object.))
+;; Avoid multithreading access to context
+;; - https://www.graalvm.org/latest/reference-manual/js/Multithreading/#multithreading-with-java-and-javascript
+;; - https://github.com/oracle/graaljs/blob/1d96acfa10cbea9e27e78800c2b82cdbad262791/graal-js/src/com.oracle.truffle.js.test.threading/src/com/oracle/truffle/js/test/threading/ConcurrentAccess.java#L173-L240
+
+(defmacro with-context-enter [c & body]
+  `(try (.enter ~c) ~@body (finally (.leave ~c))))
+
+(defmacro with-context-lock [c & body]
+  `(locking CTXLock (with-context-enter ~c ~@body)))
+
+#_(macroexpand '(with-context-lock ctx
+                  (.execute bla)))
+
 (def ^Value MD-imports
   ;; Contructing a `java.io.Reader` first to work around a bug with graal on windows
   ;; see https://github.com/oracle/graaljs/issues/534 and https://github.com/nextjournal/viewers/pull/33
@@ -33,14 +47,16 @@
                    io/input-stream
                    io/reader
                    (as-> r (Source/newBuilder "js" ^Reader r "markdown.mjs")))]
-    (.. ctx
-        (eval (.build source))
-        (getMember "default"))))
+    (with-context-enter ctx
+      (.. ctx
+          (eval (.build source))
+          (getMember "default")))))
 
 (def ^Value tokenize-fn (.getMember MD-imports "tokenizeJSON"))
 
 (defn tokenize [markdown-text]
-  (let [^Value tokens-json (.execute tokenize-fn (to-array [markdown-text]))]
+  (let [^Value tokens-json (with-context-lock ctx
+                             (.execute tokenize-fn (to-array [markdown-text])))]
     (json/read-str (.asString tokens-json) :key-fn keyword)))
 
 (defn parse

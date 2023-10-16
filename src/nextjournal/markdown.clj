@@ -33,14 +33,16 @@
                    io/input-stream
                    io/reader
                    (as-> r (Source/newBuilder "js" ^Reader r "markdown.mjs")))]
-    (.. ctx
-        (eval (.build source))
-        (getMember "default"))))
+    (locking ctx
+      (.. ctx
+          (eval (.build source))
+          (getMember "default")))))
 
 (def ^Value tokenize-fn (.getMember MD-imports "tokenizeJSON"))
 
 (defn tokenize [markdown-text]
-  (let [^Value tokens-json (.execute tokenize-fn (to-array [markdown-text]))]
+  (let [^Value tokens-json (locking ctx
+                             (.execute tokenize-fn (to-array [markdown-text])))]
     (json/read-str (.asString tokens-json) :key-fn keyword)))
 
 (defn parse

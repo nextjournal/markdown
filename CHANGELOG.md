@@ -1,11 +1,14 @@
 # Changelog
 
+## 0.5.146
+* Fix graaljs multithreaded access ([#17](https://github.com/nextjournal/markdown/issues/17))
+
 ## 0.5.144
-* Disable parsing hashtags and internal links by default (#14)
+* Disable parsing hashtags and internal links by default ([#14](https://github.com/nextjournal/markdown/issues/14))
 * Allow conditional application of custom tokenizers depending on document state around the text location
 * Arity 2 to `nextjournal.markdown/parse` was added to customize parsing options (e.g. custom tokenizers) more conveniently.
 * Support hard-breaks
-* Fix conversion to hiccup for tables with empty cells (#13)
+* Fix conversion to hiccup for tables with empty cells ([#13](https://github.com/nextjournal/markdown/issues/13))
 
 ## 0.4.138
 * Uses the official markdown-it/footnote plugin 

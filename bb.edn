@@ -67,6 +67,12 @@
    :depends [cljs:compile:tests]
    :task (shell "yarn node --trace-uncaught out/node-tests.js")}
 
+  link-changelog {:doc "Turns the issue references in the changelog into links"
+                  :task (do (defn tag->issue-link [s]
+                              (clojure.string/replace s (re-pattern "(?<!\\[)#([0-9]+)") "[#$1](https://github.com/nextjournal/markdown/issues/$1)"))
+                            (let [f "CHANGELOG.md"]
+                              (spit f (tag->issue-link (slurp f)))))}
+
   update-meta {:doc "Updates meta.edn with current version (based on commit count currently)."
                :task (spit (doto (fs/file meta-inf-file)
                              (-> fs/parent fs/create-dirs)) {:version (version)})}

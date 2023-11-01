@@ -101,14 +101,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🗝 maven cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.m2
             ~/.gitlibs
-          key: ${{ runner.os }}-maven-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+            ~/.deps.clj
+          key: ${{ runner.os }}-maven-${{ hashFiles('deps.edn') }}
 
       - name: 🗝 Clerk Cache
         uses: actions/cache@v2
@@ -134,6 +133,9 @@ jobs:
 
       - name: 🔧 Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0.3.0
+
+      - name: 🎨 Setup Tailwindcss
+        run: yarn add -D tailwindcss @tailwindcss/typography
 
       - name: 🏗 Build Clerk Notebooks with Bundled SCI Context
         run: bb build:notebooks ${{ github.sha }}

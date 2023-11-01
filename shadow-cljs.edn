@@ -23,5 +23,4 @@
    :output-to "out/sci/viewer.js"
    :release {:output-dir "public/build/js"}
    :js-options {:output-feature-set :es8}
-   :modules {:viewer {:entries [nextjournal.clerk.sci-ext
-                                nextjournal.clerk.static-app]}}}}}
+   :modules {:viewer {:entries [nextjournal.clerk.sci-ext]}}}}}

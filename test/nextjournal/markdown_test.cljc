@@ -756,6 +756,20 @@ Par.
                  "Explain 2"]]]]
              (md.transform/->hiccup parsed+sidenotes))))))
 
+(deftest repro-19-test
+  (is (match? {:type :toc
+               :children [{:type :toc
+                           :heading-level 1
+                           :children [{:type :toc
+                                       :heading-level 2}]}]}
+             (:toc (md/parse "# Title
+some par
+
+$$p(z\\\\mid x) = \\\\frac{p(x\\\\mid z)p(z)}{p(x)}.$$\n\n
+
+## SubTitle
+")))))
+
 (comment
   (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
   (clojure.test/run-tests)

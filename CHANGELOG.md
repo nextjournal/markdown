@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.148
+
+* Fixes a bug in the construction of the table of contents ([#19](https://github.com/nextjournal/markdown/issues/19)).
+
 ## 0.5.146
 * Fix graaljs multithreaded access ([#17](https://github.com/nextjournal/markdown/issues/17))
 

@@ -311,6 +311,7 @@ end"
         doc' (assign-node-id+emoji doc)
         heading (-> doc' (get-in path) (assoc :path path))]
     (cond-> doc'
+      ;; We're only considering top-level headings (e.g. not those contained inside quotes or lists)
       (zero? doc-level)
       (-> (add-to-toc heading)
           (set-title-when-missing heading)))))

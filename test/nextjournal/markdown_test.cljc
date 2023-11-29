@@ -764,6 +764,7 @@ Par.
     (is (= [:div [:p [:img {:src "/url" :alt "foo" :title "title"}]]]
            (md/->hiccup "![foo](/url \"title\")")))
 
+    ;; https://spec.commonmark.org/0.30/#example-578
     (is (= [:div [:p "My " [:img {:alt "foo bar" :src "/path/to/train.jpg" :title "title"}]]]
            (md/->hiccup "My ![foo bar](/path/to/train.jpg  \"title\"   )"))))
 

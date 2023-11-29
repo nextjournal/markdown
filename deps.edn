@@ -15,6 +15,7 @@
                :paths ["README.md"
                        "CHANGELOG.md"
                        "notebooks/try.clj"
+                       "notebooks/images.clj"
                        "notebooks/pandoc.clj"
                        "notebooks/parsing_extensibility.clj"
                        "notebooks/benchmarks.clj"

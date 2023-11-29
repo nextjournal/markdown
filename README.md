@@ -19,7 +19,7 @@ A cross-platform clojure library for [Markdown](https://en.wikipedia.org/wiki/Ma
 
 ## Flavor
 
-By building on top of [markdown-it](https://github.com/markdown-it/markdown-it), we adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) and also comply with extensions from [Github flavoured Markdown](https://github.github.com/gfm). Additionally, we parse $\LaTeX$ formulas (delimited by a $ for inline rendering or $$ for display mode).
+By building on top of [markdown-it](https://github.com/markdown-it/markdown-it), we adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) (with some exceptions[^images]) and also comply with extensions from [Github flavoured Markdown](https://github.github.com/gfm). Additionally, we parse $\LaTeX$ formulas (delimited by a $ for inline rendering or $$ for display mode).
 
 For more details you might have a look at [the set of plugins](https://github.com/nextjournal/markdown/blob/main/src/js/markdown.js) we're using.
 
@@ -93,14 +93,14 @@ We've built hiccup transformation in for convenience, but the same approach can 
 This library is one of the building blocks of [Clerk](https://github.com/nextjournal/clerk) where it is used for rendering _literate fragments_.
 
 ```clojure
-^{:nextjournal.clerk/viewer :markdown}
+^{:nextjournal.clerk/viewer 'nextjournal.clerk.viewer/markdown-viewer}
 data
 ```
 
 The transformation of markdown node types can be customised like this:
 
 ```clojure
-^{:nextjournal.clerk/viewer :html}
+^{:nextjournal.clerk/viewer 'nextjournal.clerk.viewer/html-viewer}
 (md.transform/->hiccup
  (assoc md.transform/default-hiccup-renderers
         ;; :doc specify a custom container for the whole doc
@@ -117,3 +117,6 @@ The transformation of markdown node types can be customised like this:
 ## Extensibility
 
 We added minimal tooling for [extending markdown expressions](https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
+
+[^images]: isolated images are not wrapped in a paragraph
+node, unless they're part of inline content. See more examples in this [notebook](https://nextjournal.github.io/markdown/notebooks/images).

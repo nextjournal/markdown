@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta content="width=device-width, initial-scale=1" name="viewport"><meta content="Unlike commonmark, nextjournal.markdown distinguishes between inline images and block images: image syntax which span a whole line of text produces a direct child of the document and is not wrapped in a paragraph note. Take the following text" property="og:description"><meta content="🖼️ Block Level Images" property="og:title"><meta content="article:clerk" property="og:type"><meta content="summary_large_image" name="twitter:card"><script src="https://cdn.tailwindcss.com?plugins=typography" type="text/javascript"></script><script>tailwind.config = {
+  darkMode: "class",
+  content: ["./tw/viewer.js", "./tw/**/*.edn"],
+  safelist: ['dark'],
+  theme: {
+    extend: {},
+    fontFamily: {
+      sans: ["Fira Sans", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+      serif: ["PT Serif", "serif"],
+      mono: ["Fira Mono", "monospace"]
+    }
+  },
+  variants: {
+    extend: {},
+  },
+  plugins: [],
+}
+</script><style type="text/tailwindcss">@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: 18px;
+  }
+  @media (max-width: 600px) {
+    html {
+      font-size: 16px;
+    }
+  }
+  .font-condensed { font-family: "Fira Sans Condensed", sans-serif; }
+  .font-inter     { font-family: "Inter", sans-serif; }
+  body {
+    @apply font-serif antialiased text-gray-900 sm:overscroll-y-none pb-8;
+  }
+  code, .code {
+    @apply font-mono text-sm text-gray-900 bg-slate-50 px-0.5 py-px rounded dark:bg-gray-800;
+  }
+  code::before, code::after { @apply content-none !important; }
+  h1, h3, h4, h5, h6 {
+    @apply font-condensed font-bold mt-8 first:mt-0;
+  }
+  h2 {
+    /*We cannot collapse margins due to nesting but we want to*/
+    /*keep the h2’s large margin visible*/
+    @apply font-condensed font-bold mt-8 first:mt-2;
+  }
+  h1 { @apply text-4xl; }
+  h2 { @apply text-3xl; }
+  h3 { @apply text-2xl; }
+
+  @media print {
+      h1 { @apply text-2xl !important; }
+      h2 { @apply text-xl !important; }
+      h3 { @apply text-lg !important; }
+  }
+
+  button { @apply focus:outline-none; }
+  strong { @apply font-bold; }
+  em     { @apply italic; }
+  pre    { @apply m-0 font-mono; }
+  table img { @apply inline-block; }
+}
+
+/* Compatibility */
+/* --------------------------------------------------------------- */
+/* TODO: Verify which colors are in use and replace with Tailwind
+   colors accordingly. Move Nj-specific styles out of here. */
+
+:root {
+  --teal-color: #31afd0;
+  --dark-teal-color: #095960;
+  --near-black-color: #2e2e2c;
+  --red-color: #d64242;
+  --dark-blue-color: #1f2937;
+  --dark-blue-60-color: rgba(28, 42, 56, 0.6);
+  --gray-panel-color: rgba(239, 241, 245, 1.000);
+  --brand-color: var(--dark-blue-color);
+  --link-color: #5046e4;
+  --command-bar-selected-color: var(--teal-color);
+}
+
+.serif      { @apply font-serif; }
+.sans-serif { @apply font-sans; }
+.monospace  { @apply font-mono; }
+.inter      { @apply font-inter; }
+
+.border-color-teal { border-color: var(--dark-teal-color); }
+.teal { color: var(--teal-color); }
+.bg-dark-blue { background: var(--dark-blue-color); }
+.bg-dark-blue-60 { background: rgba(28, 42, 56, 0.6); }
+.bg-gray-panel { background: var(--gray-panel-color); }
+.text-dark-blue  { color: var(--dark-blue-color); }
+.text-dark-blue-60 { color: var(--dark-blue-60-color); }
+.border-dark-blue-30 { border-color: rgba(28, 42, 56, 0.6); }
+.text-brand { color: var(--dark-blue-color); }
+.bg-brand { background: var(--dark-blue-color); }
+.text-selected { color: white; }
+.red { color: var(--red-color); }
+
+/* Disclose Button */
+/* --------------------------------------------------------------- */
+
+.disclose {
+  @apply content-none border-solid cursor-pointer inline-block relative mr-[3px] top-[-2px] transition-all;
+  border-color: var(--near-black-color) transparent;
+  border-width: 6px 4px 0;
+}
+.disclose:hover {
+  border-color: var(--near-black-color) transparent;
+}
+.dark .disclose,
+.dark .disclose:hover {
+  border-color: white transparent;
+}
+.disclose.collapsed {
+  @apply rotate-[-90deg];
+}
+
+/* Layout */
+/* --------------------------------------------------------------- */
+
+.page {
+  @apply max-w-5xl mx-auto px-12 box-border flex-shrink-0;
+}
+.max-w-prose { @apply max-w-[46rem] !important; }
+.max-w-wide  { @apply max-w-3xl !important; }
+
+/* List Styles */
+/* --------------------------------------------------------------- */
+
+.task-list-item + .task-list-item,
+.markdown-viewer ul ul {
+  @apply mt-1 mb-0;
+}
+
+/* compact TOC */
+.markdown-viewer .toc ul {
+  list-style: none;
+  @apply my-1;
+}
+
+/* Code Viewer */
+/* --------------------------------------------------------------- */
+
+.code-viewer {
+  @apply font-mono bg-slate-100 rounded-sm text-sm overflow-x-auto dark:bg-gray-800;
+}
+.code-listing  {
+    @apply -ml-8 -mr-8 relative !important;
+}
+.code-viewer .cm-content {
+  @apply py-4 px-8;
+}
+@media (min-width: 960px){
+    .notebook-viewer .code-viewer .cm-content {
+        @apply pl-12;
+    }
+    .notebook-viewer .code-listing {
+        width: 48rem !important;
+        @apply -ml-12 mr-0 !important;
+    }
+}
+/* Don’t show focus outline when double-clicking cell in Safari */
+.cm-scroller { @apply focus:outline-none; }
+
+/* Syntax Highlighting */
+/* --------------------------------------------------------------- */
+
+.inspected-value { @apply text-xs font-mono leading-[1.25rem]; }
+.cmt-strong, .cmt-heading { @apply font-bold; }
+.cmt-italic, .cmt-emphasis { @apply italic; }
+.cmt-strikethrough { @apply line-through; }
+.cmt-link { @apply underline; }
+.untyped-value { @apply whitespace-nowrap; }
+
+.cm-editor, .cmt-default, .result-viewer {
+  @apply text-slate-800 dark:text-slate-300;
+}
+.cmt-keyword {
+  @apply text-purple-800 dark:text-pink-400;
+}
+.cmt-atom, .cmt-bool, .cmt-url, .cmt-contentSeparator, .cmt-labelName {
+  @apply text-blue-900 dark:text-blue-300;
+}
+.cmt-inserted, .cmt-literal {
+  @apply text-emerald-700 dark:text-emerald-200;
+}
+.cmt-string, .cmt-deleted {
+  @apply text-rose-700 dark:text-sky-300;
+}
+.cmt-italic.cmt-string {
+  @apply dark:text-sky-200;
+}
+.cmt-regexp, .cmt-escape {
+  @apply text-orange-500 dark:text-orange-300;
+}
+.cmt-variableName {
+  @apply text-blue-800 dark:text-sky-300;
+}
+.cmt-typeName, .cmt-namespace {
+  @apply text-emerald-600 dark:text-emerald-300;
+}
+.cmt-className {
+  @apply text-teal-600 dark:text-teal-200;
+}
+.cmt-macroName {
+  @apply text-teal-700 dark:text-teal-200;
+}
+.cmt-propertyName {
+  @apply text-blue-700 dark:text-blue-200;
+}
+.cmt-comment {
+  @apply text-slate-500 dark:text-slate-400;
+}
+.cmt-meta {
+  @apply text-slate-600 dark:text-slate-400;
+}
+.cmt-invalid {
+  @apply text-red-500 dark:text-red-300;
+}
+
+.result-data {
+  @apply font-mono text-sm overflow-x-auto whitespace-nowrap leading-normal;
+}
+.result-data::-webkit-scrollbar, .path-nav::-webkit-scrollbar {
+  @apply h-0;
+}
+.result-data-collapsed {
+  @apply whitespace-nowrap;
+}
+.result-data-field {
+  @apply ml-4 whitespace-nowrap;
+}
+.result-data-field-link{
+  @apply ml-4 whitespace-nowrap cursor-pointer;
+}
+.result-data-field-link:hover {
+  @apply text-black bg-black/5;
+}
+.result-text-empty {
+  color: rgba(0,0,0,.3);
+}
+.browsify-button:hover {
+  box-shadow: -2px 0 0 2px #edf2f7;
+}
+
+/* Prose */
+/* --------------------------------------------------------------- */
+
+.notebook-viewer,
+.markdown-viewer {
+  @apply prose
+    dark:prose-invert
+    prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+    dark:prose-a:text-blue-300
+    prose-p:mt-4 prose-p:leading-snug
+    prose-ol:mt-4 prose-ol:mb-6 prose-ol:leading-snug
+    prose-ul:mt-4 prose-ul:mb-6 prose-ul:leading-snug
+    prose-blockquote:mt-4 prose-blockquote:leading-snug
+    prose-hr:mt-6 prose-hr:border-t-2 prose-hr:border-solid prose-hr:border-slate-200
+    prose-figure:mt-4
+    prose-figcaption:mt-2 prose-figcaption:text-xs
+    prose-headings:mb-4
+    prose-table:mt-0
+    prose-th:mb-0
+    prose-img:my-0
+    prose-code:font-medium prose-code:bg-slate-100
+    max-w-none;
+}
+.markdown-viewer blockquote p:first-of-type:before,
+.markdown-viewer blockquote p:last-of-type:after {
+  @apply content-none;
+}
+.markdown-node-viewer.result-viewer.fragment-item {
+    @apply mb-0 !important;
+}
+
+figcaption .markdown-viewer {
+    @apply text-xs text-slate-500;
+}
+
+figcaption .markdown-viewer a {
+    @apply underline;
+}
+/* Images */
+/* --------------------------------------------------------------- */
+
+
+/* Todo Lists */
+/* --------------------------------------------------------------- */
+
+.contains-task-list {
+  @apply pl-6 list-none;
+}
+.contains-task-list input[type="checkbox"] {
+  @apply appearance-none h-4 w-4 rounded border border-slate-200 relative mr-[0.3rem] ml-[-1.5rem] top-[0.15rem];
+}
+.contains-task-list input[type="checkbox"]:checked {
+  @apply border-indigo-600 bg-indigo-600 bg-no-repeat bg-contain;
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+}
+
+/* Markdown TOC */
+/* --------------------------------------------------------------- */
+
+.markdown-viewer .toc      { @apply mt-4; }
+.markdown-viewer h1 + .toc { @apply mt-8; }
+
+.markdown-viewer .toc h1,
+.markdown-viewer .toc h2,
+.markdown-viewer .toc h3,
+.markdown-viewer .toc h4,
+.markdown-viewer .toc h5,
+.markdown-viewer .toc h6 {
+  @apply text-base text-indigo-600 font-sans my-0;
+}
+.markdown-viewer .toc a {
+  @apply text-indigo-600 font-normal no-underline hover:underline;
+}
+.markdown-viewer .toc li    { @apply m-0; }
+.markdown-viewer .toc ul ul { @apply pl-4; }
+
+/* Notebook Spacing */
+/* --------------------------------------------------------------- */
+
+.markdown-viewer *:first-child:not(.code-viewer):not(li):not(h2):not(.sidenote) { @apply mt-0; }
+/*.viewer + .viewer { @apply mt-6; }*/
+.viewer + .result-viewer { @apply mt-0; }
+.code-viewer + .result-viewer { @apply mt-3; }
+.markdown-viewer + .markdown-viewer { @apply mt-0; }
+
+/* Sidenotes */
+/* --------------------------------------------------------------- */
+
+.sidenote-ref {
+  @apply top-[-0.5em] w-auto h-auto inline border-0 bg-transparent m-0 pointer-events-none;
+}
+.sidenote {
+  @apply block font-sans text-xs mt-4 bg-slate-100 dark:bg-slate-800 p-4;
+  font-style: normal;
+  font-weight: normal;
+}
+.sidenote-container {
+  @apply mb-4;
+}
+.sidenote-main-col *:last-child {
+  @apply mb-0;
+}
+.sidenote-main-col {
+  @apply w-full;
+}
+.sidenote-main-col > ul > li:first-child,
+.sidenote-main-col > ol > li:first-child {
+  @apply mt-0;
+}
+@media (min-width: 860px) {
+  .sidenote sup { @apply inline; }
+  .sidenote-column {
+    @apply w-[165px] -mr-[205px] flex-shrink-0;
+  }
+  .sidenote {
+    @apply bg-transparent dark:bg-transparent p-0;
+  }
+  .sidenote:first-child {
+    @apply mt-1;
+  }
+  .sidenotes-layout .markdown-viewer {
+    @apply pr-[241px];
+  }
+  .sidenote-container {
+    @apply relative flex justify-between;
+  }
+  .sidenote-container > *:not(.sidenote-column) {
+    margin-right: 40px;
+  }
+  .sidenote:last-of-type {
+
+  }
+  .sidenotes-layout h1 {
+    @apply w-[756px] !important;
+  }
+}
+.code-viewer + .viewer:not(.code-viewer):not(.code-viewer-folded),
+.code-viewer-folded + .viewer:not(.code-viewer):not(.code-viewer-folded),
+.result-viewer:not(.markdown-node-viewer) + .result-viewer {
+  @apply mt-2;
+}
+.code-viewer + .code-viewer-folded {
+  @apply mt-4;
+}
+.result-viewer {
+  @apply leading-tight mb-6;
+}
+.code-viewer.fragment-item.result-viewer {
+  @apply mb-0 !important;
+}
+.result-viewer figure {
+  @apply mt-0 !important;
+}
+@media (min-width: 768px) {
+  .devcard-desc > div {
+    @apply max-w-full m-0;
+  }
+}
+
+/* Command Palette */
+/* --------------------------------------------------------------- */
+
+.nj-commands-input {
+  @apply bg-transparent text-white;
+}
+.nj-context-menu-item:hover:not([disabled]) {
+  @apply cursor-pointer;
+  background-color: rgba(255,255,255,.14);
+}
+
+/* Devdocs */
+/* --------------------------------------------------------------- */
+
+.logo, .logo-white {
+  @apply block indent-[-999em];
+  background: url(/images/nextjournal-logo.svg) center center no-repeat;
+}
+.devdocs-body {
+  @apply font-inter;
+}
+
+/* Workarounds */
+/* --------------------------------------------------------------- */
+
+/* Fixes vega viewer resizing into infinity */
+.vega-embed .chart-wrapper { @apply h-auto !important; }
+/* fixes fraction separators being overridden by tw’s border-color */
+.katex * { @apply border-black; }
+
+@media print {
+    .dark-mode-toggle,
+    .toc-toggle { @apply hidden; }
+    .notebook-viewer { @apply pt-0; font-size: 12pt !important; margin-left: 0 !important; }
+    .code-viewer .cm-content,
+    .viewer-code .cm-content { @apply whitespace-pre-wrap !important; overflow: none; }
+    .code-viewer .cm-line { font-size: 12pt !important; }
+    html * { page-break-inside: avoid !important; }
+    .toc-panel { @apply hidden; }
+}
+</style><script src="./../../js/viewer.js" type="module"></script><link href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" rel="stylesheet" type="text/css"><link href="https://fonts.bunny.net" rel="preconnect"><link href="https://fonts.bunny.net/css?family=fira-mono:400,700%7Cfira-sans:400,400i,500,500i,700,700i%7Cfira-sans-condensed:700,700i%7Cpt-serif:400,400i,700,700i" rel="stylesheet" type="text/css"></head><body class="dark:bg-gray-900"><div id="clerk"></div><script type="module">let viewer = nextjournal.clerk.sci_env
+let state = "{:bundle? false, :path->doc {\"notebooks/images\" {:path [], :nextjournal/value {:toc [{:title \"Block Level Images\", :emoji \"🖼️\", :path \"#block-level-images\", :items []}], :sidenotes? false, :toc-visibility false, :atom-var-name->state #viewer-eval (nextjournal.clerk.render/intern-atoms! {}), :ns #viewer-eval (ns images), :file \"notebooks/images.clj\", :scope images, :bundle? false, :header {:path [], :nextjournal/value [:div.viewer.w-full.max-w-prose.px-8.not-prose.mt-3 [:div.mb-8.text-xs.sans-serif.text-slate-400 nil [:<> [:a.font-medium.border-b.border-dotted.border-slate-300.hover:text-indigo-500.hover:border-indigo-500.dark:border-slate-500.dark:hover:text-white.dark:hover:border-white.transition {:href \"./../../\"} \"Index\"] [:span.mx-2 \"•\"]] [:span \"Served from \" [:a.font-medium.border-b.border-dotted.border-slate-300.hover:text-indigo-500.hover:border-indigo-500.dark:border-slate-500.dark:hover:text-white.dark:hover:border-white.transition {:href \"https://clerk.vision\"} \"Clerk\"] nil]]], :nextjournal/viewer {:name nextjournal.clerk.viewer/html-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-html, :hash \"5dtFMoRpfSur3BJ5RKN8sHB4mECYMZ\"}}, :open-graph {:type \"article:clerk\", :title \"🖼️ Block Level Images\", :description \"Unlike commonmark, nextjournal.markdown distinguishes between inline images and block images: image syntax which span a whole line of text produces a direct child of the document and is not wrapped in a paragraph note. Take the following text\"}, :title \"🖼️ Block Level Images\", :blocks [{:path [], :nextjournal/value [:div.viewer.markdown-viewer.w-full.max-w-prose.px-8 {:data-block-id \"user/markdown-5dscnJb7F7KeFd2e9dv5kKXczFSDNs\"} [\"h1\" {:id \"block-level-images\"} [:<> \"🖼️ Block Level Images\"]]], :nextjournal/render-opts {:id \"user/markdown-5dscnJb7F7KeFd2e9dv5kKXczFSDNs\"}, :nextjournal/viewer {:name nextjournal.clerk.viewer/markdown-node-viewer, :render-fn #viewer-fn identity, :hash \"5dsjzwxRkivFXiBf1NDMWmH54cVWV1\"}} {:path [], :nextjournal/value [:div.viewer.markdown-viewer.w-full.max-w-prose.px-8 {:data-block-id \"images/markdown-5drxSLsWkX8kxiQvwo5w6wEjQYhP6n\"} [:p [:<> \"Unlike \"] [:a {:href \"https://spec.commonmark.org/0.30/#example-571\"} [:<> \"commonmark\"]] [:<> \",\"] [#viewer-eval nextjournal.clerk.render/inspect-presented {:nextjournal/value [:<> \" \"], :nextjournal/viewer {:name nextjournal.clerk.viewer/html-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-html, :hash \"5dtFMoRpfSur3BJ5RKN8sHB4mECYMZ\"}}] [:<> \"nextjournal.markdown distinguishes between inline images and \"] [:em [:<> \"block images\"]] [:<> \": image syntax which span a whole\"] [#viewer-eval nextjournal.clerk.render/inspect-presented {:nextjournal/value [:<> \" \"], :nextjournal/viewer {:name nextjournal.clerk.viewer/html-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-html, :hash \"5dtFMoRpfSur3BJ5RKN8sHB4mECYMZ\"}}] [:<> \"line of text produces a direct child of the document and is not wrapped in a paragraph note. Take the following text\"]]], :nextjournal/render-opts {:id \"images/markdown-5drxSLsWkX8kxiQvwo5w6wEjQYhP6n\"}, :nextjournal/viewer {:name nextjournal.clerk.viewer/markdown-node-viewer, :render-fn #viewer-fn identity, :hash \"5dsjzwxRkivFXiBf1NDMWmH54cVWV1\"}} {:path [], :nextjournal/value {:nextjournal/presented {:nextjournal/value [:pre \"This example shows how we're parsing images, the following is a _block image_\\n\\n![block level image](https://images.freeimages.com/images/large-previews/773/koldalen-4-1384902.jpg)\\n\\nwhile this is an inline ![inline](https://github.com/nextjournal/clerk/actions/workflows/main.yml/badge.svg) image.\\n\"], :nextjournal/viewer {:name nextjournal.clerk.viewer/html-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-html, :hash \"5dtFMoRpfSur3BJ5RKN8sHB4mECYMZ\"}, :nextjournal/render-opts {:id \"images/text-with-images-result\"}}, :nextjournal/blob-id \"5dsMQRcUR3EqrhAQLn5B1PUa9TM7Gu\", :nextjournal/fetch-opts {:blob-id \"5dsMQRcUR3EqrhAQLn5B1PUa9TM7Gu\"}, :nextjournal/hash \"8VxpStW4wbjLqg1xgo1YYyc5EKQceHrLgHLSFT74LKuf9pw3mkz5PZWFkQ5MQmitz1uDrA6hYMRM7RWxbWpp7PxumB\"}, :nextjournal/render-opts {:id \"images/text-with-images-result\"}, :nextjournal/viewer {:name nextjournal.clerk.viewer/result-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-result, :hash \"5dryaWFamQn5VBuSHLJXGpfgbLUTKh\"}} {:path [], :nextjournal/value [:div.viewer.markdown-viewer.w-full.max-w-prose.px-8 {:data-block-id \"images/markdown-5dtr4PU9XVdvjVvWVtpkQ4RTCSCxXL\"} [:p [:<> \"This is parsed as\"]]], :nextjournal/render-opts {:id \"images/markdown-5dtr4PU9XVdvjVvWVtpkQ4RTCSCxXL\"}, :nextjournal/viewer {:name nextjournal.clerk.viewer/markdown-node-viewer, :render-fn #viewer-fn identity, :hash \"5dsjzwxRkivFXiBf1NDMWmH54cVWV1\"}} {:path [], :nextjournal/value {:nextjournal/presented {:path [], :nextjournal/value \"{:type :doc,\\n :content\\n [{:type :paragraph,\\n   :content\\n   [{:type :text,\\n     :text\\n     \\\"This example shows how we're parsing images, the following is a \\\"}\\n    {:type :em, :content [{:type :text, :text \\\"block image\\\"}]}]}\\n  {:type :image,\\n   :content [{:type :text, :text \\\"block level image\\\"}],\\n   :attrs\\n   {:src\\n    \\\"https://images.freeimages.com/images/large-previews/773/koldalen-4-1384902.jpg\\\",\\n    :alt \\\"\\\"}}\\n  {:type :paragraph,\\n   :content\\n   [{:type :text, :text \\\"while this is an inline \\\"}\\n    {:type :image,\\n     :content [{:type :text, :text \\\"inline\\\"}],\\n     :attrs\\n     {:src\\n      \\\"https://github.com/nextjournal/clerk/actions/workflows/main.yml/badge.svg\\\",\\n      :alt \\\"\\\"}}\\n    {:type :text, :text \\\" image.\\\"}]}]}\", :nextjournal/render-opts {:language \"clojure\", :id \"images/anon-expr-5dr1bkQoj29txmss9E5eQrFkjskQ6f-result\"}, :nextjournal/visibility {:code :hide, :result :show}, :nextjournal/viewer {:name nextjournal.clerk.viewer/code-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-code, :hash \"5du2mraURqz2bpV4BGF3B7gNDyCYZJ\"}}, :nextjournal/blob-id \"5dsE3xJNbeqUBggrkYSzPxxfq695B3\", :nextjournal/fetch-opts {:blob-id \"5dsE3xJNbeqUBggrkYSzPxxfq695B3\"}, :nextjournal/hash \"8VuXTP5q5AfMamF1J7NeDb4XQKSvSLUbWjiBLC8TZsYdsyRB4gceaXhBQsYWjsZShuhF4QMAnYbpAQp5Wc3wgpemT1\"}, :nextjournal/render-opts {:language \"clojure\", :id \"images/anon-expr-5dr1bkQoj29txmss9E5eQrFkjskQ6f-result\"}, :nextjournal/visibility {:code :hide, :result :show}, :nextjournal/viewer {:name nextjournal.clerk.viewer/result-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-result, :hash \"5dryaWFamQn5VBuSHLJXGpfgbLUTKh\"}} {:path [], :nextjournal/value [:div.viewer.markdown-viewer.w-full.max-w-prose.px-8 {:data-block-id \"images/markdown-5drCa9CaUzBBTCVjjWyCvomvvXvxpg\"} [:p [:<> \"This allows for a different rendering of images, for instance we might want to render block images with a caption:\"]]], :nextjournal/render-opts {:id \"images/markdown-5drCa9CaUzBBTCVjjWyCvomvvXvxpg\"}, :nextjournal/viewer {:name nextjournal.clerk.viewer/markdown-node-viewer, :render-fn #viewer-fn identity, :hash \"5dsjzwxRkivFXiBf1NDMWmH54cVWV1\"}} {:path [], :nextjournal/value \"(md.transform/->hiccup\\n (assoc md.transform/default-hiccup-renderers\\n        :image (fn [{:as _ctx ::md.transform/keys [parent]} {:as node :keys [attrs]}]\\n                 (if (= :doc (:type parent))\\n                   [:figure.image\\n                    [:img (assoc attrs :alt (md.transform/->text node))]\\n                    [:figcaption.text-center.mt-1 (md.transform/->text node)]]\\n                   [:img.inline (assoc attrs :alt (md.transform/->text node))])))\\n (md/parse text-with-images))\", :nextjournal/render-opts {:loc {:line 30, :end-line 39, :column 1, :end-column 30}, :id \"images/anon-expr-5dtVVkbjiAtazAnYrEx1XGtkqQwUny-code\"}, :nextjournal/viewer {:name nextjournal.clerk.viewer/code-block-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-code-block, :hash \"5dtogCRMFvgKZ3gMGuwZAef65oxRZD\"}} {:path [], :nextjournal/value {:nextjournal/presented {:path [], :nextjournal/value [:div [:p \"This example shows how we're parsing images, the following is a \" [:em \"block image\"]] [:figure.image [:img {:src \"https://images.freeimages.com/images/large-previews/773/koldalen-4-1384902.jpg\", :alt \"block level image\"}] [:figcaption.text-center.mt-1 \"block level image\"]] [:p \"while this is an inline \" [:img.inline {:src \"https://github.com/nextjournal/clerk/actions/workflows/main.yml/badge.svg\", :alt \"inline\"}] \" image.\"]], :nextjournal/visibility {:code :show, :result :show}, :nextjournal/viewer {:name nextjournal.clerk.viewer/html-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-html, :hash \"5dtFMoRpfSur3BJ5RKN8sHB4mECYMZ\"}, :nextjournal/render-opts {:id \"images/anon-expr-5dtVVkbjiAtazAnYrEx1XGtkqQwUny-result\"}}, :nextjournal/blob-id \"5du96BvadrXNs1WiVJdP5Kd2ZLdaP1\", :nextjournal/fetch-opts {:blob-id \"5du96BvadrXNs1WiVJdP5Kd2ZLdaP1\"}, :nextjournal/hash \"8VxARaYoErx2q7A5kHJM29c1mUiR9KQ6qhAtueoUWTiQ3QtxjFs9Tsj6BeesHAezyswZ9afdFoUnsGWxztLDHG4tYm\"}, :nextjournal/render-opts {:id \"images/anon-expr-5dtVVkbjiAtazAnYrEx1XGtkqQwUny-result\"}, :nextjournal/visibility {:code :show, :result :show}, :nextjournal/viewer {:name nextjournal.clerk.viewer/result-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-result, :hash \"5dryaWFamQn5VBuSHLJXGpfgbLUTKh\"}}]}, :nextjournal/viewer {:name nextjournal.clerk.viewer/notebook-viewer, :render-fn #viewer-fn nextjournal.clerk.render/render-notebook, :hash \"5dsiHybTyGGTEpReRaV7nfNxoDgnKx\"}}}, :current-path \"notebooks/images\", :resource->url {\"/js/viewer.js\" \"js/viewer.js\"}, :index #object[java.net.URL 0x3be5eccd \"file:/home/runner/.gitlibs/libs/io.github.nextjournal/clerk/e8f275b5cf077ec9441e404c1885ff0b6ee0aef9/src/nextjournal/clerk/index.clj\"]}".replaceAll('nextjournal.clerk.view/escape-closing-script-tag', 'script')
+viewer.init(viewer.read_string(state))
+</script></body></html>

@@ -74,11 +74,12 @@ a paragraph
    :blockquote (partial into-markup [:blockquote])
    :ruler (constantly [:hr])
 
-   ;; images
-   :image (fn [{:as ctx ::keys [parent]} {:as node :keys [attrs]}]
-            (if (= :paragraph (:type parent))
-              [:img.inline attrs]
-              [:figure.image [:img attrs] (into-markup [:figcaption] ctx node)]))
+   ;; by default we always wrap images in paragraph to restore compliance with commonmark
+   :image (fn [{:as _ctx ::keys [parent]} {:as node :keys [attrs]}]
+            (let [img-markup [:img (assoc attrs :alt (->text node))]]
+              (if (= :doc (:type parent))
+                [:p img-markup]
+                img-markup)))
 
    ;; code
    :code (partial into-markup [:pre.viewer-code.not-prose])

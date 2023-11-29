@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Comply with commonmark's suggested rendering of images by default ([#18](https://github.com/nextjournal/markdown/issues/18)). This is a breaking change.
+
 ## 0.5.148
 
 * Fixes a bug in the construction of the table of contents ([#19](https://github.com/nextjournal/markdown/issues/19)).

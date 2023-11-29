@@ -756,6 +756,31 @@ Par.
                  "Explain 2"]]]]
              (md.transform/->hiccup parsed+sidenotes))))))
 
+(deftest commonmark-compliance
+  ;; we need an extra [:div] for embedding purposes, which might be dropped e.g. by configuring the `:doc` type renderer to use a react fragment `[:<>]`
+
+  (testing "images"
+    ;; https://spec.commonmark.org/0.30/#example-571
+    (is (= [:div [:p [:img {:src "/url" :alt "foo" :title "title"}]]]
+           (md/->hiccup "![foo](/url \"title\")")))
+
+    ;; https://spec.commonmark.org/0.30/#example-578
+    (is (= [:div [:p "My " [:img {:alt "foo bar" :src "/path/to/train.jpg" :title "title"}]]]
+           (md/->hiccup "My ![foo bar](/path/to/train.jpg  \"title\"   )"))))
+
+  (testing "loose vs. tight lists"
+    ;; https://spec.commonmark.org/0.30/#example-314 (loose list)
+    (is (= [:div [:ul [:li [:p "a"]] [:li [:p "b"]] [:li [:p "c"]]]]
+           (md/->hiccup "- a\n- b\n\n- c")))
+
+    ;; https://spec.commonmark.org/0.30/#example-319 (tight with loose sublist inside)
+    (is (= [:div [:ul [:li [:<> "a"] [:ul [:li [:p "b"] [:p "c"]]]] [:li [:<> "d"]]]]
+           (md/->hiccup "- a\n  - b\n\n    c\n- d\n")))
+
+    ;; https://spec.commonmark.org/0.30/#example-320 (tight with blockquote inside)
+    (is (= [:div [:ul [:li [:<> "a"] [:blockquote [:p "b"]]] [:li [:<> "c"]]]]
+           (md/->hiccup "* a\n  > b\n  >\n* c")))))
+
 (deftest repro-19-test
   (is (match? {:type :toc
                :children [{:type :toc

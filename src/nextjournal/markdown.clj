@@ -18,7 +18,6 @@
     ;; matching the poliglot library versions specified in deps.edn
     (.out System/out)
     (.err System/err)
-    (.allowIO true)
     (.allowExperimentalOptions true)
     (.allowAllAccess true)
     (.allowNativeAccess true)

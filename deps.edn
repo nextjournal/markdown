@@ -1,7 +1,18 @@
 {:paths ["src" "resources"]
  :deps {applied-science/js-interop {:mvn/version "0.3.3"}
         org.clojure/data.json {:mvn/version "2.4.0"}
-        org.graalvm.js/js {:mvn/version "21.3.2.1"}}
+
+        ;; recommended graal polyglot dependency setup as of graal JDK 23
+        ;; https://www.graalvm.org/latest/reference-manual/embed-languages/#dependency-setup
+        ;; (and example https://github.com/graalvm/polyglot-embedding-demo/blob/main/pom.xml)
+        ;; 1) org.graalvm.polyglot/polyglot
+        ;; 2) org.graalvm.polyglot/js
+        ;; ---
+        ;; 2) is a maven artifact of type 'pom' not supported by clojure deps, its pom points at
+        org.graalvm.js/js-language {:mvn/version "24.0.0"}
+        ;; 1) is a dep of org.graalvm.js/js-language
+        }
+
 
  :aliases
  {:nextjournal/clerk

@@ -2,7 +2,10 @@
  :deps {applied-science/js-interop {:mvn/version "0.3.3"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.graalvm.js/js {:mvn/version "21.3.2.1"}
-        org.commonmark/commonmark {:mvn/version "0.22.0"}}
+
+        ;; commonmark
+        org.commonmark/commonmark {:mvn/version "0.22.0"}
+        org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.22.0"}}
 
  :aliases
  {:nextjournal/clerk

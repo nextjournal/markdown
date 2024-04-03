@@ -1,10 +1,16 @@
 (ns nextjournal.markdown.parser2
-  (:require [clojure.zip :as z]
-            [nextjournal.markdown.parser :as parser])
-  (:import (org.commonmark.parser Parser)
+  (:require [clojure.string :as str]
+            [clojure.zip :as z]
+            [nextjournal.markdown.parser :as parser]
+            [nextjournal.markdown.parser2.types])
+  (:import (nextjournal.markdown.parser2.types InlineFormula)
+           (org.commonmark.parser Parser Parser$ParserExtension Parser$Builder)
+           (org.commonmark.parser.block AbstractBlockParser AbstractBlockParserFactory BlockStart)
+           (org.commonmark.text Characters)
+           (org.commonmark.parser.delimiter DelimiterProcessor)
            (org.commonmark.ext.task.list.items TaskListItemsExtension
                                                TaskListItemMarker)
-           (org.commonmark.node Node AbstractVisitor
+           (org.commonmark.node Node Nodes AbstractVisitor CustomNode Delimited
             ;;;;;;;;;; node types ;;;;;;;;;;;;;;;;;;
                                 Document
                                 BlockQuote
@@ -27,10 +33,39 @@
 
 (set! *warn-on-reflection* true)
 
-(def ^Parser parser (.. Parser
-                        builder
-                        (extensions [(TaskListItemsExtension/create)])
-                        build))
+(def InlineFormulaExtension
+  (proxy [Object Parser$ParserExtension] []
+    (extend [^Parser$Builder pb]
+      (.customDelimiterProcessor
+       pb
+       (proxy [Object DelimiterProcessor] []
+         (getOpeningCharacter [] \$)
+         (getClosingCharacter [] \$)
+         (getMinLength [] 1)
+         (process [open close]
+           (if (and (= 1 (.length open))
+                    (= 1 (.length close)))
+             (let [text (str/join
+                         (map #(.getLiteral %)
+                              (seq (Nodes/between (.. open getOpener) (.. close getCloser)))))]
+               (doseq [^Node n (Nodes/between (.. open getOpener)
+                                              (.. close getCloser))]
+                 (.unlink n))
+               (.. open getOpener
+                   ;; needs a named class `gen-class`
+                   (insertAfter (new InlineFormula text)))
+               1)
+             0)))))))
+
+(comment
+  (parse "this is inline $\\phi$ math"))
+
+(def ^Parser parser
+  (.. Parser
+      builder
+      (extensions [(TaskListItemsExtension/create)
+                   InlineFormulaExtension])
+      build))
 
 (defmulti open-node (fn [_ctx node] (type node)))
 (defmulti close-node (fn [_ctx node] (type node)))
@@ -91,6 +126,8 @@
                    SoftLineBreak (swap! !loc z/append-child {:type :softbreak})
                    HardLineBreak (swap! !loc z/append-child {:type :softbreak})
                    TaskListItemMarker (swap! !loc handle-todo-list node)
+                   InlineFormula (swap! !loc z/append-child {:type :inline-formula
+                                                             :text (.getLiteral node)})
                    (if (get-method open-node (class node))
                      (do
                        (swap! !loc open-node node)

@@ -2,16 +2,12 @@
   (:require [clojure.string :as str]
             [clojure.zip :as z]
             [nextjournal.markdown.parser :as parser]
-            [nextjournal.markdown.parser2.types])
-  (:import (nextjournal.markdown.parser2.types InlineFormula)
-           (org.commonmark.parser Parser Parser$ParserExtension Parser$Builder)
-           (org.commonmark.parser.block AbstractBlockParser AbstractBlockParserFactory BlockStart)
-           (org.commonmark.text Characters)
-           (com.vladsch.flexmark.ext.footnotes FootnoteExtension)
+            [nextjournal.markdown.parser2.types]
+            [nextjournal.markdown.parser2.footnotes :as footnotes])
+  (:import (org.commonmark.parser Parser Parser$ParserExtension Parser$Builder)
            (org.commonmark.parser.delimiter DelimiterProcessor)
-           (org.commonmark.ext.task.list.items TaskListItemsExtension
-                                               TaskListItemMarker)
-           (org.commonmark.node Node Nodes AbstractVisitor CustomNode Delimited
+           (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
+           (org.commonmark.node Node Nodes AbstractVisitor
             ;;;;;;;;;; node types ;;;;;;;;;;;;;;;;;;
                                 Document
                                 BlockQuote
@@ -32,7 +28,10 @@
                                 ThematicBreak
                                 SoftLineBreak
                                 HardLineBreak
-                                Image)))
+                                Image)
+   ;; custom types
+           (nextjournal.markdown.parser2.types InlineFormula
+                                               Footnote)))
 
 (set! *warn-on-reflection* true)
 ;; TODO:
@@ -81,13 +80,14 @@
   (.. Parser
       builder
       (extensions [(TaskListItemsExtension/create)
-                   InlineFormulaExtension])
+                   InlineFormulaExtension
+                   (footnotes/extension)])
       build))
 
 ;; helpers / ctx
 (def ^:dynamic *in-tight-list?* false)
 (defn paragraph-type [] (if *in-tight-list?* :plain :paragrpah))
-(defn in-tight-list? [node] (if (instance? ListBlock node) (.isTight node) *in-tight-list?*))
+(defn in-tight-list? [node] (if (instance? ListBlock node) (.isTight ^ListBlock node) *in-tight-list?*))
 (defmacro with-tight-list [node & body]
   `(binding [*in-tight-list?* (in-tight-list? ~node)]
      ~@body))
@@ -132,6 +132,10 @@
                            :attrs {:src (.getDestination node) :title (.getTitle node)}
                            :content []}) z/down z/rightmost))
 
+(defmethod open-node Footnote [loc ^Footnote node]
+  (-> loc (z/append-child {:type :footnote :label (.getLabel node)
+                           :content []}) z/down z/rightmost))
+
 (defn handle-todo-list [loc ^TaskListItemMarker node]
   (-> loc
       (z/edit assoc :type :todo-item :attrs {:checked (.isChecked node)})
@@ -160,7 +164,7 @@
                    (if (get-method open-node (class node))
                      (with-tight-list node
                        (swap! !loc open-node node)
-                       (.visitChildren this node)
+                       (proxy-super visitChildren node)
                        (swap! !loc close-node node))
                      (prn :open-node/not-implemented node))))))
 

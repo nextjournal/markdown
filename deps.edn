@@ -5,8 +5,7 @@
 
         ;; commonmark
         org.commonmark/commonmark {:mvn/version "0.22.0"}
-        org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.22.0"}
-        com.vladsch.flexmark/flexmark-ext-footnotes {:mvn/version "0.64.8"}}
+        org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.22.0"}}
 
  :aliases
  {:nextjournal/clerk

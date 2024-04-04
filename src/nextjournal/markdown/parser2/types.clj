@@ -18,6 +18,18 @@
 (defn inline-formula-getClosingDelimiter [this] "$")
 (defn inline-formula-getOpeningDelimiter [this] "$")
 
+(gen-class
+ :name nextjournal.markdown.parser2.types.Footnote
+ :extends org.commonmark.node.CustomBlock
+ :constructors {[String] []}
+ :init init
+ :state state
+ :methods [[getLabel [] String]]
+ :prefix "footnote-")
+
+(defn footnote-init [label] [[] (ref {:label label})])
+(defn footnote-getLabel [this] (:label @(.state this)))
+
 (comment
   (compile 'nextjournal.markdown.parser2.types)
 

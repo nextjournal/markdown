@@ -24,6 +24,7 @@
                                 Emphasis
                                 StrongEmphasis
 
+                                ListBlock
                                 ListItem
                                 Link
                                 ThematicBreak
@@ -32,6 +33,15 @@
                                 Image)))
 
 (set! *warn-on-reflection* true)
+;; TODO:
+;; - [x] inline formulas
+;; - [ ] block formulas
+;; - [x] tight lists
+;; - [x] task lists
+;; - [ ] tables
+;; - [ ] footnotes
+;; - [ ] fenced code
+
 
 (def InlineFormulaExtension
   (proxy [Object Parser$ParserExtension] []
@@ -58,7 +68,8 @@
              0)))))))
 
 (comment
-  (parse "this is inline $\\phi$ math"))
+  (parse "* this is inline $\\phi$ math
+* other  "))
 
 (def ^Parser parser
   (.. Parser
@@ -67,6 +78,15 @@
                    InlineFormulaExtension])
       build))
 
+;; helpers / ctx
+(def ^:dynamic *in-tight-list?* false)
+(defn paragraph-type [] (if *in-tight-list?* :plain :paragrpah))
+(defn in-tight-list? [node] (if (instance? ListBlock node) (.isTight node) *in-tight-list?*))
+(defmacro with-tight-list [node & body]
+  `(binding [*in-tight-list?* (in-tight-list? ~node)]
+     ~@body))
+
+;; multi stuff
 (defmulti open-node (fn [_ctx node] (type node)))
 (defmulti close-node (fn [_ctx node] (type node)))
 
@@ -76,13 +96,13 @@
 (defmethod close-node Document [loc _node] loc)
 
 (defmethod open-node Paragraph [loc _node]
-  (-> loc (z/append-child {:type :paragraph :content []}) z/down z/rightmost))
+  (-> loc (z/append-child {:type (paragraph-type) :content []}) z/down z/rightmost))
 
 (defmethod open-node Heading [loc ^Heading node]
   (-> loc (z/append-child {:type :heading :content [] :level (.getLevel node)}) z/down z/rightmost))
 
-(defmethod open-node BulletList [loc _node]
-  (-> loc (z/append-child {:type :bullet-list :content []}) z/down z/rightmost))
+(defmethod open-node BulletList [loc ^ListBlock node]
+  (-> loc (z/append-child {:type :bullet-list :content [] :tight? (.isTight node)}) z/down z/rightmost))
 
 (defmethod open-node OrderedList [loc _node]
   (-> loc (z/append-child {:type :numbered-list :content []}) z/down z/rightmost))
@@ -127,9 +147,9 @@
                    HardLineBreak (swap! !loc z/append-child {:type :softbreak})
                    TaskListItemMarker (swap! !loc handle-todo-list node)
                    InlineFormula (swap! !loc z/append-child {:type :inline-formula
-                                                             :text (.getLiteral node)})
+                                                             :text (.getLiteral ^InlineFormula node)})
                    (if (get-method open-node (class node))
-                     (do
+                     (with-tight-list node
                        (swap! !loc open-node node)
                        (.visitChildren this node)
                        (swap! !loc close-node node))
@@ -141,18 +161,20 @@
   (node->data (.parse parser md)))
 
 (comment
-  (do
-    (parse "# Ahoi
+  (parse "# Ahoi
 
 par
 broken
 
-* a **strong** item
-* what [a nice link](/to/some 'with a title')
-* just _emphatic_ two
+* a tight **strong** list
+* with [a nice link](/to/some 'with a title')
+* * with nested
 
-- [ ] one
-- [x] two
+  * lose list
+
+- [x] one inline formula $\\phi$ here
+
+- [ ] two
+
 ---
-![img](/some/src 'title')")
-    nil))
+![img](/some/src 'title')"))

@@ -7,6 +7,7 @@
            (org.commonmark.parser Parser Parser$ParserExtension Parser$Builder)
            (org.commonmark.parser.block AbstractBlockParser AbstractBlockParserFactory BlockStart)
            (org.commonmark.text Characters)
+           (com.vladsch.flexmark.ext.footnotes FootnoteExtension)
            (org.commonmark.parser.delimiter DelimiterProcessor)
            (org.commonmark.ext.task.list.items TaskListItemsExtension
                                                TaskListItemMarker)
@@ -27,6 +28,7 @@
                                 ListBlock
                                 ListItem
                                 Link
+                                LinkReferenceDefinition
                                 ThematicBreak
                                 SoftLineBreak
                                 HardLineBreak
@@ -151,6 +153,10 @@
                    TaskListItemMarker (swap! !loc handle-todo-list node)
                    InlineFormula (swap! !loc z/append-child {:type :inline-formula
                                                              :text (.getLiteral ^InlineFormula node)})
+
+                   LinkReferenceDefinition (prn :link-ref node)
+
+
                    (if (get-method open-node (class node))
                      (with-tight-list node
                        (swap! !loc open-node node)
@@ -176,8 +182,41 @@ broken
   * lose list
 
 - [x] one inline formula $\\phi$ here
-
 - [ ] two
 
 ---
-![img](/some/src 'title')"))
+![img](/some/src 'title')")
+
+
+  ;; link refs
+
+  (parse "some text with a [^link] ahoi
+
+[^link]: https://application.garden 'whatatitle'
+
+
+# text continues here
+")
+
+
+
+  ;; block footnotes
+  (md/parse "_hello_ what and foo[^note1] and^[some other note].
+
+And what.
+
+[^note1]: the _what_
+
+* and new text[^endnote] at the end.
+* the
+  * hell^[that warm place]
+
+[^endnote]: conclusion.
+")
+  (require '[nextjournal.markdown :as md])
+
+  ;; inline footnotes (might be handled via a delimited processor)
+  (md/parse "some text with^[ and not without] a footnote")
+  (parse "some text with^[ and not without] a footnote")
+  (parse "some text with $and not
+without$ a footnote"))

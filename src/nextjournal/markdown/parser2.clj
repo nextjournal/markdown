@@ -38,10 +38,14 @@
 ;; - [ ] block formulas
 ;; - [x] tight lists
 ;; - [x] task lists
-;; - [ ] tables
 ;; - [ ] footnotes
-;; - [ ] fenced code
-
+;; - [ ] strikethroughs ext
+;; - [ ] tables
+;; - [ ] fenced code info
+;; - [ ] html nodes
+;; - [ ] auto link
+;; - [ ] promote single images as blocks
+;; - [ ] [[TOC]] (although not used in Clerk)
 
 (def InlineFormulaExtension
   (proxy [Object Parser$ParserExtension] []
@@ -56,8 +60,8 @@
            (if (and (= 1 (.length open))
                     (= 1 (.length close)))
              (let [text (str/join
-                         (map #(.getLiteral %)
-                              (seq (Nodes/between (.. open getOpener) (.. close getCloser)))))]
+                         (keep #(when (instance? Text %) (.getLiteral %))
+                               (Nodes/between (.. open getOpener) (.. close getCloser))))]
                (doseq [^Node n (Nodes/between (.. open getOpener)
                                               (.. close getCloser))]
                  (.unlink n))
@@ -127,7 +131,6 @@
                            :content []}) z/down z/rightmost))
 
 (defn handle-todo-list [loc ^TaskListItemMarker node]
-  (prn :todo node)
   (-> loc
       (z/edit assoc :type :todo-item :attrs {:checked (.isChecked node)})
       z/up (z/edit assoc :type :todo-list)

@@ -87,7 +87,7 @@
 
 ;; helpers / ctx
 (def ^:dynamic *in-tight-list?* false)
-(defn paragraph-type [] (if *in-tight-list?* :plain :paragrpah))
+(defn paragraph-type [] (if *in-tight-list?* :plain :paragraph))
 (defn in-tight-list? [node] (if (instance? ListBlock node) (.isTight ^ListBlock node) *in-tight-list?*))
 (defmacro with-tight-list [node & body]
   `(binding [*in-tight-list?* (in-tight-list? ~node)]
@@ -104,6 +104,9 @@
 
 (defmethod open-node Paragraph [loc _node]
   (-> loc (z/append-child {:type (paragraph-type) :content []}) z/down z/rightmost))
+
+(defmethod open-node BlockQuote [loc _node]
+  (-> loc (z/append-child {:type :blockquote :content []}) z/down z/rightmost))
 
 (defmethod open-node Heading [loc ^Heading node]
   (-> loc (z/append-child {:type :heading :content [] :level (.getLevel node)}) z/down z/rightmost))
@@ -195,8 +198,8 @@
   (parse "some `marks` inline")
   (parse "# Ahoi
 
-par
-broken
+> par
+> broken
 
 * a tight **strong** list
 * with [a nice link](/to/some 'with a title')

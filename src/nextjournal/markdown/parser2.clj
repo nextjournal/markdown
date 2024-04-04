@@ -15,6 +15,7 @@
                                 OrderedList
                                 Code
                                 FencedCodeBlock
+                                IndentedCodeBlock
                                 Heading
                                 Text
                                 Paragraph
@@ -122,10 +123,25 @@
 (defmethod open-node StrongEmphasis [loc _node]
   (-> loc (z/append-child {:type :strong :content []}) z/down z/rightmost))
 
+(defmethod open-node Code [loc ^Code node]
+  (-> loc (z/append-child {:type :monospace
+                           :content [{:type :text
+                                      :text (.getLiteral node)}]}) z/down z/rightmost))
+
 (defmethod open-node Link [loc ^Link node]
   (-> loc (z/append-child {:type :link
                            :attrs {:href (.getDestination node) :title (.getTitle node)}
                            :content []}) z/down z/rightmost))
+
+(defmethod open-node IndentedCodeBlock [loc ^IndentedCodeBlock node]
+  (-> loc (z/append-child {:type :code
+                           :content [{:text (.getLiteral node)}]}) z/down z/rightmost))
+
+(defmethod open-node FencedCodeBlock [loc ^FencedCodeBlock node]
+  (-> loc (z/append-child (merge {:type :code
+                                  :info (.getInfo node)
+                                  :content [{:text (.getLiteral node)}]}
+                                 (parser/parse-fence-info (.getInfo node)))) z/down z/rightmost))
 
 (defmethod open-node Image [loc ^Image node]
   (-> loc (z/append-child {:type :image
@@ -146,6 +162,8 @@
   (let [!loc (atom (parser/->zip {:type :doc :content []}))]
     (.accept node
              (proxy [AbstractVisitor] []
+
+               ;; proxy can't overload method by arg type, while gen-class can: https://groups.google.com/g/clojure/c/TVRsy4Gnf70
                (visit [^Node node]
                  #_ (prn :visit (str node) (z/node @!loc))
                  (assert @!loc (format "Can't add node: '%s' to an empty location" node))
@@ -158,8 +176,8 @@
                    InlineFormula (swap! !loc z/append-child {:type :inline-formula
                                                              :text (.getLiteral ^InlineFormula node)})
 
+                   ;; not used directly
                    LinkReferenceDefinition (prn :link-ref node)
-
 
                    (if (get-method open-node (class node))
                      (with-tight-list node
@@ -174,6 +192,7 @@
   (node->data (.parse parser md)))
 
 (comment
+  (parse "some `marks` inline")
   (parse "# Ahoi
 
 par
@@ -190,19 +209,6 @@ broken
 
 ---
 ![img](/some/src 'title')")
-
-
-  ;; link refs
-
-  (parse "some text with a [^link] ahoi
-
-[^link]: https://application.garden 'whatatitle'
-
-
-# text continues here
-")
-
-
 
   ;; block footnotes
   (md/parse "_hello_ what and foo[^note1] and^[some other note].

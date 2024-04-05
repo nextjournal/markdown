@@ -219,7 +219,6 @@
 And what.
 
 [^note1]: the _what_
-
 * and new text[^endnote] at the end.
 * the
   * hell^[that warm place]
@@ -230,6 +229,4 @@ And what.
 
   ;; inline footnotes (might be handled via a delimited processor)
   (md/parse "some text with^[ and not without] a footnote")
-  (parse "some text with^[ and not without] a footnote")
-  (parse "some text with $and not
-without$ a footnote"))
+  (parse "some text with^[ and not without] a footnote"))

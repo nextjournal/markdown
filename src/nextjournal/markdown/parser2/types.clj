@@ -30,7 +30,17 @@
 (defn footnote-init [label] [[] (ref {:label label})])
 (defn footnote-getLabel [this] (:label @(.state this)))
 
-(comment
-  (compile 'nextjournal.markdown.parser2.types)
+(gen-class
+ :name nextjournal.markdown.parser2.types.FootnoteRef
+ :extends org.commonmark.node.CustomNode
+ :constructors {[String] []}
+ :init init
+ :state state
+ :methods [[getLabel [] String]]
+ :prefix "footnote-ref-")
 
-  )
+(defn footnote-ref-init [label] [[] (ref {:label label})])
+(defn footnote-ref-getLabel [this] (:label @(.state this)))
+
+(comment
+  (compile 'nextjournal.markdown.parser2.types))

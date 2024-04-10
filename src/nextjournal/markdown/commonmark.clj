@@ -1,6 +1,5 @@
-(ns nextjournal.markdown.parser2
-  (:require [clojure.string :as str]
-            [clojure.zip :as z]
+(ns nextjournal.markdown.commonmark
+  (:require [clojure.zip :as z]
             [nextjournal.markdown.parser :as parser]
             [nextjournal.markdown.parser2.types]
             [nextjournal.markdown.parser2.footnotes :as footnotes]
@@ -152,13 +151,12 @@
                    Text (swap! !loc z/append-child {:type :text :text (.getLiteral ^Text node)})
                    ThematicBreak (swap! !loc z/append-child {:type :ruler})
                    SoftLineBreak (swap! !loc z/append-child {:type :softbreak})
-                   HardLineBreak (swap! !loc z/append-child {:type :softbreak})
+                   HardLineBreak (swap! !loc z/append-child {:type :hardbreak})
                    TaskListItemMarker (swap! !loc handle-todo-list node)
-                   InlineFormula (swap! !loc z/append-child {:type :inline-formula
+                   InlineFormula (swap! !loc z/append-child {:type :formula
                                                              :text (.getLiteral ^InlineFormula node)})
 
-                   ;; not used directly
-                   LinkReferenceDefinition (prn :link-ref node)
+                   LinkReferenceDefinition :ignore #_ (prn :link-ref node)
 
                    (if (get-method open-node (class node))
                      (with-tight-list node
@@ -169,8 +167,9 @@
 
     (some-> @!loc z/root)))
 
-(defn parse [md]
-  (node->data (.parse parser md)))
+(defn parse
+  ([md] (parse {} md))
+  ([_doc md] (node->data (.parse parser md))))
 
 (comment
   (parse "some `marks` inline")

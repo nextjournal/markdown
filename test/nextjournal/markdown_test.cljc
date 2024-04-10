@@ -1,5 +1,5 @@
 (ns nextjournal.markdown-test
-  (:require [clojure.test :as t :refer [deftest testing is]]
+  (:require [clojure.test :as t :refer [deftest testing is use-fixtures]]
             [matcher-combinators.test :refer [match?]]
             [matcher-combinators.standalone :as standalone]
             [matcher-combinators.matchers :as m]
@@ -7,6 +7,15 @@
             [matcher-combinators.ansi-color]
             [nextjournal.markdown.parser :as md.parser]
             [nextjournal.markdown.transform :as md.transform]))
+
+#?(:clj (use-fixtures :once
+                      (fn [f]
+                        (prn "Running Tests with legacy GraalJS parser")
+                        (f)
+                        (prn "----------------------------------------------------------------------------------")
+                        (flush)
+                        (prn "Running Tests with new Java parser")
+                        (md/with-new-parser (f)))))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
 (matcher-combinators.ansi-color/disable!)

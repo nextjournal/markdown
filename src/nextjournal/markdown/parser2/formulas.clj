@@ -32,7 +32,7 @@
 
 (comment
 
-  (nextjournal.markdown.parser2/parse "
+  (nextjournal.markdown.commonmark/parse "
   # Ok
   Aloha, that costs
   * a $\\int_a^b\\phi(t)dt$ with discount

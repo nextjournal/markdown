@@ -26,7 +26,7 @@
             (BlockContinue/atIndex non-space)))))))
 
 (comment
-  (nextjournal.markdown.parser2/parse "init [^label] end
+  (nextjournal.markdown.commonmark/parse "init [^label] end
 
 [^label]: * this is nice _and_ nice
           * and so so

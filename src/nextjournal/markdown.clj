@@ -3,6 +3,7 @@
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
             [nextjournal.markdown.parser :as markdown.parser]
+            [nextjournal.markdown.commonmark :as commonmark]
             [nextjournal.markdown.transform :as markdown.transform])
   (:import (org.graalvm.polyglot Context Context$Builder Source Value)
            (java.io Reader)))
@@ -45,10 +46,17 @@
                              (.execute tokenize-fn (to-array [markdown-text])))]
     (json/read-str (.asString tokens-json) :key-fn keyword)))
 
+(def ^:dynamic *legacy-graal-js-parser* true)
+(defmacro with-new-parser [& body]
+  `(binding [*legacy-graal-js-parser* false] ~@body))
+
 (defn parse
   "Turns a markdown string into a nested clojure structure."
   ([markdown-text] (parse markdown.parser/empty-doc markdown-text))
-  ([doc markdown-text] (markdown.parser/parse doc (tokenize markdown-text))))
+  ([doc markdown-text]
+   (if *legacy-graal-js-parser*
+     (markdown.parser/parse doc (tokenize markdown-text))
+     (commonmark/parse doc markdown-text))))
 
 (defn ->hiccup
   "Turns a markdown string into hiccup."
@@ -66,6 +74,13 @@
 - [ ] [nice](very/nice/thing)
 - [x] ~~thing~~
 ")
+
+  (with-new-parser
+   (parse "# Hello Markdown
+- [ ] what
+- [ ] [nice](very/nice/thing)
+- [x] ~~thing~~
+"))
 
   (->hiccup "# Hello Markdown
 

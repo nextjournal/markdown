@@ -4,7 +4,7 @@
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.eval :as clerk.eval]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.parser2 :as parser2]
+            [nextjournal.markdown.commonmark :as commonmark]
             parsing-extensibility
             [nextjournal.markdown.parser :as md.parser]))
 
@@ -27,12 +27,12 @@
 
   ;; Default set of tokenizers
   (time-ms (parse reference-text))
-  (time-ms (parser2/parse reference-text))
+  (time-ms (commonmark/parse reference-text))
 
   (-> (parse reference-text)
       :content count )
 
-  (-> (parser2/parse reference-text)
+  (-> (commonmark/parse reference-text)
    :content count )
 
 

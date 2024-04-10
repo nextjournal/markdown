@@ -3,7 +3,8 @@
             [clojure.zip :as z]
             [nextjournal.markdown.parser :as parser]
             [nextjournal.markdown.parser2.types]
-            [nextjournal.markdown.parser2.footnotes :as footnotes])
+            [nextjournal.markdown.parser2.footnotes :as footnotes]
+            [nextjournal.markdown.parser2.formulas :as formulas])
   (:import (org.commonmark.parser Parser Parser$ParserExtension Parser$Builder)
            (org.commonmark.parser.delimiter DelimiterProcessor)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
@@ -49,29 +50,6 @@
 ;; - [ ] promote single images as blocks
 ;; - [ ] [[TOC]] (although not used in Clerk)
 
-(def InlineFormulaExtension
-  (proxy [Object Parser$ParserExtension] []
-    (extend [^Parser$Builder pb]
-      (.customDelimiterProcessor
-       pb
-       (proxy [Object DelimiterProcessor] []
-         (getOpeningCharacter [] \$)
-         (getClosingCharacter [] \$)
-         (getMinLength [] 1)
-         (process [open close]
-           (if (and (= 1 (.length open))
-                    (= 1 (.length close)))
-             (let [text (str/join
-                         (keep #(when (instance? Text %) (.getLiteral %))
-                               (Nodes/between (.. open getOpener) (.. close getCloser))))]
-               (doseq [^Node n (Nodes/between (.. open getOpener)
-                                              (.. close getCloser))]
-                 (.unlink n))
-               (.. open getOpener
-                   ;; needs a named class `gen-class`
-                   (insertAfter (new InlineFormula text)))
-               1)
-             0)))))))
 
 (comment
   (parse "* this is inline $\\phi$ math
@@ -80,9 +58,9 @@
 (def ^Parser parser
   (.. Parser
       builder
-      (extensions [(TaskListItemsExtension/create)
-                   InlineFormulaExtension
-                   (footnotes/extension)])
+      (extensions [(formulas/extension)
+                   (footnotes/extension)
+                   (TaskListItemsExtension/create)])
       build))
 
 ;; helpers / ctx

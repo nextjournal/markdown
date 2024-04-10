@@ -47,6 +47,9 @@
                                                     :git/sha "e8f275b5cf077ec9441e404c1885ff0b6ee0aef9"
                                                     :deps/root "render"}}}
 
+  :commonmark-java-local
+  {:extra-paths ["../commonmark-java/commonmark/target/classes"]}
+
   :build
   {:ns-default build
    :deps {io.github.clojure/tools.build {:git/tag "v0.6.1" :git/sha "515b334"}

@@ -9,14 +9,23 @@
  :constructors {[String] []}
  :init init
  :state state
- :implements [org.commonmark.node.Delimited]
  :methods [[getLiteral [] String]]
  :prefix "inline-formula-")
 
 (defn inline-formula-init [lit] [[] (ref {:literal lit})])
 (defn inline-formula-getLiteral [this] (:literal @(.state this)))
-(defn inline-formula-getClosingDelimiter [this] "$")
-(defn inline-formula-getOpeningDelimiter [this] "$")
+
+(gen-class
+ :name nextjournal.markdown.parser2.types.BlockFormula
+ :extends org.commonmark.node.CustomBlock
+ :constructors {[String] []}
+ :init init
+ :state state
+ :methods [[getLiteral [] String]]
+ :prefix "block-formula-")
+
+(defn block-formula-init [lit] [[] (ref {:literal lit})])
+(defn block-formula-getLiteral [this] (:literal @(.state this)))
 
 (gen-class
  :name nextjournal.markdown.parser2.types.Footnote

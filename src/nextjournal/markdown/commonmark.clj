@@ -31,8 +31,7 @@
                                 HardLineBreak
                                 Image)
    ;; custom types
-           (nextjournal.markdown.parser2.types InlineFormula
-                                               Footnote)))
+           (nextjournal.markdown.parser2.types InlineFormula BlockFormula Footnote)))
 
 (set! *warn-on-reflection* true)
 ;; TODO:
@@ -153,10 +152,10 @@
                    SoftLineBreak (swap! !loc z/append-child {:type :softbreak})
                    HardLineBreak (swap! !loc z/append-child {:type :hardbreak})
                    TaskListItemMarker (swap! !loc handle-todo-list node)
-                   InlineFormula (swap! !loc z/append-child {:type :formula
-                                                             :text (.getLiteral ^InlineFormula node)})
+                   InlineFormula (swap! !loc z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
+                   BlockFormula (swap! !loc z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
 
-                   LinkReferenceDefinition :ignore #_ (prn :link-ref node)
+                     LinkReferenceDefinition :ignore #_(prn :link-ref node)
 
                    (if (get-method open-node (class node))
                      (with-tight-list node

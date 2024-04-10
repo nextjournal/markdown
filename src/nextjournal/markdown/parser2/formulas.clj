@@ -31,7 +31,7 @@
       (.addInlineParser ^InlineParserImpl (new InlineParserImpl ctx)
                         \$ (list (inline-formula-parser))))))
 
-(def block-parser
+(def ^BlockParser block-parser
   (let [block-formula (new BlockFormula "formula text")]
     (proxy [AbstractBlockParser] []
       (isContainer [] false)
@@ -55,10 +55,8 @@
               candidate-content (subs line-content next-non-space)
               m (re-matcher block-formula-delimiter-regex candidate-content)]
           (if (re-find m)
-            (let [block-index (+ next-non-space (.end m))
-                  ^BlockParser bp block-parser]
-              (.atIndex (BlockStart/of (into-array [bp]))
-                        block-index))
+            (.atIndex (BlockStart/of (into-array [block-parser]))
+                      (+ next-non-space (.end m)))
             (BlockStart/none)))))))
 
 (defn extension []
@@ -73,7 +71,9 @@
   # Ok
   Aloha, that costs
 
-  $$\\bigoplus$$
+  $$
+  \\bigoplus
+  $$
 
   * a $\\int_a^b\\phi(t)dt$ with discount
   * and what"))

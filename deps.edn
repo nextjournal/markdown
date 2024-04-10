@@ -4,8 +4,12 @@
         org.graalvm.js/js {:mvn/version "21.3.2.1"}
 
         ;; commonmark
-        org.commonmark/commonmark {:mvn/version "0.22.0"}
+        ;; org.commonmark/commonmark {:mvn/version "0.22.0"}
+        ;; temporary fork
+        com.github.nextjournal/commonmark-java {:mvn/version "4641654"}
         org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.22.0"}}
+
+ :mvn/repos {"jitpack.io" {:url "https://jitpack.io"}}
 
  :aliases
  {:nextjournal/clerk

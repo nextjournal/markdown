@@ -5,8 +5,8 @@
 
         ;; commonmark
         ;; org.commonmark/commonmark {:mvn/version "0.22.0"}
-        ;; temporary fork
-        com.github.nextjournal/commonmark-java {:mvn/version "4641654"}
+        ;; use temporary jitpack commit until release
+        com.github.commonmark/commonmark-java {:mvn/version "3733963"}
         org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.22.0"}}
 
  :mvn/repos {"jitpack.io" {:url "https://jitpack.io"}}

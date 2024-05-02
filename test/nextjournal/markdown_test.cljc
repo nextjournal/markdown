@@ -804,7 +804,31 @@ $$p(z\\\\mid x) = \\\\frac{p(x\\\\mid z)p(z)}{p(x)}.$$\n\n
 ## SubTitle
 ")))))
 
+
+(deftest formulas
+  (is (match? {:type :doc
+               :content [{:type :heading}
+                         {:type :paragraph
+                          :content [{:type :text, :text "This is an "}
+                                    {:type :formula, :text "\\mathit{inline}"}
+                                    {:type :text, :text " formula."}]}
+                         {:type :block-formula, :text string?}
+                         {:type :block-formula, :text "\\bigoplus"}]}
+              (md/parse "# Title
+This is an $\\mathit{inline}$ formula.
+
+$$
+\\begin{equation}
+\\dfrac{1}{128\\pi^{2}}
+\\end{equation}
+$$
+
+$$\\bigoplus$$
+"))))
+
 (comment
+  (clojure.test/run-test-var #'formulas)
+
   (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
   (clojure.test/run-tests)
   (run-tests 'nextjournal.markdown-test)

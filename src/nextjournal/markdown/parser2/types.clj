@@ -18,14 +18,16 @@
 (gen-class
  :name nextjournal.markdown.parser2.types.BlockFormula
  :extends org.commonmark.node.CustomBlock
- :constructors {[String] []}
+ :constructors {[] []}
  :init init
  :state state
- :methods [[getLiteral [] String]]
- :prefix "block-formula-")
+ :prefix "block-formula-"
+ :methods [[getLiteral [] String]
+           [setLiteral [String] String]])
 
-(defn block-formula-init [lit] [[] (ref {:literal lit})])
-(defn block-formula-getLiteral [this] (:literal @(.state this)))
+(defn block-formula-init [] [[] (atom nil)])
+(defn block-formula-getLiteral [this] @(.state this))
+(defn block-formula-setLiteral [this val] (reset! (.state this) val))
 
 (gen-class
  :name nextjournal.markdown.parser2.types.Footnote

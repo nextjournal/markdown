@@ -4,10 +4,9 @@
             [nextjournal.markdown.parser2.types]
             [nextjournal.markdown.parser2.footnotes :as footnotes]
             [nextjournal.markdown.parser2.formulas :as formulas])
-  (:import (org.commonmark.parser Parser Parser$ParserExtension Parser$Builder)
-           (org.commonmark.parser.delimiter DelimiterProcessor)
+  (:import (org.commonmark.parser Parser)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
-           (org.commonmark.node Node Nodes AbstractVisitor
+           (org.commonmark.node Node AbstractVisitor
             ;;;;;;;;;; node types ;;;;;;;;;;;;;;;;;;
                                 Document
                                 BlockQuote

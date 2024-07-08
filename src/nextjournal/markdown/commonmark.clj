@@ -167,9 +167,10 @@
                    BlockFormula (swap! !ctx update-current z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
                    FootnoteReference (swap! !ctx (fn [{:as ctx :keys [label->footnote-ref]}]
                                                    (let [label (.getLabel ^FootnoteReference node)
-                                                         footnote-ref {:type :footnote-ref
-                                                                       :ref (count label->footnote-ref)
-                                                                       :label label}]
+                                                         footnote-ref (or (get label->footnote-ref label)
+                                                                          {:type :footnote-ref
+                                                                           :ref (count label->footnote-ref)
+                                                                           :label label})]
                                                      (-> ctx
                                                          (update-current z/append-child footnote-ref)
                                                          (update :label->footnote-ref assoc label footnote-ref)))))
@@ -187,12 +188,13 @@
       (-> ctx
           :doc z/root
           (assoc :footnotes
-                 (into []
-                       ;; there will never be references without definitions, but the contrary may happen
-                       (keep (fn [{:as footnote :keys [label]}]
-                               (when (contains? label->footnote-ref label)
-                                 (assoc footnote :ref (:ref (label->footnote-ref label))))))
-                       (-> @!ctx :footnotes z/root :content)))))))
+                 ;; there will never be references without definitions, but the contrary may happen
+                 (vec
+                  (sort-by :ref
+                           (keep (fn [{:as footnote :keys [label]}]
+                                   (when (contains? label->footnote-ref label)
+                                     (assoc footnote :ref (:ref (label->footnote-ref label)))))
+                                 (-> @!ctx :footnotes z/root :content)))))))))
 
 (defn parse
   ([md] (parse {} md))
@@ -237,4 +239,15 @@ And what.
   (require '[nextjournal.markdown :as md])
   (md/parse text-with-footnotes)
 
-  (parse "some https://github.com and what"))
+  (parse (slurp "../clerk-px23/README.md"))
+
+  (parse "Knuth's _Literate Programming_[^literateprogramming][^knuth84] emphasized the importance of focusing on human beings as consumers of computer programs. His original implementation involved authoring files that combine source code and documentation, which were then divided into two derived artifacts: source code for the computer and a typeset document in natural language to explain the program.
+
+[^knuth84]: [Literate Programming](https://doi.org/10.1093/comjnl/27.2.97)
+[^literateprogramming]: An extensive archive of related material is maintained [here](http://www.literateprogramming.com).")
+
+  (parse "this might[^reuse] here[^another] and here[^reuse] here
+
+[^another]: stuff
+[^reuse]: define here
+"))

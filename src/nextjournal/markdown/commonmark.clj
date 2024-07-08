@@ -90,7 +90,7 @@
   (-> loc (z/append-child {:type :blockquote :content []}) z/down z/rightmost))
 
 (defmethod open-node Heading [loc ^Heading node]
-  (-> loc (z/append-child {:type :heading :content [] :level (.getLevel node)}) z/down z/rightmost))
+  (-> loc (z/append-child {:type :heading :content [] :heading-level (.getLevel node)}) z/down z/rightmost))
 
 (defmethod open-node BulletList [loc ^ListBlock node]
   (-> loc (z/append-child {:type :bullet-list :content [] :tight? (.isTight node)}) z/down z/rightmost))

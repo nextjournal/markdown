@@ -416,7 +416,7 @@ end"
             (let [new-loc (-> loc (z/replace {:type :sidenote-container :content []})
                               (z/append-child node)
                               (z/append-child {:type :sidenote-column
-                                               :content (mapv #(footnote->sidenote (get footnotes %)) refs)}))]
+                                               :content (mapv #(footnote->sidenote (get footnotes %)) (distinct refs))}))]
               (recur (z/right new-loc) (z/up new-loc)))
             (recur (z/right loc) parent))
           :else

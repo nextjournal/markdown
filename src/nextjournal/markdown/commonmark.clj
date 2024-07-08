@@ -150,7 +150,8 @@
 
 (defn node->data [^Node node]
   (let [!ctx (atom {:doc (parser/->zip {:type :doc :content []})
-                    :footnotes (parser/->zip {:type :footnotes :content []})})]
+                    :footnotes (parser/->zip {:type :footnotes :content []})
+                    :label->footnote-ref {}})]
     (.accept node
              (proxy [AbstractVisitor] []
                ;; proxy can't overload method by arg type, while gen-class can: https://groups.google.com/g/clojure/c/TVRsy4Gnf70
@@ -164,10 +165,14 @@
                    TaskListItemMarker (swap! !ctx update-current handle-todo-list node)
                    InlineFormula (swap! !ctx update-current z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
                    BlockFormula (swap! !ctx update-current z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
-                   FootnoteReference (swap! !ctx update-current z/append-child
-                                            {:type :footnote-ref
-                                             :ref nil       ;; TODO: postprocess to assign ref number
-                                             :label (.getLabel ^FootnoteReference node)})
+                   FootnoteReference (swap! !ctx (fn [{:as ctx :keys [label->footnote-ref]}]
+                                                   (let [label (.getLabel ^FootnoteReference node)
+                                                         footnote-ref {:type :footnote-ref
+                                                                       :ref (count label->footnote-ref)
+                                                                       :label label}]
+                                                     (-> ctx
+                                                         (update-current z/append-child footnote-ref)
+                                                         (update :label->footnote-ref assoc label footnote-ref)))))
 
                    ;; else
                    (if (get-method open-node (class node))
@@ -178,8 +183,16 @@
                          (swap! !ctx update-current close-node node)))
                      (prn :open-node/not-implemented node))))))
 
-    (-> @!ctx :doc z/root
-        (assoc :footnotes (-> @!ctx :footnotes z/root :content)))))
+    (let [{:as ctx :keys [label->footnote-ref]} (deref !ctx)]
+      (-> ctx
+          :doc z/root
+          (assoc :footnotes
+                 (into []
+                       ;; there will never be references without definitions, but the contrary may happen
+                       (keep (fn [{:as footnote :keys [label]}]
+                               (when (contains? label->footnote-ref label)
+                                 (assoc footnote :ref (:ref (label->footnote-ref label))))))
+                       (-> @!ctx :footnotes z/root :content)))))))
 
 (defn parse
   ([md] (parse {} md))
@@ -216,7 +229,7 @@ And what.
 
 [^note2]: conclusion and $\\phi$
 
-[^note3]: this should definitely not be here
+[^note3]: this should just be ignored
 ")
 
   (parse text-with-footnotes)

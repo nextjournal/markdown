@@ -185,7 +185,6 @@
       (recur (ppop p) (conj ancestors (get-in doc p)))
       ancestors)))
 
-;; TODO: consider rewriting parse in terms of this zipper
 (defn ->zip [doc]
   (z/zipper (every-pred map? :type) :content
             (fn [node cs] (assoc node :content (vec cs)))

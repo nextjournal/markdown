@@ -6,8 +6,11 @@
         ;; commonmark
         ;; org.commonmark/commonmark {:mvn/version "0.22.0"}
         ;; use temporary jitpack commit until release
-        com.github.commonmark/commonmark-java {:mvn/version "3733963"}
-        org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.22.0"}}
+        ;; com.github.commonmark/commonmark-java {:mvn/version "3733963"}
+        com.github.commonmark/commonmark-java {:local/root "./jars/commonmark-0.22.1-SNAPSHOT.jar"}
+        org.commonmark/commonmark-ext-task-list-items {:local/root "./jars/commonmark-ext-task-list-items-0.22.1-SNAPSHOT.jar"}
+        org.commonmark/commonmark-ext-footnotes {:local/root "./jars/commonmark-ext-footnotes-0.22.1-SNAPSHOT.jar"}
+        }
 
  :mvn/repos {"jitpack.io" {:url "https://jitpack.io"}}
 

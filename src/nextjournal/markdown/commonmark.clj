@@ -2,10 +2,10 @@
   (:require [clojure.zip :as z]
             [nextjournal.markdown.parser :as parser]
             [nextjournal.markdown.parser2.types]
-            [nextjournal.markdown.parser2.footnotes :as footnotes]
             [nextjournal.markdown.parser2.formulas :as formulas])
   (:import (org.commonmark.parser Parser)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
+           (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition)
            (org.commonmark.node Node AbstractVisitor
             ;;;;;;;;;; node types ;;;;;;;;;;;;;;;;;;
                                 Document
@@ -30,7 +30,7 @@
                                 HardLineBreak
                                 Image)
    ;; custom types
-           (nextjournal.markdown.parser2.types InlineFormula BlockFormula Footnote)))
+           (nextjournal.markdown.parser2.types InlineFormula BlockFormula)))
 
 (set! *warn-on-reflection* true)
 ;; TODO:
@@ -56,16 +56,22 @@
   (.. Parser
       builder
       (extensions [(formulas/extension)
-                   (footnotes/extension)
+                   (FootnotesExtension/create)
                    (TaskListItemsExtension/create)])
       build))
 
 ;; helpers / ctx
 (def ^:dynamic *in-tight-list?* false)
+(def ^:dynamic *current-root* :doc)                         ;; :doc | :footnotes
 (defn paragraph-type [] (if *in-tight-list?* :plain :paragraph))
+(defn current-root [] *current-root*)
 (defn in-tight-list? [node] (if (instance? ListBlock node) (.isTight ^ListBlock node) *in-tight-list?*))
+(defn current-root-for [node] (if (instance? FootnoteDefinition node) :footnotes *current-root*))
 (defmacro with-tight-list [node & body]
   `(binding [*in-tight-list?* (in-tight-list? ~node)]
+     ~@body))
+(defmacro with-current-root [node & body]
+  `(binding [*current-root* (current-root-for ~node)]
      ~@body))
 
 ;; multi stuff
@@ -126,8 +132,11 @@
                            :attrs {:src (.getDestination node) :title (.getTitle node)}
                            :content []}) z/down z/rightmost))
 
-(defmethod open-node Footnote [loc ^Footnote node]
-  (-> loc (z/append-child {:type :footnote :label (.getLabel node)
+(defmethod open-node FootnoteDefinition [loc ^FootnoteDefinition node]
+  (-> loc (z/append-child {:type :footnote
+                           :label (.getLabel node)
+                           :ref (inc (-> loc z/root :content count))
+                           ;; TODO: there might be definitions which do not correspond to any reference
                            :content []}) z/down z/rightmost))
 
 (defn handle-todo-list [loc ^TaskListItemMarker node]
@@ -136,41 +145,48 @@
       z/up (z/edit assoc :type :todo-list)
       z/down z/rightmost))
 
+(defn update-current [ctx f & args]
+  (apply update ctx (current-root) f args))
+
 (defn node->data [^Node node]
-  (let [!loc (atom (parser/->zip {:type :doc :content []}))]
+  (let [!ctx (atom {:doc (parser/->zip {:type :doc :content []})
+                    :footnotes (parser/->zip {:type :footnotes :content []})})]
     (.accept node
              (proxy [AbstractVisitor] []
-
                ;; proxy can't overload method by arg type, while gen-class can: https://groups.google.com/g/clojure/c/TVRsy4Gnf70
                (visit [^Node node]
-                 #_ (prn :visit (str node) (z/node @!loc))
-                 (assert @!loc (format "Can't add node: '%s' to an empty location" node))
                  (condp instance? node
-                   Text (swap! !loc z/append-child {:type :text :text (.getLiteral ^Text node)})
-                   ThematicBreak (swap! !loc z/append-child {:type :ruler})
-                   SoftLineBreak (swap! !loc z/append-child {:type :softbreak})
-                   HardLineBreak (swap! !loc z/append-child {:type :hardbreak})
-                   TaskListItemMarker (swap! !loc handle-todo-list node)
-                   InlineFormula (swap! !loc z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
-                   BlockFormula (swap! !loc z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
+                   LinkReferenceDefinition :ignore
+                   Text (swap! !ctx update-current z/append-child {:type :text :text (.getLiteral ^Text node)})
+                   ThematicBreak (swap! !ctx update-current z/append-child {:type :ruler})
+                   SoftLineBreak (swap! !ctx update-current z/append-child {:type :softbreak})
+                   HardLineBreak (swap! !ctx update-current z/append-child {:type :hardbreak})
+                   TaskListItemMarker (swap! !ctx update-current handle-todo-list node)
+                   InlineFormula (swap! !ctx update-current z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
+                   BlockFormula (swap! !ctx update-current z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
+                   FootnoteReference (swap! !ctx update-current z/append-child
+                                            {:type :footnote-ref
+                                             :ref nil       ;; TODO: postprocess to assign ref number
+                                             :label (.getLabel ^FootnoteReference node)})
 
-                     LinkReferenceDefinition :ignore #_(prn :link-ref node)
-
+                   ;; else
                    (if (get-method open-node (class node))
                      (with-tight-list node
-                       (swap! !loc open-node node)
-                       (proxy-super visitChildren node)
-                       (swap! !loc close-node node))
+                       (with-current-root node
+                         (swap! !ctx update-current open-node node)
+                         (proxy-super visitChildren node)
+                         (swap! !ctx update-current close-node node)))
                      (prn :open-node/not-implemented node))))))
 
-    (some-> @!loc z/root)))
+    (-> @!ctx :doc z/root
+        (assoc :footnotes (-> @!ctx :footnotes z/root :content)))))
 
 (defn parse
   ([md] (parse {} md))
   ([_doc md] (node->data (.parse parser md))))
 
 (comment
-  (parse "some `marks` inline")
+  (parse "some `marks` inline and inline $formula$ with a [link _with_ em](https://what.tfk)")
   (parse "# Ahoi
 
 > par
@@ -188,20 +204,24 @@
 ---
 ![img](/some/src 'title')")
 
-  ;; block footnotes
-  (md/parse "_hello_ what and foo[^note1] and^[some other note].
+  ;; footnotes
+  (def text-with-footnotes "_hello_ what and foo[^note1] and
 
 And what.
 
 [^note1]: the _what_
-* and new text[^endnote] at the end.
-* the
-  * hell^[that warm place]
 
-[^endnote]: conclusion.
+* and new text[^note2] at the end.
+* the hell
+
+[^note2]: conclusion and $\\phi$
+
+[^note3]: this should definitely not be here
 ")
-  (require '[nextjournal.markdown :as md])
 
-  ;; inline footnotes (might be handled via a delimited processor)
-  (md/parse "some text with^[ and not without] a footnote")
-  (parse "some text with^[ and not without] a footnote"))
+  (parse text-with-footnotes)
+
+  (require '[nextjournal.markdown :as md])
+  (md/parse text-with-footnotes)
+
+  (parse "some https://github.com and what"))

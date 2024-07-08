@@ -135,8 +135,6 @@
 (defmethod open-node FootnoteDefinition [loc ^FootnoteDefinition node]
   (-> loc (z/append-child {:type :footnote
                            :label (.getLabel node)
-                           :ref (inc (-> loc z/root :content count))
-                           ;; TODO: there might be definitions which do not correspond to any reference
                            :content []}) z/down z/rightmost))
 
 (defn handle-todo-list [loc ^TaskListItemMarker node]
@@ -189,12 +187,12 @@
           :doc z/root
           (assoc :footnotes
                  ;; there will never be references without definitions, but the contrary may happen
-                 (vec
-                  (sort-by :ref
-                           (keep (fn [{:as footnote :keys [label]}]
-                                   (when (contains? label->footnote-ref label)
-                                     (assoc footnote :ref (:ref (label->footnote-ref label)))))
-                                 (-> @!ctx :footnotes z/root :content)))))))))
+                 (->> @!ctx :footnotes z/root :content
+                      (keep (fn [{:as footnote :keys [label]}]
+                              (when (contains? label->footnote-ref label)
+                                (assoc footnote :ref (:ref (label->footnote-ref label))))))
+                      (sort-by :ref)
+                      (vec)))))))
 
 (defn parse
   ([md] (parse {} md))
@@ -250,6 +248,8 @@ And what.
 
 [^another]: stuff
 [^reuse]: define here
+
+this should be left as is
 
 another paragraph reusing[^reuse]
 ")

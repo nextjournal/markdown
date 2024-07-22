@@ -5,7 +5,7 @@
             [nextjournal.markdown.parser2.formulas :as formulas])
   (:import (org.commonmark.parser Parser)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
-           (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition)
+           (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
            (org.commonmark.node Node AbstractVisitor
             ;;;;;;;;;; node types ;;;;;;;;;;;;;;;;;;
                                 Document
@@ -56,86 +56,119 @@
   (.. Parser
       builder
       (extensions [(formulas/extension)
-                   (FootnotesExtension/create)
-                   (TaskListItemsExtension/create)])
+                   (TaskListItemsExtension/create)
+                   (.. (FootnotesExtension/builder)
+                       (inlineFootnotes true)
+                       (build))])
       build))
 
 ;; helpers / ctx
 (def ^:dynamic *in-tight-list?* false)
-(def ^:dynamic *current-root* :doc)                         ;; :doc | :footnotes
+
 (defn paragraph-type [] (if *in-tight-list?* :plain :paragraph))
-(defn current-root [] *current-root*)
+
 (defn in-tight-list? [node] (if (instance? ListBlock node) (.isTight ^ListBlock node) *in-tight-list?*))
-(defn current-root-for [node] (if (instance? FootnoteDefinition node) :footnotes *current-root*))
+
 (defmacro with-tight-list [node & body]
   `(binding [*in-tight-list?* (in-tight-list? ~node)]
-     ~@body))
-(defmacro with-current-root [node & body]
-  `(binding [*current-root* (current-root-for ~node)]
      ~@body))
 
 ;; multi stuff
 (defmulti open-node (fn [_ctx node] (type node)))
 (defmulti close-node (fn [_ctx node] (type node)))
 
-(defmethod close-node :default [loc _node] (z/up loc))
+(defn update-current [{:as ctx :keys [root]} f & args]
+  (assert root (str "Missing root: '" (keys ctx) "'"))
+  (apply update ctx root f args))
 
-(defmethod open-node Document [loc _node] loc)
-(defmethod close-node Document [loc _node] loc)
+(defmethod close-node :default [ctx _node] (update-current ctx z/up))
 
-(defmethod open-node Paragraph [loc _node]
-  (-> loc (z/append-child {:type (paragraph-type) :content []}) z/down z/rightmost))
+(defmethod open-node Document [ctx _node] ctx)
+(defmethod close-node Document [ctx _node] ctx)
 
-(defmethod open-node BlockQuote [loc _node]
-  (-> loc (z/append-child {:type :blockquote :content []}) z/down z/rightmost))
+(defmethod open-node Paragraph [ctx _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type (paragraph-type) :content []}) z/down z/rightmost))))
 
-(defmethod open-node Heading [loc ^Heading node]
-  (-> loc (z/append-child {:type :heading :content [] :heading-level (.getLevel node)}) z/down z/rightmost))
+(defmethod open-node BlockQuote [ctx _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :blockquote :content []}) z/down z/rightmost))))
 
-(defmethod open-node BulletList [loc ^ListBlock node]
-  (-> loc (z/append-child {:type :bullet-list :content [] :tight? (.isTight node)}) z/down z/rightmost))
+(defmethod open-node Heading [ctx ^Heading node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :heading :content [] :heading-level (.getLevel node)}) z/down z/rightmost))))
 
-(defmethod open-node OrderedList [loc _node]
-  (-> loc (z/append-child {:type :numbered-list :content []}) z/down z/rightmost))
+(defmethod open-node BulletList [ctx ^ListBlock node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] :tight? (.isTight node)}) z/down z/rightmost))))
 
-(defmethod open-node ListItem [loc _node]
-  (-> loc (z/append-child {:type :list-item :content []}) z/down z/rightmost))
+(defmethod open-node OrderedList [ctx _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :numbered-list :content []}) z/down z/rightmost))))
 
-(defmethod open-node Emphasis [loc _node]
-  (-> loc (z/append-child {:type :em :content []}) z/down z/rightmost))
+(defmethod open-node ListItem [ctx _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :list-item :content []}) z/down z/rightmost))))
 
-(defmethod open-node StrongEmphasis [loc _node]
-  (-> loc (z/append-child {:type :strong :content []}) z/down z/rightmost))
+(defmethod open-node Emphasis [ctx _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :em :content []}) z/down z/rightmost))))
 
-(defmethod open-node Code [loc ^Code node]
-  (-> loc (z/append-child {:type :monospace
-                           :content [{:type :text
-                                      :text (.getLiteral node)}]}) z/down z/rightmost))
+(defmethod open-node StrongEmphasis [ctx _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :strong :content []}) z/down z/rightmost))))
 
-(defmethod open-node Link [loc ^Link node]
-  (-> loc (z/append-child {:type :link
-                           :attrs {:href (.getDestination node) :title (.getTitle node)}
-                           :content []}) z/down z/rightmost))
+(defmethod open-node Code [ctx ^Code node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :monospace
+                                                         :content [{:type :text
+                                                                    :text (.getLiteral node)}]}) z/down z/rightmost))))
 
-(defmethod open-node IndentedCodeBlock [loc ^IndentedCodeBlock node]
-  (-> loc (z/append-child {:type :code
-                           :content [{:text (.getLiteral node)}]}) z/down z/rightmost))
+(defmethod open-node Link [ctx ^Link node]
+  (update-current ctx (fn [loc]
+                        (-> loc (z/append-child {:type :link
+                                                 :attrs {:href (.getDestination node) :title (.getTitle node)}
+                                                 :content []}) z/down z/rightmost))))
 
-(defmethod open-node FencedCodeBlock [loc ^FencedCodeBlock node]
-  (-> loc (z/append-child (merge {:type :code
-                                  :info (.getInfo node)
-                                  :content [{:text (.getLiteral node)}]}
-                                 (parser/parse-fence-info (.getInfo node)))) z/down z/rightmost))
+(defmethod open-node IndentedCodeBlock [ctx ^IndentedCodeBlock node]
+  (update-current ctx (fn [loc]
+                        (-> loc (z/append-child {:type :code
+                                                 :content [{:text (.getLiteral node)}]}) z/down z/rightmost))))
 
-(defmethod open-node Image [loc ^Image node]
-  (-> loc (z/append-child {:type :image
-                           :attrs {:src (.getDestination node) :title (.getTitle node)}
-                           :content []}) z/down z/rightmost))
+(defmethod open-node FencedCodeBlock [ctx ^FencedCodeBlock node]
+  (update-current ctx (fn [loc]
+                        (-> loc (z/append-child (merge {:type :code
+                                                        :info (.getInfo node)
+                                                        :content [{:text (.getLiteral node)}]}
+                                                       (parser/parse-fence-info (.getInfo node)))) z/down z/rightmost))))
 
-(defmethod open-node FootnoteDefinition [loc ^FootnoteDefinition node]
-  (-> loc (z/append-child {:type :footnote
-                           :label (.getLabel node)
-                           :content []}) z/down z/rightmost))
+(defmethod open-node Image [ctx ^Image node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :image
+                                                         :attrs {:src (.getDestination node) :title (.getTitle node)}
+                                                         :content []}) z/down z/rightmost))))
+
+(defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
+  (-> ctx
+      (assoc :root :footnotes)
+      (update-current (fn [loc]
+                        (-> loc
+                            (z/append-child {:type :footnote
+                                             :label (.getLabel node)
+                                             :content []}) z/down z/rightmost)))))
+
+(defmethod close-node FootnoteDefinition [ctx ^FootnoteDefinition _node]
+  (-> ctx (update-current z/up) (assoc :root :doc)))
+
+(defmethod open-node InlineFootnote [{:as ctx :keys [label->footnote-ref]} ^InlineFootnote _node]
+  (let [label (str "note-" (count label->footnote-ref))
+        footnote-ref {:type :footnote-ref
+                      :inline? true
+                      :ref (count label->footnote-ref)
+                      :label label}]
+    (-> ctx
+        (update-current z/append-child footnote-ref)
+        (update :label->footnote-ref assoc label footnote-ref)
+        (assoc :root :footnotes)
+        (update-current (fn [loc]
+                          (-> loc
+                              (z/append-child {:type :footnote
+                                               :inline? true
+                                               :label label
+                                               :content []}) z/down z/rightmost))))))
+
+(defmethod close-node InlineFootnote [ctx ^FootnoteDefinition _node]
+  (-> ctx (update-current z/up) (assoc :root :doc)))
 
 (defn handle-todo-list [loc ^TaskListItemMarker node]
   (-> loc
@@ -143,12 +176,10 @@
       z/up (z/edit assoc :type :todo-list)
       z/down z/rightmost))
 
-(defn update-current [ctx f & args]
-  (apply update ctx (current-root) f args))
-
 (defn node->data [^Node node]
   (let [!ctx (atom {:doc (parser/->zip {:type :doc :content []})
                     :footnotes (parser/->zip {:type :footnotes :content []})
+                    :root :doc
                     :label->footnote-ref {}})]
     (.accept node
              (proxy [AbstractVisitor] []
@@ -176,10 +207,9 @@
                    ;; else
                    (if (get-method open-node (class node))
                      (with-tight-list node
-                       (with-current-root node
-                         (swap! !ctx update-current open-node node)
-                         (proxy-super visitChildren node)
-                         (swap! !ctx update-current close-node node)))
+                       (swap! !ctx open-node node)
+                       (proxy-super visitChildren node)
+                       (swap! !ctx close-node node))
                      (prn :open-node/not-implemented node))))))
 
     (let [{:as ctx :keys [label->footnote-ref]} (deref !ctx)]
@@ -218,21 +248,19 @@
 ![img](/some/src 'title')")
 
   ;; footnotes
-  (def text-with-footnotes "_hello_ what and foo[^note1] and
+  (parse "_hello_ what and foo[^note1] and
 
 And what.
 
 [^note1]: the _what_
 
 * and new text[^note2] at the end.
-* the hell
+* the hell^[this is an inline note]
 
 [^note2]: conclusion and $\\phi$
 
 [^note3]: this should just be ignored
 ")
-
-  (parse text-with-footnotes)
 
   (require '[nextjournal.markdown :as md])
   (md/parse text-with-footnotes)

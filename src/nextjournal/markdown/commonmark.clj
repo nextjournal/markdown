@@ -176,11 +176,11 @@
       z/up (z/edit assoc :type :todo-list)
       z/down z/rightmost))
 
-(defn node->data [^Node node]
-  (let [!ctx (atom {:doc (parser/->zip {:type :doc :content []})
-                    :footnotes (parser/->zip {:type :footnotes :content []})
+(defn node->data [{:as _ctx :keys [content footnotes label->footnote-ref]} ^Node node]
+  (let [!ctx (atom {:doc (parser/->zip {:type :doc :content (or content [])})
+                    :footnotes (parser/->zip {:type :footnotes :content (or footnotes [])})
                     :root :doc
-                    :label->footnote-ref {}})]
+                    :label->footnote-ref (or label->footnote-ref {})})]
     (.accept node
              (proxy [AbstractVisitor] []
                ;; proxy can't overload method by arg type, while gen-class can: https://groups.google.com/g/clojure/c/TVRsy4Gnf70
@@ -215,7 +215,8 @@
     (let [{:as ctx :keys [label->footnote-ref]} (deref !ctx)]
       (-> ctx
           :doc z/root
-          (assoc :footnotes
+          (assoc :label->footnote-ref label->footnote-ref
+                 :footnotes
                  ;; there will never be references without definitions, but the contrary may happen
                  (->> @!ctx :footnotes z/root :content
                       (keep (fn [{:as footnote :keys [label]}]
@@ -226,9 +227,14 @@
 
 (defn parse
   ([md] (parse {} md))
-  ([_doc md] (node->data (.parse parser md))))
+  ([ctx md] (node->data ctx (.parse parser md))))
 
 (comment
+  (-> {}
+      (parse "# Title")
+      (parse "some para^[with note]")
+      (parse "some para^[with other note]"))
+
   (parse "some `marks` inline and inline $formula$ with a [link _with_ em](https://what.tfk)")
   (parse "# Ahoi
 
@@ -255,7 +261,7 @@ And what.
 [^note1]: the _what_
 
 * and new text[^note2] at the end.
-* the hell^[this is an inline note]
+* the hell^[crazy _inline_ note with [a](https://a-link.xx) inside]
 
 [^note2]: conclusion and $\\phi$
 

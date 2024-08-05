@@ -121,12 +121,14 @@
    {:regex #":([a-zA-Z0-9_\-.]+):"
     :handler emoji-handler}))
 
+;; Assuming we're using Tailwind CSS.
+;; Otherwise, add appropriate styles in `emoji-handler`
 (defn emoji-renderer
   [ctx node]
   (let [params (:attrs node)
         src (:path params)
         alt (:name params)]
-    [:img.emote params]))
+    [:img.inline-flex params]))
 
 ;; Finally, we can try to offset the performance hit of the emoji lookup by adding some
 ;; asynchrony and timeouts. It's up to you to add spinners, error messages,

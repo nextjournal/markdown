@@ -60,11 +60,11 @@
   The map is a vector of composite map vectors"
   []
   (let [root (io/file emoji-dir)
-        packs (.listFiles root)]
+        packs (file-seq root)]
     (mapcat (fn [pack]
               (when (.isDirectory pack)
                 (let [pack-name (.getName pack)
-                      files (.listFiles pack)
+                      files (file-seq pack)
                       emoji-names (mapv (fn [file]
                                           (-> file
                                               .getName
@@ -77,9 +77,8 @@
                   (assoc {} (keyword pack-name) (mapv #(assoc {} :name % :path %2) emoji-names paths)))))
             packs)))
 
-;; cache the emoji. This is a great boost for performance, 
-;; but you'll need to restart your application when you add new emoji
-(defonce emoji (scan-emoji-dir))
+;; avoid re-scanning the directory on every request
+(def emoji (delay (scan-emoji-dir)))
 
 ;; Next, we need to look up our emoji data we just grabbed. 
 ;; Now, depending on whether you want better performance and less risk 
@@ -91,17 +90,17 @@
 (defn find-emoji-info
   "Looks up the emoji info for an emoji token.
   If unqualified names are enabled in the settings, will
-  sift through all packs."
+  sift through all packs. Discards duplicates."
   [emoji-token]
-  (let [[pack name] (str/split emoji-token #"\." 2)]
-    (->
-     (if unqualified-emoji-names?
-       (reduce (fn [acc [_ emote-pack]]
-                 (concat acc (filter #(= emoji-token (:name %)) emote-pack)))
-               []
-               emoji)
-       (filter #(= name (:name %)) ((keyword pack) emoji)))
-     (first)))) ;; **note**: we discard any duplicates here
+  (let [[pack name] (str/split emoji-token #"\." 2)
+        emoji-map @emoji]
+    (if unqualified-emoji-names?
+      (->> emoji-map
+           vals
+           (apply concat)
+           (filter #(= emoji-token (:name %)))
+           first)
+      (get-in emoji-map [(keyword pack) name]))))
 
 ;; Finally, we can create our handler and renderer
 (defn emoji-handler [match]
@@ -125,9 +124,7 @@
 ;; Otherwise, add appropriate styles in `emoji-handler`
 (defn emoji-renderer
   [ctx node]
-  (let [params (:attrs node)
-        src (:path params)
-        alt (:name params)]
+  (let [params (:attrs node)]
     [:img.inline-flex params]))
 
 ;; Finally, we can try to offset the performance hit of the emoji lookup by adding some

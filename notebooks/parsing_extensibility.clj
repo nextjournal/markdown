@@ -2,11 +2,15 @@
 (ns parsing-extensibility
   {:nextjournal.clerk/toc :collapsed
    :nextjournal.clerk/no-cache true}
-  (:require [nextjournal.clerk :as clerk]
-            [nextjournal.markdown :as md]
-            [nextjournal.markdown.parser :as md.parser]
-            [edamame.core :as edamame]
-            [clojure.string :as str]))
+  (:require
+   [clojuer.java.io :as io]
+   [clojure.core.async :as async]
+   [clojure.string :as str]
+   [edamame.core :as edamame]
+   [nextjournal.clerk :as clerk]
+   [nextjournal.markdown :as md]
+   [nextjournal.markdown.parser :as md.parser]
+   [nextjournal.markdown.transform :as md.transform]))
 
 ^{:nextjournal.clerk/visibility {:code :hide :result :hide}}
 (def show-text
@@ -31,12 +35,121 @@
 
 (md.parser/tokenize-text-node internal-link-tokenizer {} {:text "some [[set]] of [[wiki]] link"})
 
-
 ;; In order to opt-in of the extra tokenization above, we need to configure the document context as follows:
 (md/parse (update md.parser/empty-doc :text-tokenizers conj internal-link-tokenizer)
           "some [[set]] of [[wiki]] link")
 
 ;; We provide an `internal-link-tokenizer` as well as a `hashtag-tokenizer` as part of the `nextjournal.markdown.parser` namespace. By default, these are not used during parsing and need to be opted-in for like explained above.
+;; 
+;; ### Example #2: custom emoji 
+;;
+;; Another, sligthly more complex example is extending the Hiccup transformer,
+;; so that we can add emojis (like :smile:) to the text.
+;;
+;; Assuming we have multiple emoji packs installed, we need to first build a data
+;; structure to hold the metadata about the emoji, like this:
+'([:memes [{:name "bonk"
+            :path "img/emoji/memes/bonk.png"}]]
+  [:yellow_ball [{:name "yb-sunglasses"
+                  :path "img/emoji/yellow_ball/yb-sunglasses.png"}]])
+
+(defonce emoji-dir "resources/public/img/emotes")
+
+(defn scan-emoji-dir
+  "Scans the emoji directory and returns a map of emoji info.
+  The map is a vector of composite map vectors"
+  []
+  (let [root (io/file emoji-dir)
+        packs (.listFiles root)]
+    (mapcat (fn [pack]
+              (when (.isDirectory pack)
+                (let [pack-name (.getName pack)
+                      files (.listFiles pack)
+                      emoji-names (mapv (fn [file]
+                                          (-> file
+                                              .getName
+                                              (str/split #"\." 2) ; trim the extension naively
+                                              first))
+                                        files)
+                      ;; you can remove str/replace call here if it won't cause issues with
+                      ;; your public resources path not being accessible to the client
+                      paths (mapv #(str/replace (.getPath %) #"resources/public" "") files)]
+                  (assoc {} (keyword pack-name) (mapv #(assoc {} :name % :path %2) emoji-names paths)))))
+            packs)))
+
+;; cache the emoji. This is a great boost for performance, 
+;; but you'll need to restart your application when you add new emoji
+(defonce emoji (scan-emoji-dir))
+
+;; Next, we need to look up our emoji data we just grabbed. 
+;; Now, depending on whether you want better performance and less risk 
+;; of conflicts, you might want to require fully qualified emoji names, 
+;; at the expense of some user inconvenience.  
+;; This function makes that configurable
+(def unqualified-emoji-names? true)
+
+(defn find-emoji-info
+  "Looks up the emoji info for an emoji token.
+  If unqualified names are enabled in the settings, will
+  sift through all packs."
+  [emoji-token]
+  (let [[pack name] (str/split emoji-token #"\." 2)]
+    (->
+     (if unqualified-emoji-names?
+       (reduce (fn [acc [_ emote-pack]]
+                 (concat acc (filter #(= emoji-token (:name %)) emote-pack)))
+               []
+               emoji)
+       (filter #(= name (:name %)) ((keyword pack) emoji)))
+     (first)))) ;; **note**: we discard any duplicates here
+
+;; Finally, we can create our handler and renderer
+(defn emoji-handler [match]
+  (let [emoji-name (second match)
+        emote-info (find-emoji-info emoji-name)]
+    (if emote-info
+      {:type :emoji
+       :tag :img
+       :attrs {:src (:path emote-info)
+               :alt (:name emote-info)
+               :style {:max-width "2.5rem"}}}
+      {:type :text
+       :text (str ":" emoji-name ":")})))
+
+(def ^:private emoji-tokenizer
+  (md.parser/normalize-tokenizer
+   {:regex #":([a-zA-Z0-9_\-.]+):"
+    :handler emoji-handler}))
+
+(defn emoji-renderer
+  [ctx node]
+  (let [params (:attrs node)
+        src (:path params)
+        alt (:name params)]
+    [:img.emote params]))
+
+;; Finally, we can try to offset the performance hit of the emoji lookup by adding some
+;; asynchrony and timeouts. It's up to you to add spinners, error messages,
+;; fallback values etc. to your Hiccup template.
+(defn parse-message
+  "Parses message's formatting (extended markdown, see docs)
+  and returns a rum template"
+  [message]
+  (async/go
+    (try
+      (let [parsing-chan (async/go (md.parser/parse
+                                     ;; add the emoji tokenizer to text tokenizers
+                                    (update md.parser/empty-doc :text-tokenizers conj emoji-tokenizer)
+                                    (md/tokenize message)))
+            timeout-chan (async/timeout 2000)
+            ;; add the renderer to the default renderers map
+            renderers (assoc md.transform/default-hiccup-renderers :emoji emoji-renderer)
+            [result port] (async/alts! [parsing-chan timeout-chan])]
+        (if (= port timeout-chan)
+          {:error "Parsing timed out"}
+          (md.transform/->hiccup renderers result)))
+      (catch Exception e
+        {:error (str "Error parsing message: " (.getMessage e))}))))
 
 ;; ## Read-based tokenization
 ;;

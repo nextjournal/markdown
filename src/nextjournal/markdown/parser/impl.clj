@@ -1,4 +1,4 @@
-(ns nextjournal.markdown.commonmark
+(ns nextjournal.markdown.parser.impl
   (:require [clojure.zip :as z]
             [nextjournal.markdown.parser :as parser]
             [nextjournal.markdown.parser2.types]

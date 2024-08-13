@@ -5,7 +5,7 @@
 (deftest multithreading
   (let [!exs (atom [])
         proc (fn []
-               (try (md/tokenize (slurp "notebooks/reference.md"))
+               (try (md/parse (slurp "notebooks/reference.md"))
                     (catch IllegalStateException e
                       (swap! !exs conj e))))
         t1 (new Thread proc)

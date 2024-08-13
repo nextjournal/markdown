@@ -35,40 +35,6 @@
 ;;     * to hide paragraphs.
 ;;     **/
 ;;     this.hidden = false
-;;
-;; so when a paragraph is marked as hidden, markdown-it will unwrap its contents.
-
-(defn flat-tokenize [text]
-  (into []
-        (comp
-         (mapcat (partial tree-seq (comp seq :children) :children))
-         (map #(select-keys % [:type :content :hidden :level :info])))
-        (md/tokenize text)))
-
-;; Some examples follow of a
-;; * tight list
-(flat-tokenize "
-- one
-- two")
-
-;; * loose list because of an inner paragraph
-(flat-tokenize "
-- one
-
-  inner par
-- two")
-
-;; * loose list with 2-newline separated items
-(flat-tokenize "
-- one
-
-- two")
-
-(flat-tokenize "
-- one
-  * thight sub one
-- two
-")
 
 ;; ## Pandoc to the Rescue
 ;;

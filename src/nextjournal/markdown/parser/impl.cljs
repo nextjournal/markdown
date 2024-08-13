@@ -1,51 +1,29 @@
 ;; # 🧩 Parsing
-;;
-;; Deals with transforming a sequence of tokens obtained by [markdown-it] into a nested AST composed of nested _nodes_.
-;;
-;; A _node_ is a clojure map and has no closed specification at the moment. We do follow a few conventions for its keys:
-;;
-;; - `:type` a keyword (:heading, :paragraph, :text, :code etc.) present on all nodes.
-;;
-;; When a node contains other child nodes, then it will have a
-;;
-;; - `:content` a collection of nodes representing nested content
-;;
-;; when a node is a textual leaf (as in a `:text` or `:formula` nodes) it carries a
-;; - `:text` key with a string value
-;;
-;; Other keys might include e.g.
-;;
-;; - `:info` specific of fenced code blocks
-;; - `:heading-level` specific of `:heading` nodes
-;; - `:attrs` attributes as passed by markdown-it tokens (e.g `{:style "some style info"}`)
-(ns nextjournal.markdown.parser
-  (:require [clojure.string :as str]
+;; plan
+;; - write this with parse/2 copying from parser.cljc
+;; - introduce impl.shared
+;; - copy tokenizer from markdown cljs
+;; - make markdown.clj cljc (break clj parsing)
+;; - delete markdown.cljs
+;; -
+
+(ns nextjournal.markdown.parser.impl
+  (:require ["/js/markdown" :as md]
+            ["markdown-it/lib/token" :as Token]
+            [applied-science.js-interop :as j]
+            [clojure.string :as str]
             [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.parser.emoji :as emoji]
-            #?@(:cljs [[applied-science.js-interop :as j]
-                       [cljs.reader :as reader]])))
+   ;; TODO: drop refers
+            [nextjournal.markdown.parser.impl.utils :as u :refer [empty-doc re-idx-seq]]))
 
-;; clj common accessors
-(def get-in* #?(:clj get-in :cljs j/get-in))
-(def update* #?(:clj update :cljs j/update!))
+(extend-type Token
+  ILookup
+  (-lookup [this key] (j/get this key)))
 
-#?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
-(defn re-idx-seq
-  "Takes a regex and a string, returns a seq of triplets comprised of match groups followed by indices delimiting each match."
-  [re text]
-  #?(:clj (let [m (re-matcher re text)]
-            (take-while some? (repeatedly #(when (.find m) [(re-groups* m) (.start m) (.end m)]))))
-     :cljs (let [rex (js/RegExp. (.-source re) "g")]
-             (take-while some? (repeatedly #(when-some [m (.exec rex text)] [(vec m) (.-index m) (.-lastIndex rex)]))))))
-
-
-(comment (re-idx-seq #"\{\{([^{]+)\}\}" "foo {{hello}} bar"))
-(comment (re-idx-seq #"\{\{[^{]+\}\}" "foo {{hello}} bar"))
-;; region node operations
-;; helpers
 (defn inc-last [path] (update path (dec (count path)) inc))
-(defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second #?(:clj Integer/parseInt :cljs js/parseInt))))
+(defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second js/parseInt)))
 
 (defn split-by-emoji [s]
   (let [[match start end] (first (re-idx-seq emoji/regex s))]
@@ -117,7 +95,7 @@
                :else (assoc info-map (keyword token) true))))
          {}
          tokens)))
-    (catch #?(:clj Throwable :cljs :default) _ {})))
+    (catch :default _ {})))
 
 (comment
   (parse-fence-info "python runtime-id=5f77e475-6178-47a3-8437-45c9c34d57ff")
@@ -150,7 +128,7 @@
       (-> #_doc
        (update ::path inc-last)
        (update-in (pop path) conj node)))
-    (catch #?(:clj Exception :cljs js/Error) e
+    (catch js/Error e
       (throw (ex-info (str "nextjournal.markdown cannot add node: " node " at path: " path)
                       {:doc doc :node node} e)))))
 
@@ -257,16 +235,16 @@
     (reduce (xf rf) (assoc doc :toc {:type :toc}) content)))
 
 (comment
- (-> {:type :toc}
-     ;;(into-toc {:heading-level 3 :title "Foo"})
-     ;;(into-toc {:heading-level 2 :title "Section 1"})
-     (into-toc {:heading-level 1 :title "Title" :type :toc})
-     (into-toc {:heading-level 4 :title "Section 2" :type :toc})
-     ;;(into-toc {:heading-level 4 :title "Section 2.1"})
-     ;;(into-toc {:heading-level 2 :title "Section 3"})
-     )
+  (-> {:type :toc}
+      ;;(into-toc {:heading-level 3 :title "Foo"})
+      ;;(into-toc {:heading-level 2 :title "Section 1"})
+      (into-toc {:heading-level 1 :title "Title" :type :toc})
+      (into-toc {:heading-level 4 :title "Section 2" :type :toc})
+      ;;(into-toc {:heading-level 4 :title "Section 2.1"})
+      ;;(into-toc {:heading-level 2 :title "Section 3"})
+      )
 
- (-> "# Top _Title_
+  (-> "# Top _Title_
 
 par
 
@@ -291,9 +269,9 @@ par
 #### Four
 
 end"
-     nextjournal.markdown/parse
-     :toc
-     ))
+      nextjournal.markdown/parse
+      :toc
+      ))
 ;; endregion
 
 ;; region token handlers
@@ -338,7 +316,7 @@ end"
 (defmethod apply-token "blockquote_close" [doc _token] (close-node doc))
 
 (defmethod apply-token "tocOpen" [doc _token] (open-node doc :toc))
-(defmethod apply-token "tocBody" [doc _token] doc) ;; ignore body
+(defmethod apply-token "tocBody" [doc _token] doc)          ;; ignore body
 (defmethod apply-token "tocClose" [doc _token] (-> doc close-node (update-current dissoc :content)))
 
 (defmethod apply-token "code_block" [doc {:as _token c :content}]
@@ -354,15 +332,15 @@ end"
 
 ;; footnotes
 (defmethod apply-token "footnote_ref" [{:as doc :keys [footnotes]} token]
-  (push-node doc (footnote-ref (+ (count footnotes) (get-in* token [:meta :id]))
-                               (get-in* token [:meta :label]))))
+  (push-node doc (footnote-ref (+ (count footnotes) (j/get-in token [:meta :id]))
+                               (j/get-in token [:meta :label]))))
 
 (defmethod apply-token "footnote_anchor" [doc token] doc)
 
 (defmethod apply-token "footnote_open" [{:as doc ::keys [footnote-offset]} token]
   ;; consider an offset in case we're parsing multiple inputs into the same context
-  (let [ref (+ (get-in* token [:meta :id]) footnote-offset)
-        label (get-in* token [:meta :label])]
+  (let [ref (+ (j/get-in token [:meta :id]) footnote-offset)
+        label (j/get-in token [:meta :label])]
     (open-node doc :footnote nil (cond-> {:ref ref} label (assoc :label label)))))
 
 (defmethod apply-token "footnote_close" [doc token] (close-node doc))
@@ -422,7 +400,32 @@ end"
           :else
           (recur (z/right loc) parent))))))
 
+(comment
+  (-> "_hello_ what and foo[^note1] and^[some other note].
 
+And what.
+
+[^note1]: the _what_
+
+* and new text[^endnote] at the end.
+* the
+  * hell^[that warm place]
+
+[^endnote]: conclusion.
+"
+      nextjournal.markdown/tokenize
+      parse
+      #_flatten-tokens
+      #_insert-sidenote-containers)
+
+  (-> empty-doc
+      (update :text-tokenizers (partial map normalize-tokenizer))
+      (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
+      insert-sidenote-columns
+      (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
+      insert-sidenote-columns
+      (apply-tokens (nextjournal.markdown/tokenize "is^[this thing]"))
+      insert-sidenote-columns))
 
 ;; tables
 ;; table data tokens might have {:style "text-align:right|left"} attrs, maybe better nested node > :attrs > :style ?
@@ -441,16 +444,16 @@ end"
 
 (comment
   (->
-"
-| Syntax |  JVM                     | JavaScript                      |
-|--------|:------------------------:|--------------------------------:|
-|   foo  |  Loca _lDate_ ahoiii     | goog.date.Date                  |
-|   bar  |  java.time.LocalTime     | some [kinky](link/to/something) |
-|   bag  |  java.time.LocalDateTime | $\\phi$                         |
-"
-    nextjournal.markdown/parse
-    nextjournal.markdown.transform/->hiccup
-    ))
+   "
+   | Syntax |  JVM                     | JavaScript                      |
+   |--------|:------------------------:|--------------------------------:|
+   |   foo  |  Loca _lDate_ ahoiii     | goog.date.Date                  |
+   |   bar  |  java.time.LocalTime     | some [kinky](link/to/something) |
+   |   bag  |  java.time.LocalDateTime | $\\phi$                         |
+   "
+   nextjournal.markdown/parse
+   nextjournal.markdown.transform/->hiccup
+   ))
 
 ;; ## Handling of Text Tokens
 ;;
@@ -573,102 +576,27 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 ;; region data builder api
 (defn pairs->kmap [pairs] (into {} (map (juxt (comp keyword first) second)) pairs))
 (defn apply-tokens [doc tokens]
-  (let [mapify-attrs-xf (map (fn [x] (update* x :attrs pairs->kmap)))]
+  (let [mapify-attrs-xf (map (fn [x] (j/update! x :attrs pairs->kmap)))]
     (reduce (mapify-attrs-xf apply-token) doc tokens)))
 
-(def empty-doc {:type :doc
-                :content []
-                ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
-                ::id->index {}
-                ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
-                :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
-                :toc {:type :toc}
-                :footnotes []
-                ::path [:content -1] ;; private
-                :text-tokenizers []})
-
 (defn parse
-  "Takes a doc and a collection of markdown-it tokens, applies tokens to doc. Uses an emtpy doc in arity 1."
-  ([tokens] (parse empty-doc tokens))
-  ([doc tokens] (-> doc
-                    (update :text-tokenizers (partial map normalize-tokenizer))
-                    (apply-tokens tokens)
-                    (dissoc ::path
-                            ::id->index
-                            :text-tokenizers
-                            :text->id+emoji-fn))))
+  ([markdown]
+   ;; TODO: unify emoji extraction
+   (parse empty-doc markdown))
+  ([ctx markdown]
+   (apply-tokens (-> ctx
+                     (assoc :text->id+emoji-fn (comp text->id+emoji md.transform/->text))
+                     ;; TODO: 👆unify
+                     (update :text-tokenizers (partial map normalize-tokenizer)))
+                 (md/tokenize markdown))))
 
 (comment
-
- (-> "# 🎱 Markdown Data
-
-some _emphatic_ **strong** [link](https://foo.com)
-
----
-
-> some ~~nice~~ quote
-> for fun
-
-## Formulas
-
-[[TOC]]
-
-$$\\Pi^2$$
-
-- [ ]  and
-- [x]  some $\\Phi_{\\alpha}$ latext
-- [ ]  bullets
-
-## Sidenotes
-
-here [^mynote] to somewhere
-
-## Fences
-
-```py id=\"aaa-bbb-ccc\"
-1
-print(\"this is some python\")
-2
-3
-```
-
-![Image Text](https://img.icons8.com/officel/16/000000/public.png)
-
-Hline Section
--------------
-
-### but also [[indented code]]
-
-    import os
-    os.listdir('/')
-
-or monospace mark [`real`](/foo/bar) fun.
-
-[^mynote]: Here you _can_ `explain` at lenght
-"
-     nextjournal.markdown/tokenize
-     parse
-     ;;seq
-     ;;(->> (take 10))
-     ;;(->> (take-last 4))
-     ))
-;; endregion
-
-;; region zoom-in at section
-(defn section-at [{:as doc :keys [content]} [_ pos :as path]]
-  ;; TODO: generalize over path (zoom-in at)
-  ;; supports only top-level headings atm (as found in TOC)
-  (let [{:as h section-level :heading-level} (get-in doc path)
-        in-section? (fn [{l :heading-level}] (or (not l) (< section-level l)))]
-    (when section-level
-      {:type :doc
-       :content (cons h
-                      (->> content
-                           (drop (inc pos))
-                           (take-while in-section?)))})))
+  (defn pr-dbg [x] (js/console.log (js/JSON.parse (js/JSON.stringify x))))
+  (parse "# 🎱 Hello")
+  )
 
 (comment
- (some-> "# Title
+  (some-> "# Title
 
 ## Section 1
 
@@ -700,9 +628,9 @@ two two two
 ## Section 3
 
 some final par"
-    nextjournal.markdown/parse
-    (section-at [:content 9])                         ;; ⬅ paths are stored in TOC sections
-    nextjournal.markdown.transform/->hiccup))
+          nextjournal.markdown/parse
+          (section-at [:content 9])                         ;; ⬅ paths are stored in TOC sections
+          nextjournal.markdown.transform/->hiccup))
 ;; endregion
 
 

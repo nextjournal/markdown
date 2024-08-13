@@ -1,21 +1,13 @@
 (ns nextjournal.markdown-test
-  (:require [clojure.test :as t :refer [deftest testing is use-fixtures]]
+  (:require [clojure.test :as t :refer [deftest testing is]]
             [matcher-combinators.test :refer [match?]]
             [matcher-combinators.standalone :as standalone]
             [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
             [matcher-combinators.ansi-color]
             [nextjournal.markdown.parser :as md.parser]
+            [nextjournal.markdown.parser.impl.utils :as u]
             [nextjournal.markdown.transform :as md.transform]))
-
-#?(:clj (use-fixtures :once
-                      (fn [f]
-                        (prn "Running Tests with legacy GraalJS parser")
-                        (f)
-                        (prn "----------------------------------------------------------------------------------")
-                        (flush)
-                        (prn "Running Tests with new Java parser")
-                        (md/with-new-parser (f)))))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
 (matcher-combinators.ansi-color/disable!)
@@ -39,11 +31,11 @@ $$\\int_a^bf(t)dt$$
 ")
 
 (defn parse-internal-links [text]
-  (md/parse (update md.parser/empty-doc :text-tokenizers conj md.parser/internal-link-tokenizer)
+  (md/parse (update u/empty-doc :text-tokenizers conj u/internal-link-tokenizer)
             text))
 
 (defn parse-hashtags [text]
-  (md/parse (update md.parser/empty-doc :text-tokenizers conj md.parser/hashtag-tokenizer)
+  (md/parse (update u/empty-doc :text-tokenizers conj u/hashtag-tokenizer)
             text))
 
 (deftest parse-test

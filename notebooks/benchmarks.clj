@@ -20,8 +20,8 @@
 (defn parse
   ([text] (parse [] text))
   ([extra-tokenizers text]
-   (md.parser/parse (update md.parser/empty-doc :text-tokenizers concat extra-tokenizers)
-                    (md/tokenize text))))
+   (md/parse (update md.parser/empty-doc :text-tokenizers concat extra-tokenizers)
+             text)))
 
 (comment
 

@@ -12,6 +12,9 @@
                 :nextjournal.markdown.parser.impl/path [:content -1] ;; private
                 :text-tokenizers []})
 
+;; node utils
+(defn text-node [s] {:type :text :text s})
+
 #?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
 (defn re-idx-seq
   "Takes a regex and a string, returns a seq of triplets comprised of match groups followed by indices delimiting each match."
@@ -21,6 +24,10 @@
      :cljs (let [rex (js/RegExp. (.-source re) "g")]
              (take-while some? (repeatedly #(when-some [m (.exec rex text)] [(vec m) (.-index m) (.-lastIndex rex)]))))))
 
+
+#_ (re-idx-seq #"\{\{([^{]+)\}\}" "foo {{hello}} bar")
+#_ (re-idx-seq #"\{\{[^{]+\}\}" "foo {{hello}} bar {{what}} the")
+
 ;; zipper utils
 
 (defn ->zip [doc]
@@ -28,19 +35,111 @@
             (fn [node cs] (assoc node :content (vec cs)))
             doc))
 
-;; TODO: rewrite in terms of zippers
-(def ppop (comp pop pop))
+(def zip? (comp some? :zip/children meta))
+
+#_(zip? (->zip {:type :doc :content []}))
+#_(->zip {:type :doc :content []})
 
 ;; TODO: rewrite in terms of zippers
-(defn current-ancestor-nodes
-  "Given an open parsing context `doc`, returns the list of ancestors of the node last parsed into the document, up to but
-   not including the top document."
-  [{:as doc :nextjournal.markdown.parser.impl/keys [path]}]
-  (assert path "A path is needed in document context to retrieve the current node: `current-ancestor-nodes` cannot be called after `parse`.")
-  (loop [p (ppop path) ancestors []]
-    (if (seq p)
-      (recur (ppop p) (conj ancestors (get-in doc p)))
-      ancestors)))
+(def ppop (comp pop pop))
+(defn inc-last [path] (update path (dec (count path)) inc))
+(defn empty-text-node? [{text :text t :type}] (and (= :text t) (empty? text)))
+;; TODO: unify in terms of zippers
+#?(:cljs
+   (defn push-node [{:as doc :nextjournal.markdown.parser.impl/keys [path]} node]
+     (try
+       (cond-> doc
+         ;; ⬇ mdit produces empty text tokens at mark boundaries, see edge cases below
+         (not (empty-text-node? node))
+         (-> #_doc
+          (update :nextjournal.markdown.parser.impl/path inc-last)
+          (update-in (pop path) conj node)))
+       (catch js/Error e
+         (throw (ex-info (str "nextjournal.markdown cannot add node: " node " at path: " path)
+                         {:doc doc :node node} e)))))
+   :clj
+   (def push-node z/append-child))
+
+;; ## Handling of Text Tokens
+;;
+;;    normalize-tokenizer :: {:regex, :doc-handler} | {:tokenizer-fn, :handler} -> Tokenizer
+;;    Tokenizer :: {:tokenizer-fn :: TokenizerFn, :doc-handler :: DocHandler}
+;;
+;;    Match :: Any
+;;    Handler :: Match -> Node
+;;    IndexedMatch :: (Match, Int, Int)
+;;    TokenizerFn :: String -> [IndexedMatch]
+;;    DocHandler :: Doc -> {:match :: Match} -> Doc
+
+(defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} doc {:as node :keys [text]}]
+  ;; TokenizerFn -> HNode -> [HNode]
+  (assert (and (fn? tokenizer-fn)
+               (fn? doc-handler)
+               (fn? pred)
+               (string? text))
+          {:text text :tokenizer tkz})
+  (let [idx-seq (when (pred doc) (tokenizer-fn text))]
+    (if (seq idx-seq)
+      (let [text-hnode (fn [s] (assoc (text-node s) :doc-handler push-node))
+            {:keys [nodes remaining-text]}
+            (reduce (fn [{:as acc :keys [remaining-text]} [match start end]]
+                      (-> acc
+                          (update :remaining-text subs 0 start)
+                          (cond->
+                            (< end (count remaining-text))
+                            (update :nodes conj (text-hnode (subs remaining-text end))))
+                          (update :nodes conj {:doc-handler doc-handler
+                                               :match match :text text
+                                               :start start :end end})))
+                    {:remaining-text text :nodes ()}
+                    (reverse idx-seq))]
+        (cond-> nodes
+          (seq remaining-text)
+          (conj (text-hnode remaining-text))))
+      [node])))
+
+(defn handle-text-token [{:as doc :keys [text-tokenizers]} text]
+  (let [text-tokenizers (:text-tokenizers (if (zip? doc) (z/root doc) doc))]
+    (reduce (fn [doc {:as node :keys [doc-handler]}] (doc-handler doc (dissoc node :doc-handler)))
+            doc
+            (reduce (fn [nodes tokenizer]
+                      (mapcat (fn [{:as node :keys [type]}]
+                                (if (= :text type) (tokenize-text-node tokenizer doc node) [node]))
+                              nodes))
+                    [{:type :text :text text :doc-handler push-node}]
+                    text-tokenizers))))
+
+;; clj
+#_(handle-text-token (->zip {:type :doc :content []}) "some-text")
+
+;; tokenizers
+(defn normalize-tokenizer
+  "Normalizes a map of regex and handler into a Tokenizer"
+  [{:as tokenizer :keys [doc-handler pred handler regex tokenizer-fn]}]
+  (assert (and (or doc-handler handler) (or regex tokenizer-fn)))
+  (cond-> tokenizer
+    (not doc-handler) (assoc :doc-handler (fn [doc {:keys [match]}] (push-node doc (handler match))))
+    (not tokenizer-fn) (assoc :tokenizer-fn (partial re-idx-seq regex))
+    (not pred) (assoc :pred (constantly true))))
+
+;; TODO: rewrite in terms of zippers
+#?(:cljs
+   (defn current-ancestor-nodes
+     "Given an open parsing context `doc`, returns the list of ancestors of the node last parsed into the document, up to but
+      not including the top document."
+     [{:as doc :nextjournal.markdown.parser.impl/keys [path]}]
+     (assert path "A path is needed in document context to retrieve the current node: `current-ancestor-nodes` cannot be called after `parse`.")
+     (loop [p (ppop path) ancestors []]
+       (if (seq p)
+         (recur (ppop p) (conj ancestors (get-in doc p)))
+         ancestors)))
+   :clj
+   (defn current-ancestor-nodes [loc]
+     (loop [loc loc ancestors []]
+       (let [parent (z/up loc)]
+         (if (and parent (not= :doc (:type (z/node parent))))
+           (recur parent (conj ancestors (z/node parent)))
+           ancestors)))))
 
 (def hashtag-tokenizer
   {:regex #"(^|\B)#[\w-]+"
@@ -51,6 +150,9 @@
   {:regex #"\[\[([^\]]+)\]\]"
    :pred #(every? (complement #{:link}) (map :type (current-ancestor-nodes %)))
    :handler (fn [match] {:type :internal-link :text (match 1)})})
+
+#_(normalize-tokenizer internal-link-tokenizer)
+#_(normalize-tokenizer hashtag-tokenizer)
 
 (defn parse-fence-info [info-str]
   (try
@@ -72,10 +174,10 @@
          tokens)))
     (catch #?(:clj Throwable :cljs :default) _ {})))
 
-
 (comment
-  (->zip {:type :doc :content []})
-
-
-  (re-idx-seq #"\{\{([^{]+)\}\}" "foo {{hello}} bar")
-  (re-idx-seq #"\{\{[^{]+\}\}" "foo {{hello}} bar {{what}} the"))
+  (parse-fence-info "python runtime-id=5f77e475-6178-47a3-8437-45c9c34d57ff")
+  (parse-fence-info "{#some-id .lang foo=nex}")
+  (parse-fence-info "#id clojure")
+  (parse-fence-info "clojure #id")
+  (parse-fence-info "clojure")
+  (parse-fence-info "{r cars, echo=FALSE}"))

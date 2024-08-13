@@ -175,18 +175,22 @@
       z/up (z/edit assoc :type :todo-list)
       z/down z/rightmost))
 
-(defn node->data [{:as _ctx :keys [content footnotes label->footnote-ref]} ^Node node]
-  (let [!ctx (atom {:doc (u/->zip {:type :doc :content (or content [])})
-                    :footnotes (u/->zip {:type :footnotes :content (or footnotes [])})
-                    :root :doc
-                    :label->footnote-ref (or label->footnote-ref {})})]
+(defn node->data [{:as ctx :keys [footnotes]} ^Node node]
+  (assert (:type ctx) ":type must be set on initial doc")
+  (assert (:content ctx) ":content must be set on initial doc")
+  (let [!ctx (atom (-> ctx
+                       (update :label->footnote-ref #(or % {}))
+                       (assoc :doc (u/->zip ctx)
+                              :footnotes (u/->zip {:type :footnotes :content (or footnotes [])})
+                              :root :doc)))]
     (.accept node
              (proxy [AbstractVisitor] []
                ;; proxy can't overload method by arg type, while gen-class can: https://groups.google.com/g/clojure/c/TVRsy4Gnf70
                (visit [^Node node]
                  (condp instance? node
                    LinkReferenceDefinition :ignore
-                   Text (swap! !ctx update-current z/append-child {:type :text :text (.getLiteral ^Text node)})
+                   ;;Text (swap! !ctx update-current z/append-child {:type :text :text (.getLiteral ^Text node)})
+                   Text (swap! !ctx update-current u/handle-text-token (.getLiteral ^Text node))
                    ThematicBreak (swap! !ctx update-current z/append-child {:type :ruler})
                    SoftLineBreak (swap! !ctx update-current z/append-child {:type :softbreak})
                    HardLineBreak (swap! !ctx update-current z/append-child {:type :hardbreak})

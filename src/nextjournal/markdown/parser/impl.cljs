@@ -77,34 +77,6 @@
 ;; - https://pandoc.org/MANUAL.html#fenced-code-blocks
 ;; - https://rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf"
 
-(defn parse-fence-info [info-str]
-  (try
-    (when (string? info-str)
-      (let [tokens (-> info-str
-                       str/trim
-                       (str/replace #"[\{\}\,]" "")         ;; remove Pandoc/Rmarkdown brackets and commas
-                       (str/replace "." "")                 ;; remove dots
-                       (str/split #" "))]                   ;; split by spaces
-        (reduce
-         (fn [{:as info-map :keys [language]} token]
-           (let [[_ k v] (re-matches #"^([^=]+)=([^=]+)$" token)]
-             (cond
-               (str/starts-with? token "#") (assoc info-map :id (str/replace token #"^#" "")) ;; pandoc #id
-               (and k v) (assoc info-map (keyword k) v)
-               (not language) (assoc info-map :language token) ;; language is the first simple token which is not a pandoc's id
-               :else (assoc info-map (keyword token) true))))
-         {}
-         tokens)))
-    (catch :default _ {})))
-
-(comment
-  (parse-fence-info "python runtime-id=5f77e475-6178-47a3-8437-45c9c34d57ff")
-  (parse-fence-info "{#some-id .lang foo=nex}")
-  (parse-fence-info "#id clojure")
-  (parse-fence-info "clojure #id")
-  (parse-fence-info "clojure")
-  (parse-fence-info "{r cars, echo=FALSE}"))
-
 ;; leaf nodes
 (defn text-node [text] {:type :text :text text})
 (defn formula [text] {:type :formula :text text})
@@ -326,7 +298,7 @@ end"
       close-node))
 (defmethod apply-token "fence" [doc {:as _token i :info c :content}]
   (-> doc
-      (open-node :code {} (assoc (parse-fence-info i) :info i))
+      (open-node :code {} (assoc (u/parse-fence-info i) :info i))
       (push-node (text-node c))
       close-node))
 
@@ -419,7 +391,7 @@ And what.
       #_insert-sidenote-containers)
 
   (-> empty-doc
-      (update :text-tokenizers (partial map normalize-tokenizer))
+      (update :text-tokenizers (partial map u/normalize-tokenizer))
       (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
       insert-sidenote-columns
       (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
@@ -455,94 +427,31 @@ And what.
    nextjournal.markdown.transform/->hiccup
    ))
 
-;; ## Handling of Text Tokens
-;;
-;;    normalize-tokenizer :: {:regex, :doc-handler} | {:tokenizer-fn, :handler} -> Tokenizer
-;;    Tokenizer :: {:tokenizer-fn :: TokenizerFn, :doc-handler :: DocHandler}
-;;
-;;    Match :: Any
-;;    Handler :: Match -> Node
-;;    IndexedMatch :: (Match, Int, Int)
-;;    TokenizerFn :: String -> [IndexedMatch]
-;;    DocHandler :: Doc -> {:match :: Match} -> Doc
-
-(def hashtag-tokenizer
-  {:regex #"(^|\B)#[\w-]+"
-   :pred #(every? (complement #{:link}) (map :type (current-ancestor-nodes %)))
-   :handler (fn [match] {:type :hashtag :text (subs (match 0) 1)})})
-
-(def internal-link-tokenizer
-  {:regex #"\[\[([^\]]+)\]\]"
-   :pred #(every? (complement #{:link}) (map :type (current-ancestor-nodes %)))
-   :handler (fn [match] {:type :internal-link :text (match 1)})})
-
 (comment
   (->> "# Hello #Fishes
 
 > what about #this
 
 _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
-       nextjournal.markdown/tokenize
-       (parse (update empty-doc :text-tokenizers conj hashtag-tokenizer))))
-
-
-(defn normalize-tokenizer
-  "Normalizes a map of regex and handler into a Tokenizer"
-  [{:as tokenizer :keys [doc-handler pred handler regex tokenizer-fn]}]
-  (assert (and (or doc-handler handler) (or regex tokenizer-fn)))
-  (cond-> tokenizer
-    (not doc-handler) (assoc :doc-handler (fn [doc {:keys [match]}] (push-node doc (handler match))))
-    (not tokenizer-fn) (assoc :tokenizer-fn (partial re-idx-seq regex))
-    (not pred) (assoc :pred (constantly true))))
-
-(defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} doc {:as node :keys [text]}]
-  ;; TokenizerFn -> HNode -> [HNode]
-  (assert (and (fn? tokenizer-fn) (fn? doc-handler) (fn? pred) (string? text))
-          {:text text :tokenizer tkz})
-  (let [idx-seq (when (pred doc) (tokenizer-fn text))]
-    (if (seq idx-seq)
-      (let [text-hnode (fn [s] (assoc (text-node s) :doc-handler push-node))
-            {:keys [nodes remaining-text]}
-            (reduce (fn [{:as acc :keys [remaining-text]} [match start end]]
-                      (-> acc
-                          (update :remaining-text subs 0 start)
-                          (cond->
-                            (< end (count remaining-text))
-                            (update :nodes conj (text-hnode (subs remaining-text end))))
-                          (update :nodes conj {:doc-handler doc-handler
-                                               :match match :text text
-                                               :start start :end end})))
-                    {:remaining-text text :nodes ()}
-                    (reverse idx-seq))]
-        (cond-> nodes
-          (seq remaining-text)
-          (conj (text-hnode remaining-text))))
-      [node])))
+       (parse (update empty-doc :text-tokenizers conj (u/normalize-tokenizer u/hashtag-tokenizer)))))
 
 (defmethod apply-token "text" [{:as doc :keys [text-tokenizers]} {:keys [content]}]
-  (reduce (fn [doc {:as node :keys [doc-handler]}] (doc-handler doc (dissoc node :doc-handler)))
-          doc
-          (reduce (fn [nodes tokenizer]
-                    (mapcat (fn [{:as node :keys [type]}]
-                              (if (= :text type) (tokenize-text-node tokenizer doc node) [node]))
-                            nodes))
-                  [{:type :text :text content :doc-handler push-node}]
-                  text-tokenizers)))
+  (u/handle-text-token doc content))
 
 (comment
-  (def mustache (normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}" :handler (fn [m] {:type :eval :text (m 1)})}))
+  (def mustache (u/normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}" :handler (fn [m] {:type :eval :text (m 1)})}))
   (tokenize-text-node mustache {} {:text "{{what}} the {{hellow}}"})
   (apply-token (assoc empty-doc :text-tokenizers [mustache])
                {:type "text" :content "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]] and {{eval}} me"})
 
   (parse (assoc empty-doc
                 :text-tokenizers
-                [(normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}"
+                [(u/normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}"
                                        :doc-handler (fn [{:as doc ::keys [path]} {[_ meta] :match}]
                                                       (update-in doc (ppop path) assoc :meta meta))})])
-         (nextjournal.markdown/tokenize "# Title {{id=heading}}
+          "# Title {{id=heading}}
 * one
-* two")))
+* two"))
 
 ;; inlines
 (defmethod apply-token "inline" [doc {:as _token ts :children}] (apply-tokens doc ts))
@@ -587,7 +496,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
    (apply-tokens (-> ctx
                      (assoc :text->id+emoji-fn (comp text->id+emoji md.transform/->text))
                      ;; TODO: 👆unify
-                     (update :text-tokenizers (partial map normalize-tokenizer)))
+                     )
                  (md/tokenize markdown))))
 
 (comment

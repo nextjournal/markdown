@@ -10,7 +10,22 @@
             [nextjournal.markdown.transform :as md.transform]))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
-(matcher-combinators.ansi-color/disable!)
+#?(:cljs (matcher-combinators.ansi-color/disable!))
+
+(deftest simple-parsing
+  (is (match? {:type :doc,
+               :content [{:type :heading
+                          :heading-level 1
+                          :content [{:type :text, :text "Ahoi"}]}
+                         {:type :bullet-list,
+                          :content [{:type :list-item, :content [{:type :plain, :content [{:type :text, :text "one"}]}]}
+                                    {:type :list-item, :content [{:type :plain, :content [{:type :em, :content [{:type :text, :text "nice"}]}]}]}
+                                    {:type :list-item, :content [{:type :plain, :content [{:type :text, :text "list"}]}]}]}]
+               :footnotes []}
+              (md/parse "# Ahoi
+* one
+* _nice_
+* list"))))
 
 (def markdown-text
   "# 🎱 Hello
@@ -96,63 +111,50 @@ $$\\int_a^bf(t)dt$$
 
 
   (testing "parses internal links / plays well with todo lists"
-    (is (match? {:toc {:type :toc}
-            :type :doc
-            :content [{:type :paragraph
-                       :content [{:text "a "
-                                  :type :text}
-                                 {:text "wikistyle"
-                                  :type :internal-link}
-                                 {:text " link"
-                                  :type :text}]}]}
+    (is (match? {:type :doc
+                 :content [{:type :paragraph
+                            :content [{:text "a "
+                                       :type :text}
+                                      {:text "wikistyle"
+                                       :type :internal-link}
+                                      {:text " link"
+                                       :type :text}]}]}
                 (parse-internal-links "a [[wikistyle]] link")))
 
     (is (match? {:type :doc
-            :title "a wikistyle link in title"
-            :content [{:heading-level 1
-                       :type :heading
-                       :content [{:text "a "
-                                  :type :text}
-                                 {:text "wikistyle"
-                                  :type :internal-link}
-                                 {:text " link in title"
-                                  :type :text}]}]
-            :toc {:type :toc
-                  :children [{:type :toc
-                              :content [{:text "a "
-                                         :type :text}
-                                        {:text "wikistyle"
-                                         :type :internal-link}
-                                        {:text " link in title"
-                                         :type :text}]
-                              :heading-level 1
-                              :path [:content 0]}]}}
+                 :content [{:heading-level 1
+                            :type :heading
+                            :content [{:text "a "
+                                       :type :text}
+                                      {:text "wikistyle"
+                                       :type :internal-link}
+                                      {:text " link in title"
+                                       :type :text}]}]}
                 (parse-internal-links "# a [[wikistyle]] link in title")))
 
     (is (match? {:type :doc
-            :toc {:type :toc}
-            :content [{:type :todo-list
-                       :attrs {:has-todos true}
-                       :content [{:type :todo-item
-                                  :attrs {:checked true :todo true}
-                                  :content [{:content [{:text "done "
-                                                        :type :text}
-                                                       {:text "linkme"
-                                                        :type :internal-link}
-                                                       {:text " to"
-                                                        :type :text}]
-                                             :type :plain}]}
-                                 {:type :todo-item
-                                  :attrs {:checked false :todo true}
-                                  :content [{:type :plain
-                                             :content [{:text "pending"
-                                                        :type :text}]}]}
-                                 {:type :todo-item
-                                  :attrs {:checked false :todo true}
-                                  :content [{:type :plain
-                                             :content [{:text "pending"
-                                                        :type :text}]}]}]}]}
-           (parse-internal-links "- [x] done [[linkme]] to
+                 :toc {:type :toc}
+                 :content [{:type :todo-list
+                            :content [{:type :todo-item
+                                       :attrs {:checked true}
+                                       :content [{:content [{:text "done "
+                                                             :type :text}
+                                                            {:text "linkme"
+                                                             :type :internal-link}
+                                                            {:text " to"
+                                                             :type :text}]
+                                                  :type :plain}]}
+                                      {:type :todo-item
+                                       :attrs {:checked false}
+                                       :content [{:type :plain
+                                                  :content [{:text "pending"
+                                                             :type :text}]}]}
+                                      {:type :todo-item
+                                       :attrs {:checked false}
+                                       :content [{:type :plain
+                                                  :content [{:text "pending"
+                                                             :type :text}]}]}]}]}
+                (parse-internal-links "- [x] done [[linkme]] to
 - [ ] pending
 - [ ] pending")))))
 
@@ -348,32 +350,25 @@ rupt me when I'm writing."))))
   - [ ] nested
 ")))))
 
-(deftest tags-text
+(deftest hashtags-test
   (testing "parsing tags"
     (is (match? {:type :doc
-            :title "Hello Tags"
-            :content [{:content [{:text "Hello Tags"
-                                  :type :text}]
-                       :heading-level 1
-                       :type :heading}
-                      {:content [{:text "par with "
-                                  :type :text}
-                                 {:text "really_nice"
-                                  :type :hashtag}
-                                 {:text " "
-                                  :type :text}
-                                 {:text "useful-123"
-                                  :type :hashtag}
-                                 {:text " tags"
-                                  :type :text}]
-                       :type :paragraph}]
-            :toc {:type :toc
-                  :children [{:type :toc
-                              :content [{:text "Hello Tags"
-                                         :type :text}]
-                              :heading-level 1
-                              :path [:content 0]}]}}
-           (parse-hashtags "# Hello Tags
+                 :content [{:content [{:text "Hello Tags"
+                                       :type :text}]
+                            :heading-level 1
+                            :type :heading}
+                           {:content [{:text "par with "
+                                       :type :text}
+                                      {:text "really_nice"
+                                       :type :hashtag}
+                                      {:text " "
+                                       :type :text}
+                                      {:text "useful-123"
+                                       :type :hashtag}
+                                      {:text " tags"
+                                       :type :text}]
+                            :type :paragraph}]}
+                (parse-hashtags "# Hello Tags
 par with #really_nice #useful-123 tags
 "))))
 
@@ -817,6 +812,56 @@ $$
 
 $$\\bigoplus$$
 "))))
+
+(deftest toc-test
+  (testing "extracts toc structure"
+    (is (match? {:type :toc,
+                 :children [{:type :toc,
+                             :content [{:type :text, :text "Title"}],
+                             :heading-level 1,
+                             :attrs {:id "title"},
+                             :path [:content 0],
+                             :children [{:type :toc,
+                                         :content [{:type :text, :text "Section One"}],
+                                         :heading-level 2,
+                                         :attrs {:id "section-one"},
+                                         :path [:content 1],
+                                         :children [{:type :toc,
+                                                     :content [{:type :text, :text "Section 1.1"}],
+                                                     :heading-level 3,
+                                                     :attrs {:id "section-1.1"},
+                                                     :path [:content 3]}
+                                                    {:type :toc,
+                                                     :content [{:type :text, :text "Section 1.2"}],
+                                                     :heading-level 3,
+                                                     :attrs {:id "section-1.2"},
+                                                     :path [:content 4]}]}
+                                        {:type :toc,
+                                         :content [{:type :text, :text "Section Two"}],
+                                         :heading-level 2,
+                                         :attrs {:id "section-two"},
+                                         :path [:content 6],
+                                         :children [{:type :toc,
+                                                     :content [{:type :text, :text "Section 2.1"}],
+                                                     :heading-level 3,
+                                                     :attrs {:id "section-2.1"},
+                                                     :path [:content 8],
+                                                     :children [{:type :toc,
+                                                                 :content [{:type :text, :text "Section 3.1"}],
+                                                                 :heading-level 4,
+                                                                 :attrs {:id "section-3.1"},
+                                                                 :path [:content 9]}]}]}]}]}
+                (:toc (md/parse "# Title
+## Section One
+some text
+### Section 1.1
+### Section 1.2
+some text
+## Section Two
+some text
+### Section 2.1
+#### Section 3.1
+"))))))
 
 (comment
   (clojure.test/run-test-var #'formulas)

@@ -1,6 +1,7 @@
 (ns nextjournal.markdown
   "Markdown as data"
   (:require [nextjournal.markdown.parser.impl :as impl]
+            [nextjournal.markdown.parser.impl.utils :as u]
             [nextjournal.markdown.transform :as markdown.transform]))
 
 
@@ -9,13 +10,16 @@
 
 (defn parse
   "Turns a markdown string into a nested clojure structure."
-  ([markdown-text] (impl/parse markdown-text))
-  ([doc markdown-text]
-   (-> doc
+  ([markdown-text] (parse u/empty-doc markdown-text))
+  ([ctx markdown-text]
+   (-> ctx
+       (update :text-tokenizers (partial map u/normalize-tokenizer))
        (impl/parse markdown-text)
-       (dissoc :text-tokenizers
+       (dissoc :label->footnote-ref
                :nextjournal.markdown.parser.impl/id->index
-               :nextjournal.markdown.parser.impl/path))))
+               :nextjournal.markdown.parser.impl/path
+               :text-tokenizers
+               :text->id+emoji-fn))))
 
 (defn ->hiccup
   "Turns a markdown string into hiccup."

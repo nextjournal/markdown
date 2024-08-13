@@ -2,7 +2,7 @@
   (:require [clojure.string :as str])
   (:import (java.util Set)
            (java.util.regex Matcher)
-           (nextjournal.markdown.parser2.types InlineFormula BlockFormula)
+           (nextjournal.markdown.parser.impl.types InlineFormula BlockFormula)
            (org.commonmark.parser Parser$ParserExtension Parser$Builder SourceLine)
            (org.commonmark.parser.beta InlineContentParser InlineContentParserFactory ParsedInline InlineParserState)
            (org.commonmark.parser.block AbstractBlockParser BlockContinue BlockParserFactory BlockStart ParserState BlockParser)))

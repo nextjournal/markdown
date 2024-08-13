@@ -4,7 +4,7 @@
 ;; https://github.com/noties/Markwon/blob/master/markwon-ext-latex/src/main/java/io/noties/markwon/ext/latex/JLatexMathBlockParser.java
 
 (gen-class
- :name nextjournal.markdown.parser2.types.InlineFormula
+ :name nextjournal.markdown.parser.impl.types.InlineFormula
  :extends org.commonmark.node.CustomNode
  :constructors {[String] []}
  :init init
@@ -16,7 +16,7 @@
 (defn inline-formula-getLiteral [this] (:literal @(.state this)))
 
 (gen-class
- :name nextjournal.markdown.parser2.types.BlockFormula
+ :name nextjournal.markdown.parser.impl.types.BlockFormula
  :extends org.commonmark.node.CustomBlock
  :constructors {[] []}
  :init init
@@ -30,4 +30,4 @@
 (defn block-formula-setLiteral [this val] (reset! (.state this) val))
 
 (comment
-  (compile 'nextjournal.markdown.parser2.types))
+  (compile 'nextjournal.markdown.parser.impl.types))

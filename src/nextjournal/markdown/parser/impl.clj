@@ -1,13 +1,12 @@
 (ns nextjournal.markdown.parser.impl
   (:require [clojure.zip :as z]
-            [nextjournal.markdown.parser :as parser]
             [nextjournal.markdown.parser.impl.types]
-            [nextjournal.markdown.parser.impl.formulas :as formulas])
+            [nextjournal.markdown.parser.impl.formulas :as formulas]
+            [nextjournal.markdown.parser.impl.utils :as u])
   (:import (org.commonmark.parser Parser)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
            (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
            (org.commonmark.node Node AbstractVisitor
-            ;;;;;;;;;; node types ;;;;;;;;;;;;;;;;;;
                                 Document
                                 BlockQuote
                                 BulletList
@@ -29,8 +28,8 @@
                                 SoftLineBreak
                                 HardLineBreak
                                 Image)
-   ;; custom types
-           (nextjournal.markdown.parser2.types InlineFormula BlockFormula)))
+           (nextjournal.markdown.parser.impl.types InlineFormula
+                                                   BlockFormula)))
 
 (set! *warn-on-reflection* true)
 ;; TODO:
@@ -131,7 +130,7 @@
                         (-> loc (z/append-child (merge {:type :code
                                                         :info (.getInfo node)
                                                         :content [{:text (.getLiteral node)}]}
-                                                       (parser/parse-fence-info (.getInfo node)))) z/down z/rightmost))))
+                                                       (u/parse-fence-info (.getInfo node)))) z/down z/rightmost))))
 
 (defmethod open-node Image [ctx ^Image node]
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :image
@@ -177,8 +176,8 @@
       z/down z/rightmost))
 
 (defn node->data [{:as _ctx :keys [content footnotes label->footnote-ref]} ^Node node]
-  (let [!ctx (atom {:doc (parser/->zip {:type :doc :content (or content [])})
-                    :footnotes (parser/->zip {:type :footnotes :content (or footnotes [])})
+  (let [!ctx (atom {:doc (u/->zip {:type :doc :content (or content [])})
+                    :footnotes (u/->zip {:type :footnotes :content (or footnotes [])})
                     :root :doc
                     :label->footnote-ref (or label->footnote-ref {})})]
     (.accept node
@@ -268,10 +267,8 @@ And what.
 [^note3]: this should just be ignored
 ")
 
-  (require '[nextjournal.markdown :as md])
-  (md/parse text-with-footnotes)
-
   (parse (slurp "../clerk-px23/README.md"))
+  ;; => :ref 27
 
   (parse "Knuth's _Literate Programming_[^literateprogramming][^knuth84] emphasized the importance of focusing on human beings as consumers of computer programs. His original implementation involved authoring files that combine source code and documentation, which were then divided into two derived artifacts: source code for the computer and a typeset document in natural language to explain the program.
 

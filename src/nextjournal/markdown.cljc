@@ -4,7 +4,6 @@
             [nextjournal.markdown.parser.impl.utils :as u]
             [nextjournal.markdown.transform :as markdown.transform]))
 
-
 ;; TODO: remove fixme (shadow compile warnings)
 (defn tokenize [_] [])
 

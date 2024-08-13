@@ -1,18 +1,31 @@
 {:paths ["src" "resources" "classes"]
+ :mvn/repos {"jitpack.io" {:url "https://jitpack.io"}}
  :deps {applied-science/js-interop {:mvn/version "0.3.3"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.graalvm.js/js {:mvn/version "21.3.2.1"}
 
         ;; commonmark
-        ;; org.commonmark/commonmark {:mvn/version "0.22.0"}
-        ;; use temporary jitpack commit until release
-        ;; com.github.commonmark/commonmark-java {:mvn/version "3733963"}
-        com.github.commonmark/commonmark-java {:local/root "./jars/commonmark-0.22.1-SNAPSHOT.jar"}
-        org.commonmark/commonmark-ext-task-list-items {:local/root "./jars/commonmark-ext-task-list-items-0.22.1-SNAPSHOT.jar"}
-        org.commonmark/commonmark-ext-footnotes {:local/root "./jars/commonmark-ext-footnotes-0.22.1-SNAPSHOT.jar"}
-        }
+        ;;org.commonmark/commonmark {:mvn/version "0.22.0"}
+        ;;org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.22.0"}
 
- :mvn/repos {"jitpack.io" {:url "https://jitpack.io"}}
+        ;; use jitpack until release
+        com.github.commonmark/commonmark-java {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
+        com.github.commonmark.commonmark-java/commonmark-ext-task-list-items {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
+
+        ;; jitpack bisect
+
+        ;; origin/main bad
+        ;; 7b48401897a0c0bf46e757445a20deab78796101 bad (first)
+
+        ;; faea2a2a61cfa1b1f26a4e914532b651b3602e34 good
+        ;; dd0a4be86643ba95da7304336e2ab123a74d0e35 good
+        ;; 3733963538bd52d619da40508d837186316dadbb good
+
+        ;; jitpack stopped working as of commit, use local jars
+        ;; com.github.commonmark/commonmark-java {:local/root "./jars/commonmark-0.22.1-SNAPSHOT.jar"}
+        ;; org.commonmark/commonmark-ext-task-list-items {:local/root "./jars/commonmark-ext-task-list-items-0.22.1-SNAPSHOT.jar"}
+        ;; org.commonmark/commonmark-ext-footnotes {:local/root "./jars/commonmark-ext-footnotes-0.22.1-SNAPSHOT.jar"}
+        }
 
  :aliases
  {:nextjournal/clerk
@@ -54,9 +67,6 @@
    :extra-deps {io.github.nextjournal/clerk.render {:git/url "https://github.com/nextjournal/clerk"
                                                     :git/sha "e8f275b5cf077ec9441e404c1885ff0b6ee0aef9"
                                                     :deps/root "render"}}}
-
-  :commonmark-java-local
-  {:extra-paths ["../commonmark-java/commonmark/target/classes"]}
 
   :build
   {:ns-default build

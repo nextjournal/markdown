@@ -5,7 +5,7 @@
             [nextjournal.markdown.parser.impl.utils :as u])
   (:import (org.commonmark.parser Parser)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
-           (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
+           #_ (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
            (org.commonmark.node Node AbstractVisitor
                                 Document
                                 BlockQuote
@@ -56,6 +56,7 @@
       builder
       (extensions [(formulas/extension)
                    (TaskListItemsExtension/create)
+                   #_
                    (.. (FootnotesExtension/builder)
                        (inlineFootnotes true)
                        (build))])
@@ -137,6 +138,7 @@
                                                          :attrs {:src (.getDestination node) :title (.getTitle node)}
                                                          :content []}) z/down z/rightmost))))
 
+#_
 (defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
   (-> ctx
       (assoc :root :footnotes)
@@ -145,10 +147,10 @@
                             (z/append-child {:type :footnote
                                              :label (.getLabel node)
                                              :content []}) z/down z/rightmost)))))
-
+#_
 (defmethod close-node FootnoteDefinition [ctx ^FootnoteDefinition _node]
   (-> ctx (update-current z/up) (assoc :root :doc)))
-
+#_
 (defmethod open-node InlineFootnote [{:as ctx :keys [label->footnote-ref]} ^InlineFootnote _node]
   (let [label (str "note-" (count label->footnote-ref))
         footnote-ref {:type :footnote-ref
@@ -165,7 +167,7 @@
                                                :inline? true
                                                :label label
                                                :content []}) z/down z/rightmost))))))
-
+#_
 (defmethod close-node InlineFootnote [ctx ^FootnoteDefinition _node]
   (-> ctx (update-current z/up) (assoc :root :doc)))
 
@@ -197,6 +199,7 @@
                    TaskListItemMarker (swap! !ctx update-current handle-todo-list node)
                    InlineFormula (swap! !ctx update-current z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
                    BlockFormula (swap! !ctx update-current z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
+                   #_#_
                    FootnoteReference (swap! !ctx (fn [{:as ctx :keys [label->footnote-ref]}]
                                                    (let [label (.getLabel ^FootnoteReference node)
                                                          footnote-ref (or (get label->footnote-ref label)

@@ -1,8 +1,8 @@
 (ns nextjournal.markdown.parser.impl
   (:require [clojure.zip :as z]
             [nextjournal.markdown.parser :as parser]
-            [nextjournal.markdown.parser2.types]
-            [nextjournal.markdown.parser2.formulas :as formulas])
+            [nextjournal.markdown.parser.impl.types]
+            [nextjournal.markdown.parser.impl.formulas :as formulas])
   (:import (org.commonmark.parser Parser)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
            (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
@@ -35,13 +35,13 @@
 (set! *warn-on-reflection* true)
 ;; TODO:
 ;; - [x] inline formulas
-;; - [ ] block formulas
+;; - [x] block formulas
 ;; - [x] tight lists
 ;; - [x] task lists
-;; - [ ] footnotes
+;; - [x] footnotes
 ;; - [ ] strikethroughs ext
 ;; - [ ] tables
-;; - [ ] fenced code info
+;; - [x] fenced code info
 ;; - [ ] html nodes
 ;; - [ ] auto link
 ;; - [ ] promote single images as blocks

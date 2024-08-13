@@ -1,4 +1,4 @@
-(ns nextjournal.markdown.parser2.types)
+(ns nextjournal.markdown.parser.impl.types)
 
 ;; See also
 ;; https://github.com/noties/Markwon/blob/master/markwon-ext-latex/src/main/java/io/noties/markwon/ext/latex/JLatexMathBlockParser.java

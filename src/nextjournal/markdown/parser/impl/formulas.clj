@@ -1,4 +1,4 @@
-(ns nextjournal.markdown.parser2.formulas
+(ns nextjournal.markdown.parser.impl.formulas
   (:require [clojure.string :as str])
   (:import (java.util Set)
            (java.util.regex Matcher)

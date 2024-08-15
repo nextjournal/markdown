@@ -85,6 +85,19 @@
       (z/append-child {:type :heading})
       z/down zdepth)
 
+(defn zopen-node [loc node]
+  (-> loc (z/append-child node) z/down z/rightmost))
+
+(defn zpath
+  "Given a document zipper location `loc` returns a vector corresponding to the path of node at `loc`
+   suitable for get-in from root. That is `(= (z/node loc) (get-in (z/root loc) (zpath loc)`"
+  [loc]
+  (loop [coords (second loc) idxs ()]
+    (if-some [idx (when (and coords (:l coords)) (count (:l coords)))]
+      (recur (:ppath coords) (conj idxs idx))
+      (vec (when (seq idxs)
+             (cons :content (interpose :content idxs)))))))
+
 ;; TODO: rewrite in terms of zippers
 (def ppop (comp pop pop))
 (defn inc-last [path] (update path (dec (count path)) inc))

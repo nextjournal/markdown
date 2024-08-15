@@ -109,14 +109,14 @@
                                       id (assoc-in [:attrs :id] id)
                                       emoji (assoc :emoji emoji))))
                           (as-> l
+                            ;; only add top level headings to ToC
                             (if (= 1 (u/zdepth l))
-                              ;; only add top level headings to ToC
-                              (-> l z/up
-                                  (z/edit (fn [doc]
-                                            (-> doc
-                                                (u/add-to-toc (z/node l))
-                                                (u/set-title-when-missing (z/node l)))))
-                                  z/down z/rightmost)
+                              (let [heading-node (z/node l)]
+                                (-> l z/up
+                                    (z/edit (fn [doc]
+                                              (-> doc
+                                                  (u/add-to-toc (assoc heading-node :path (u/zpath l)))
+                                                  (u/set-title-when-missing heading-node)))) z/down z/rightmost))
                               l))
                           z/up)))))
 

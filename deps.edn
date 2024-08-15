@@ -11,6 +11,7 @@
         ;; use jitpack until release
         com.github.commonmark/commonmark-java {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
         com.github.commonmark.commonmark-java/commonmark-ext-task-list-items {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
+        com.github.commonmark.commonmark-java/commonmark-ext-gfm-tables {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
 
         ;; jitpack bisect
 

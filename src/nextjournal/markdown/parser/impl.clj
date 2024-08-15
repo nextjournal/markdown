@@ -5,7 +5,8 @@
             [nextjournal.markdown.parser.impl.utils :as u])
   (:import (org.commonmark.parser Parser)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
-           #_ (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
+           (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension)
+   #_(org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
            (org.commonmark.node Node AbstractVisitor
                                 Document
                                 BlockQuote
@@ -56,10 +57,10 @@
       builder
       (extensions [(formulas/extension)
                    (TaskListItemsExtension/create)
-                   #_
-                   (.. (FootnotesExtension/builder)
-                       (inlineFootnotes true)
-                       (build))])
+                   (TablesExtension/create)
+                   #_(.. (FootnotesExtension/builder)
+                         (inlineFootnotes true)
+                         (build))])
       build))
 
 ;; helpers / ctx
@@ -67,7 +68,11 @@
 
 (defn paragraph-type [] (if *in-tight-list?* :plain :paragraph))
 
-(defn in-tight-list? [node] (if (instance? ListBlock node) (.isTight ^ListBlock node) *in-tight-list?*))
+(defn in-tight-list? [node]
+  (cond
+    (instance? ListBlock node) (.isTight ^ListBlock node)
+    (instance? BlockQuote node) false
+    :else *in-tight-list?*))
 
 (defmacro with-tight-list [node & body]
   `(binding [*in-tight-list?* (in-tight-list? ~node)]
@@ -121,7 +126,7 @@
                           z/up)))))
 
 (defmethod open-node BulletList [ctx ^ListBlock node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] #_#_ :tight? (.isTight node)}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] #_#_:tight? (.isTight node)}) z/down z/rightmost))))
 
 (defmethod open-node OrderedList [ctx _node]
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :numbered-list :content []}) z/down z/rightmost))))
@@ -167,38 +172,51 @@
                                                          :attrs {:src (.getDestination node) :title (.getTitle node)}
                                                          :content []}) z/down z/rightmost))))
 
-#_
-(defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
-  (-> ctx
-      (assoc :root :footnotes)
-      (update-current (fn [loc]
-                        (-> loc
-                            (z/append-child {:type :footnote
-                                             :label (.getLabel node)
-                                             :content []}) z/down z/rightmost)))))
-#_
-(defmethod close-node FootnoteDefinition [ctx ^FootnoteDefinition _node]
-  (-> ctx (update-current z/up) (assoc :root :doc)))
-#_
-(defmethod open-node InlineFootnote [{:as ctx :keys [label->footnote-ref]} ^InlineFootnote _node]
-  (let [label (str "note-" (count label->footnote-ref))
-        footnote-ref {:type :footnote-ref
-                      :inline? true
-                      :ref (count label->footnote-ref)
-                      :label label}]
+(defmethod open-node TableBlock [ctx ^TableBlock _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table
+                                                         :content []}) z/down z/rightmost))))
+(defmethod open-node TableHead [ctx ^TableHead _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-head
+                                                         :content []}) z/down z/rightmost))))
+(defmethod open-node TableBody [ctx ^TableBody _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-body
+                                                         :content []}) z/down z/rightmost))))
+(defmethod open-node TableRow [ctx ^TableRow _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-row
+                                                         :content []}) z/down z/rightmost))))
+
+(defmethod open-node TableCell [ctx ^TableCell _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-data
+                                                         :content []}) z/down z/rightmost))))
+
+#_(defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
     (-> ctx
-        (update-current z/append-child footnote-ref)
-        (update :label->footnote-ref assoc label footnote-ref)
         (assoc :root :footnotes)
         (update-current (fn [loc]
                           (-> loc
                               (z/append-child {:type :footnote
-                                               :inline? true
-                                               :label label
-                                               :content []}) z/down z/rightmost))))))
-#_
-(defmethod close-node InlineFootnote [ctx ^FootnoteDefinition _node]
-  (-> ctx (update-current z/up) (assoc :root :doc)))
+                                               :label (.getLabel node)
+                                               :content []}) z/down z/rightmost)))))
+#_(defmethod close-node FootnoteDefinition [ctx ^FootnoteDefinition _node]
+    (-> ctx (update-current z/up) (assoc :root :doc)))
+#_(defmethod open-node InlineFootnote [{:as ctx :keys [label->footnote-ref]} ^InlineFootnote _node]
+    (let [label (str "note-" (count label->footnote-ref))
+          footnote-ref {:type :footnote-ref
+                        :inline? true
+                        :ref (count label->footnote-ref)
+                        :label label}]
+      (-> ctx
+          (update-current z/append-child footnote-ref)
+          (update :label->footnote-ref assoc label footnote-ref)
+          (assoc :root :footnotes)
+          (update-current (fn [loc]
+                            (-> loc
+                                (z/append-child {:type :footnote
+                                                 :inline? true
+                                                 :label label
+                                                 :content []}) z/down z/rightmost))))))
+#_(defmethod close-node InlineFootnote [ctx ^FootnoteDefinition _node]
+    (-> ctx (update-current z/up) (assoc :root :doc)))
 
 (defn handle-todo-list [loc ^TaskListItemMarker node]
   (-> loc
@@ -229,16 +247,15 @@
                    TaskListItemMarker (swap! !ctx update-current handle-todo-list node)
                    InlineFormula (swap! !ctx update-current z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
                    BlockFormula (swap! !ctx update-current z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
-                   #_#_
-                   FootnoteReference (swap! !ctx (fn [{:as ctx :keys [label->footnote-ref]}]
-                                                   (let [label (.getLabel ^FootnoteReference node)
-                                                         footnote-ref (or (get label->footnote-ref label)
-                                                                          {:type :footnote-ref
-                                                                           :ref (count label->footnote-ref)
-                                                                           :label label})]
-                                                     (-> ctx
-                                                         (update-current z/append-child footnote-ref)
-                                                         (update :label->footnote-ref assoc label footnote-ref)))))
+                   #_#_FootnoteReference (swap! !ctx (fn [{:as ctx :keys [label->footnote-ref]}]
+                                                       (let [label (.getLabel ^FootnoteReference node)
+                                                             footnote-ref (or (get label->footnote-ref label)
+                                                                              {:type :footnote-ref
+                                                                               :ref (count label->footnote-ref)
+                                                                               :label label})]
+                                                         (-> ctx
+                                                             (update-current z/append-child footnote-ref)
+                                                             (update :label->footnote-ref assoc label footnote-ref)))))
 
                    ;; else branch nodes
                    (if (get-method open-node (class node))
@@ -262,10 +279,12 @@
                       (vec)))))))
 
 (defn parse
-  ([md] (parse {} md))
+  ([md] (parse u/empty-doc md))
   ([ctx md] (node->data ctx (.parse parser md))))
 
 (comment
+  (remove-all-methods open-node)
+  (remove-all-methods close-node)
   (-> {}
       (parse "# Title")
       (parse "some para^[with note]")

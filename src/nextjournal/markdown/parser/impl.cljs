@@ -129,7 +129,11 @@
 
 ;; for building the TOC we just care about headings at document top level (not e.g. nested under lists) ⬆
 
-(defmethod apply-token "paragraph_open" [doc {:as _token :keys [hidden]}] (open-node doc (if hidden :plain :paragraph)))
+(defmethod apply-token "paragraph_open" [doc {:as _token :keys [hidden]}]
+  ;; no trace of tight vs loose on list nodes
+  ;; markdown-it passes this info directly to paragraphs via this `hidden` key
+  (open-node doc (if hidden :plain :paragraph)))
+
 (defmethod apply-token "paragraph_close" [doc _token] (close-node doc))
 
 (defmethod apply-token "bullet_list_open" [doc {{:as attrs :keys [has-todos]} :attrs}] (open-node doc (if has-todos :todo-list :bullet-list) attrs))

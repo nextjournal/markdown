@@ -188,6 +188,21 @@ $$\\int_a^bf(t)dt$$
              "two"]]]]
          (md/->hiccup markdown-text))))
 
+(deftest tables-test
+  (is (= {:type :doc
+          :content [{:type :table
+                     :content [{:type :table-head :content [{:type :table-row, :content [{:type :table-header, :content [{:type :text, :text "x"}]} {:type :table-header, :content [{:type :text, :text "y"}]}]}]}
+                               {:type :table-body :content [{:type :table-row, :content [{:type :table-data, :content [{:type :text, :text "1"}]} {:type :table-data, :content [{:type :text, :text "2"}]}]} {:type :table-row, :content [{:type :table-data, :content [{:type :text, :text "3"}]} {:type :table-data, :content [{:type :text, :text "4"}]}]}]}]}]
+          :toc {:type :toc}
+          :footnotes []}
+
+         (md/parse "
+|  x |  y |
+|----|----|
+|  1 |  2 |
+|  3 |  4 |
+"))))
+
 (deftest table-with-empty-cells
   (is (match? [:div [:table
                      [:thead

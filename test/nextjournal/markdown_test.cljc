@@ -862,6 +862,66 @@ some text
 #### Section 3.1
 "))))))
 
+
+(deftest link-test
+  (testing "links with a title"
+    (is (= {:type :link
+            :attrs {:href "/some/path" :title "this is the link title"}
+            :content [{:type :text :text "ahoi"}]}
+           (-> (md/parse "[ahoi](/some/path 'this is the link title')")
+               :content first :content first))))
+  (testing "links with no title"
+    (is (= {:type :link
+            :attrs {:href "/some/path"}
+            :content [{:type :text :text "ahoi"}]}
+           (-> (md/parse "[ahoi](/some/path)")
+               :content first :content first))))
+  (testing "links with nested content"
+    (is (= {:type :link
+            :attrs {:href "/some/path"}
+            :content [{:type :text :text "some "}
+                      {:type :em :content [{:type :text :text "markup"}]}
+                      {:type :text :text " here"}]}
+           (-> (md/parse "[some _markup_ here](/some/path)")
+               :content first :content first)))))
+
+(deftest code-test
+  (testing "inline code"
+    (is (= {:type :paragraph
+            :content [{:type :text :text "some "}
+                      {:type :monospace :content [{:text "inline code" :type :text}]}
+                      {:type :text :text " here"}]}
+           (-> (md/parse "some `inline code` here")
+               :content first))))
+  (testing "indented code blocks"
+    (is (= {:type :code
+            :content [{:type :text :text "and indented\ncode here\n"}]}
+           (-> (md/parse "some text
+
+    and indented
+    code here
+
+back to text") :content second)))
+
+    (testing "fenced code blocks"
+      (is (= {:type :code :info ""
+              :content [{:type :text :text "and fenced\ncode here\n"}]}
+             (-> (md/parse "some text
+```
+and fenced
+code here
+```
+back to text") :content second)))
+
+      (is (= {:type :code
+              :content [{:type :text :text "(this is code)\n"}]
+              :info "clojure id=12345 no-exec"
+              :language "clojure" :id "12345" :no-exec true}
+             (-> (md/parse "```clojure id=12345 no-exec
+(this is code)
+```")
+                 :content first))))))
+
 (comment
   (clojure.test/run-test-var #'formulas)
 

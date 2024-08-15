@@ -41,6 +41,9 @@
 - [x] ~~thing~~
 ")
 
+  (-> (nextjournal.markdown.graaljs/parse "[alt](https://this/is/a.link)") :content first :content first)
+  (-> (parse "[alt](https://this/is/a.link)") :content first :content first)
+
   (with-new-parser
    (parse "# Hello Markdown
 - [ ] what

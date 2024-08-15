@@ -109,8 +109,14 @@
                                       id (assoc-in [:attrs :id] id)
                                       emoji (assoc :emoji emoji))))
                           (as-> l
-                            (if (= 1 (u/zdepth l)) ;; only add top level headings to ToC
-                              (-> l z/up (z/edit u/add-to-toc (z/node l)) z/down z/rightmost)
+                            (if (= 1 (u/zdepth l))
+                              ;; only add top level headings to ToC
+                              (-> l z/up
+                                  (z/edit (fn [doc]
+                                            (-> doc
+                                                (u/add-to-toc (z/node l))
+                                                (u/set-title-when-missing (z/node l)))))
+                                  z/down z/rightmost)
                               l))
                           z/up)))))
 
@@ -137,19 +143,23 @@
 (defmethod open-node Link [ctx ^Link node]
   (update-current ctx (fn [loc]
                         (-> loc (z/append-child {:type :link
-                                                 :attrs {:href (.getDestination node) :title (.getTitle node)}
-                                                 :content []}) z/down z/rightmost))))
+                                                 :content []
+                                                 :attrs (cond-> {:href (.getDestination node)}
+                                                          (.getTitle node)
+                                                          (assoc :title (.getTitle node)))}) z/down z/rightmost))))
 
 (defmethod open-node IndentedCodeBlock [ctx ^IndentedCodeBlock node]
   (update-current ctx (fn [loc]
                         (-> loc (z/append-child {:type :code
-                                                 :content [{:text (.getLiteral node)}]}) z/down z/rightmost))))
+                                                 :content [{:type :text
+                                                            :text (.getLiteral node)}]}) z/down z/rightmost))))
 
 (defmethod open-node FencedCodeBlock [ctx ^FencedCodeBlock node]
   (update-current ctx (fn [loc]
                         (-> loc (z/append-child (merge {:type :code
                                                         :info (.getInfo node)
-                                                        :content [{:text (.getLiteral node)}]}
+                                                        :content [{:type :text
+                                                                   :text (.getLiteral node)}]}
                                                        (u/parse-fence-info (.getInfo node)))) z/down z/rightmost))))
 
 (defmethod open-node Image [ctx ^Image node]

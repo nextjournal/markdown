@@ -11,73 +11,18 @@
   (:require ["/js/markdown" :as md]
             ["markdown-it/lib/token" :as Token]
             [applied-science.js-interop :as j]
-            [clojure.string :as str]
             [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
-            [nextjournal.markdown.parser.emoji :as emoji]
-   ;; TODO: drop refers
-            [nextjournal.markdown.parser.impl.utils :as u :refer [empty-doc re-idx-seq]]))
+            [nextjournal.markdown.parser.impl.utils :as u]))
 
 (extend-type Token
   ILookup
   (-lookup [this key] (j/get this key)))
 
-(defn inc-last [path] (update path (dec (count path)) inc))
 (defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second js/parseInt)))
 
-(defn split-by-emoji [s]
-  (let [[match start end] (first (re-idx-seq emoji/regex s))]
-    (if match
-      [(subs s start end) (str/trim (subs s end))]
-      [nil s])))
-
-#_(split-by-emoji " Stop")
-#_(split-by-emoji "🤚🏽 Stop")
-#_(split-by-emoji "🤚🏽🤚 Stop")
-#_(split-by-emoji "🤚🏽Stop")
-#_(split-by-emoji "🤚🏽   Stop")
-#_(split-by-emoji "😀 Stop")
-#_(split-by-emoji "⚛️ Stop")
-#_(split-by-emoji "⚛ Stop")
-#_(split-by-emoji "⬇ Stop")
-#_(split-by-emoji "Should not 🙁️ Split")
-
-(defn text->id+emoji [text]
-  (when (string? text)
-    (let [[emoji text'] (split-by-emoji (str/trim text))]
-      (cond-> {:id (apply str (map (comp str/lower-case (fn [c] (case c (\space \_) \- c))) text'))}
-        emoji (assoc :emoji emoji)))))
-
-#_(text->id+emoji "Hello There")
-#_(text->id+emoji "Hello_There")
-#_(text->id+emoji "👩‍🔬 Quantum Physics")
-
-;; `parse-fence-info` ingests nextjournal, GFM, Pandoc and RMarkdown fenced code block info (any text following the leading 3 backticks) and returns a map
-;;
-;; _nextjournal_ / _GFM_
-;;
-;;    ```python id=2e3541da-0735-4b7f-a12f-4fb1bfcb6138
-;;    python code
-;;    ```
-;;
-;; _Pandoc_
-;;
-;;    ```{#pandoc-id .languge .extra-class key=Val}
-;;    code in language
-;;    ```
-;;
-;; _Rmd_
-;;
-;;    ```{r cars, echo=FALSE}
-;;    R code
-;;    ```
-;;
-;; See also:
-;; - https://github.github.com/gfm/#info-string
-;; - https://pandoc.org/MANUAL.html#fenced-code-blocks
-;; - https://rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf"
-
 ;; leaf nodes
+;; TODO: use from utils
 (defn text-node [text] {:type :text :text text})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
@@ -98,7 +43,7 @@
       ;; ⬇ mdit produces empty text tokens at mark boundaries, see edge cases below
       (not (empty-text-node? node))
       (-> #_doc
-       (update ::path inc-last)
+       (update ::path u/inc-last)
        (update-in (pop path) conj node)))
     (catch js/Error e
       (throw (ex-info (str "nextjournal.markdown cannot add node: " node " at path: " path)
@@ -135,11 +80,7 @@
       (recur (ppop p) (conj ancestors (get-in doc p)))
       ancestors)))
 
-(defn ->zip [doc]
-  (z/zipper (every-pred map? :type) :content
-            (fn [node cs] (assoc node :content (vec cs)))
-            doc))
-
+;; TODO: unify via zipper
 (defn assign-node-id+emoji [{:as doc ::keys [id->index path] :keys [text->id+emoji-fn]}]
   (let [{:keys [id emoji]} (when (ifn? text->id+emoji-fn) (-> doc (get-in path) text->id+emoji-fn))
         id-count (when id (get id->index id))]
@@ -336,42 +277,6 @@ end"
   ;; this assumes the footnote container is a paragraph, won't work for lists
   (node :sidenote (-> content first :content) nil (cond-> {:ref ref} label (assoc :label label))))
 
-(defn node-with-sidenote-refs [p-node]
-  (loop [l (->zip p-node) refs []]
-    (if (z/end? l)
-      (when (seq refs)
-        {:node (z/root l) :refs refs})
-      (let [{:keys [type ref]} (z/node l)]
-        (if (= :footnote-ref type)
-          (recur (z/next (z/edit l assoc :type :sidenote-ref)) (conj refs ref))
-          (recur (z/next l) refs))))))
-
-(defn insert-sidenote-containers
-  "Handles footnotes as sidenotes.
-
-   Takes and returns a parsed document. When the document has footnotes, wraps every top-level block which contains footnote references
-   with a `:footnote-container` node, into each of such nodes, adds a `:sidenote-column` node containing a `:sidenote` node for each found ref.
-   Renames type `:footnote-ref` to `:sidenote-ref."
-  [{:as doc ::keys [path] :keys [footnotes]}]
-  (if-not (seq footnotes)
-    doc
-    (let [root (->zip doc)]
-      (loop [loc (z/down root) parent root]
-        (cond
-          (nil? loc)
-          (-> parent z/node (assoc :sidenotes? true))
-          (contains? #{:plain :paragraph :blockquote :numbered-list :bullet-list :todo-list :heading :table}
-                     (:type (z/node loc)))
-          (if-some [{:keys [node refs]} (node-with-sidenote-refs (z/node loc))]
-            (let [new-loc (-> loc (z/replace {:type :sidenote-container :content []})
-                              (z/append-child node)
-                              (z/append-child {:type :sidenote-column
-                                               :content (mapv #(footnote->sidenote (get footnotes %)) (distinct refs))}))]
-              (recur (z/right new-loc) (z/up new-loc)))
-            (recur (z/right loc) parent))
-          :else
-          (recur (z/right loc) parent))))))
-
 (comment
   (-> "_hello_ what and foo[^note1] and^[some other note].
 
@@ -388,7 +293,7 @@ And what.
       nextjournal.markdown/tokenize
       parse
       #_flatten-tokens
-      #_insert-sidenote-containers)
+      #_u/insert-sidenote-containers)
 
   (-> empty-doc
       (update :text-tokenizers (partial map u/normalize-tokenizer))
@@ -489,15 +394,8 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
     (reduce (mapify-attrs-xf apply-token) doc tokens)))
 
 (defn parse
-  ([markdown]
-   ;; TODO: unify emoji extraction
-   (parse empty-doc markdown))
-  ([ctx markdown]
-   (apply-tokens (-> ctx
-                     (assoc :text->id+emoji-fn (comp text->id+emoji md.transform/->text))
-                     ;; TODO: 👆unify
-                     )
-                 (md/tokenize markdown))))
+  ([markdown] (parse u/empty-doc markdown))
+  ([ctx markdown] (apply-tokens ctx (md/tokenize markdown))))
 
 (comment
   (defn pr-dbg [x] (js/console.log (js/JSON.parse (js/JSON.stringify x))))

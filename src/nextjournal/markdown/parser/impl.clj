@@ -77,6 +77,7 @@
 (defmulti open-node (fn [_ctx node] (type node)))
 (defmulti close-node (fn [_ctx node] (type node)))
 
+(defn current-loc [{:as ctx :keys [root]}] (get ctx root))
 (defn update-current [{:as ctx :keys [root]} f & args]
   (assert root (str "Missing root: '" (keys ctx) "'"))
   (apply update ctx root f args))
@@ -95,8 +96,19 @@
 (defmethod open-node Heading [ctx ^Heading node]
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :heading :content [] :heading-level (.getLevel node)}) z/down z/rightmost))))
 
+(defmethod close-node Heading [ctx ^Heading _node]
+  (let [{:keys [text->id+emoji-fn]} (-> ctx current-loc z/root)
+        {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
+                             (text->id+emoji-fn (-> ctx current-loc z/node)))]
+    (update-current ctx (fn [loc]
+                          (-> loc
+                              (z/edit (fn [node]
+                                        (cond-> node
+                                          id (assoc-in [:attrs :id] id)
+                                          emoji (assoc :emoji emoji)))) z/up)))))
+
 (defmethod open-node BulletList [ctx ^ListBlock node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] :tight? (.isTight node)}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] #_#_ :tight? (.isTight node)}) z/down z/rightmost))))
 
 (defmethod open-node OrderedList [ctx _node]
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :numbered-list :content []}) z/down z/rightmost))))
@@ -190,6 +202,7 @@
                ;; proxy can't overload method by arg type, while gen-class can: https://groups.google.com/g/clojure/c/TVRsy4Gnf70
                (visit [^Node node]
                  (condp instance? node
+                   ;; leaf nodes
                    LinkReferenceDefinition :ignore
                    ;;Text (swap! !ctx update-current z/append-child {:type :text :text (.getLiteral ^Text node)})
                    Text (swap! !ctx update-current u/handle-text-token (.getLiteral ^Text node))
@@ -210,7 +223,7 @@
                                                          (update-current z/append-child footnote-ref)
                                                          (update :label->footnote-ref assoc label footnote-ref)))))
 
-                   ;; else
+                   ;; else branch nodes
                    (if (get-method open-node (class node))
                      (with-tight-list node
                        (swap! !ctx open-node node)

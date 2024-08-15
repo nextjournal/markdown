@@ -1,9 +1,49 @@
 ;; # Markdown parsing shared utils
 (ns nextjournal.markdown.parser.impl.utils
   (:require [clojure.string :as str]
-            [clojure.zip :as z]))
+            [clojure.zip :as z]
+            [nextjournal.markdown.parser.emoji :as emoji]
+            [nextjournal.markdown.transform :as md.transform]))
+
+#?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
+(defn re-idx-seq
+  "Takes a regex and a string, returns a seq of triplets comprised of match groups followed by indices delimiting each match."
+  [re text]
+  #?(:clj (let [m (re-matcher re text)]
+            (take-while some? (repeatedly #(when (.find m) [(re-groups* m) (.start m) (.end m)]))))
+     :cljs (let [rex (js/RegExp. (.-source re) "g")]
+             (take-while some? (repeatedly #(when-some [m (.exec rex text)] [(vec m) (.-index m) (.-lastIndex rex)]))))))
+
+#_ (re-idx-seq #"\{\{([^{]+)\}\}" "foo {{hello}} bar")
+#_ (re-idx-seq #"\{\{[^{]+\}\}" "foo {{hello}} bar {{what}} the")
 
 ;; ## Context and Nodes
+
+(defn split-by-emoji [s]
+  (let [[match start end] (first (re-idx-seq emoji/regex s))]
+    (if match
+      [(subs s start end) (str/trim (subs s end))]
+      [nil s])))
+
+#_(split-by-emoji " Stop")
+#_(split-by-emoji "🤚🏽 Stop")
+#_(split-by-emoji "🤚🏽🤚 Stop")
+#_(split-by-emoji "🤚🏽Stop")
+#_(split-by-emoji "🤚🏽   Stop")
+#_(split-by-emoji "😀 Stop")
+#_(split-by-emoji "⚛️ Stop")
+#_(split-by-emoji "⚛ Stop")
+#_(split-by-emoji "⬇ Stop")
+#_(split-by-emoji "Should not 🙁️ Split")
+#_(text->id+emoji "Hello There")
+#_(text->id+emoji "Hello_There")
+#_(text->id+emoji "👩‍🔬 Quantum Physics")
+
+(defn text->id+emoji [text]
+  (when (string? text)
+    (let [[emoji text'] (split-by-emoji (str/trim text))]
+      (cond-> {:id (apply str (map (comp str/lower-case (fn [c] (case c (\space \_) \- c))) text'))}
+        emoji (assoc :emoji emoji)))))
 
 ;; TODO: move this to n.markdown ns
 (def empty-doc
@@ -12,6 +52,7 @@
    ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
    :nextjournal.markdown.parser.impl/id->index {}
    ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
+   :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
    :toc {:type :toc}
    :footnotes []
    :nextjournal.markdown.parser.impl/path [:content -1]     ;; private
@@ -69,18 +110,6 @@
 ;;    IndexedMatch :: (Match, Int, Int)
 ;;    TokenizerFn :: String -> [IndexedMatch]
 ;;    DocHandler :: Doc -> {:match :: Match} -> Doc
-
-#?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
-(defn re-idx-seq
-  "Takes a regex and a string, returns a seq of triplets comprised of match groups followed by indices delimiting each match."
-  [re text]
-  #?(:clj (let [m (re-matcher re text)]
-            (take-while some? (repeatedly #(when (.find m) [(re-groups* m) (.start m) (.end m)]))))
-     :cljs (let [rex (js/RegExp. (.-source re) "g")]
-             (take-while some? (repeatedly #(when-some [m (.exec rex text)] [(vec m) (.-index m) (.-lastIndex rex)]))))))
-
-#_ (re-idx-seq #"\{\{([^{]+)\}\}" "foo {{hello}} bar")
-#_ (re-idx-seq #"\{\{[^{]+\}\}" "foo {{hello}} bar {{what}} the")
 
 (defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} doc {:as node :keys [text]}]
   ;; TokenizerFn -> HNode -> [HNode]
@@ -164,6 +193,32 @@
 
 #_(normalize-tokenizer internal-link-tokenizer)
 #_(normalize-tokenizer hashtag-tokenizer)
+
+;; ## 🤺 Fence Info
+;; `parse-fence-info` ingests nextjournal, GFM, Pandoc and RMarkdown fenced code block info (any text following the leading 3 backticks) and returns a map
+;;
+;; _nextjournal_ / _GFM_
+;;
+;;    ```python id=2e3541da-0735-4b7f-a12f-4fb1bfcb6138
+;;    python code
+;;    ```
+;;
+;; _Pandoc_
+;;
+;;    ```{#pandoc-id .languge .extra-class key=Val}
+;;    code in language
+;;    ```
+;;
+;; _Rmd_
+;;
+;;    ```{r cars, echo=FALSE}
+;;    R code
+;;    ```
+;;
+;; See also:
+;; - https://github.github.com/gfm/#info-string
+;; - https://pandoc.org/MANUAL.html#fenced-code-blocks
+;; - https://rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf"
 
 (defn parse-fence-info [info-str]
   (try

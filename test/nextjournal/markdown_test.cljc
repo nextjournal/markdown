@@ -53,7 +53,8 @@ $$\\int_a^bf(t)dt$$
 
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"
-    (is (match? {:type :doc
+    (is (= {:type :doc
+            :footnotes []
             :title "🎱 Hello"
             :content [{:content [{:text "🎱 Hello"
                                   :type :text}]
@@ -99,14 +100,14 @@ $$\\int_a^bf(t)dt$$
                                              :type :paragraph}]
                                   :type :list-item}]
                        :type :bullet-list}]
-            :toc {:children [{:content [{:text "🎱 Hello"
-                                         :type :text}]
+            :toc {:type :toc
+                  :children [{:type :toc
+                              :content [{:type :text, :text "🎱 Hello"}]
                               :heading-level 1
-                              :path [:content 0]
-                              :type :toc}]
-                  :type :toc}}
+                              :attrs {:id "hello"}
+                              :emoji "🎱"
+                              :path [:content 0]}]}}
            (md/parse markdown-text))))
-
 
   (testing "parses internal links / plays well with todo lists"
     (is (match? {:type :doc

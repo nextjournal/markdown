@@ -185,6 +185,7 @@
       (recur (ppop p) (conj ancestors (get-in doc p)))
       ancestors)))
 
+;; TODO: consider rewriting parse in terms of this zipper
 (defn ->zip [doc]
   (z/zipper (every-pred map? :type) :content
             (fn [node cs] (assoc node :content (vec cs)))
@@ -416,13 +417,40 @@ end"
             (let [new-loc (-> loc (z/replace {:type :sidenote-container :content []})
                               (z/append-child node)
                               (z/append-child {:type :sidenote-column
-                                               :content (mapv #(footnote->sidenote (get footnotes %)) (distinct refs))}))]
+                                               ;; TODO: broken in the old implementation
+                                               ;; should be :content (mapv #(footnote->sidenote (get footnotes %)) (distinct refs))}))]
+                                               :content (mapv #(footnote->sidenote (get footnotes %)) refs)}))]
               (recur (z/right new-loc) (z/up new-loc)))
             (recur (z/right loc) parent))
           :else
           (recur (z/right loc) parent))))))
 
+(comment
+  (-> "_hello_ what and foo[^note1] and^[some other note].
 
+And what.
+
+[^note1]: the _what_
+
+* and new text[^endnote] at the end.
+* the
+  * hell^[that warm place]
+
+[^endnote]: conclusion.
+"
+      nextjournal.markdown/tokenize
+      parse
+      #_ flatten-tokens
+      insert-sidenote-containers)
+
+  (-> empty-doc
+      (update :text-tokenizers (partial map normalize-tokenizer))
+      (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
+      insert-sidenote-columns
+      (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
+      insert-sidenote-columns
+      (apply-tokens (nextjournal.markdown/tokenize "is^[this thing]"))
+      insert-sidenote-columns))
 
 ;; tables
 ;; table data tokens might have {:style "text-align:right|left"} attrs, maybe better nested node > :attrs > :style ?

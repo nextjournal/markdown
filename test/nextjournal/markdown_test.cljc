@@ -1,11 +1,9 @@
 (ns nextjournal.markdown-test
   (:require [clojure.test :as t :refer [deftest testing is]]
             [matcher-combinators.test :refer [match?]]
-            [matcher-combinators.standalone :as standalone]
             [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
             [matcher-combinators.ansi-color]
-            [nextjournal.markdown.parser :as md.parser]
             [nextjournal.markdown.parser.impl.utils :as u]
             [nextjournal.markdown.transform :as md.transform]))
 
@@ -631,7 +629,7 @@ Par.
 [^note2]: Explain 2
 "
                                      md/parse
-                                     md.parser/insert-sidenote-containers)]
+                                     u/insert-sidenote-containers)]
       (is (match? {:type :doc
                    :sidenotes? true
                    :content [{:type :sidenote-container

@@ -1,36 +1,33 @@
+;; # Markdown parsing shared utils
 (ns nextjournal.markdown.parser.impl.utils
   (:require [clojure.string :as str]
             [clojure.zip :as z]))
 
-(def empty-doc {:type :doc
-                :content []
-                ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
-                :nextjournal.markdown.parser.impl/id->index {}
-                ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
-                :toc {:type :toc}
-                :footnotes []
-                :nextjournal.markdown.parser.impl/path [:content -1] ;; private
-                :text-tokenizers []})
+;; ## Context and Nodes
 
-;; node utils
+;; TODO: move this to n.markdown ns
+(def empty-doc
+  {:type :doc
+   :content []
+   ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
+   :nextjournal.markdown.parser.impl/id->index {}
+   ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
+   :toc {:type :toc}
+   :footnotes []
+   :nextjournal.markdown.parser.impl/path [:content -1]     ;; private
+   :text-tokenizers []})
+
 (defn text-node [s] {:type :text :text s})
 (defn formula [text] {:type :formula :text text})
 (defn block-formula [text] {:type :block-formula :text text})
 
-#?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
-(defn re-idx-seq
-  "Takes a regex and a string, returns a seq of triplets comprised of match groups followed by indices delimiting each match."
-  [re text]
-  #?(:clj (let [m (re-matcher re text)]
-            (take-while some? (repeatedly #(when (.find m) [(re-groups* m) (.start m) (.end m)]))))
-     :cljs (let [rex (js/RegExp. (.-source re) "g")]
-             (take-while some? (repeatedly #(when-some [m (.exec rex text)] [(vec m) (.-index m) (.-lastIndex rex)]))))))
+(defn node
+  [type content attrs top-level]
+  (cond-> {:type type :content content}
+    (seq attrs) (assoc :attrs attrs)
+    (seq top-level) (merge top-level)))
 
-
-#_ (re-idx-seq #"\{\{([^{]+)\}\}" "foo {{hello}} bar")
-#_ (re-idx-seq #"\{\{[^{]+\}\}" "foo {{hello}} bar {{what}} the")
-
-;; zipper utils
+;; ## 🤐 Zipper Utils
 
 (defn ->zip [doc]
   (z/zipper (every-pred map? :type) :content
@@ -62,7 +59,7 @@
    :clj
    (def push-node z/append-child))
 
-;; ## Handling of Text Tokens
+;; ## Parsing Extensibility
 ;;
 ;;    normalize-tokenizer :: {:regex, :doc-handler} | {:tokenizer-fn, :handler} -> Tokenizer
 ;;    Tokenizer :: {:tokenizer-fn :: TokenizerFn, :doc-handler :: DocHandler}
@@ -72,6 +69,18 @@
 ;;    IndexedMatch :: (Match, Int, Int)
 ;;    TokenizerFn :: String -> [IndexedMatch]
 ;;    DocHandler :: Doc -> {:match :: Match} -> Doc
+
+#?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
+(defn re-idx-seq
+  "Takes a regex and a string, returns a seq of triplets comprised of match groups followed by indices delimiting each match."
+  [re text]
+  #?(:clj (let [m (re-matcher re text)]
+            (take-while some? (repeatedly #(when (.find m) [(re-groups* m) (.start m) (.end m)]))))
+     :cljs (let [rex (js/RegExp. (.-source re) "g")]
+             (take-while some? (repeatedly #(when-some [m (.exec rex text)] [(vec m) (.-index m) (.-lastIndex rex)]))))))
+
+#_ (re-idx-seq #"\{\{([^{]+)\}\}" "foo {{hello}} bar")
+#_ (re-idx-seq #"\{\{[^{]+\}\}" "foo {{hello}} bar {{what}} the")
 
 (defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} doc {:as node :keys [text]}]
   ;; TokenizerFn -> HNode -> [HNode]
@@ -183,3 +192,47 @@
   (parse-fence-info "clojure #id")
   (parse-fence-info "clojure")
   (parse-fence-info "{r cars, echo=FALSE}"))
+
+;; ## Footnote handling
+
+(defn node-with-sidenote-refs [p-node]
+  (loop [l (->zip p-node) refs []]
+    (if (z/end? l)
+      (when (seq refs)
+        {:node (z/root l) :refs refs})
+      (let [{:keys [type ref]} (z/node l)]
+        (if (= :footnote-ref type)
+          (recur (z/next (z/edit l assoc :type :sidenote-ref)) (conj refs ref))
+          (recur (z/next l) refs))))))
+
+(defn footnote->sidenote [{:keys [ref label content]}]
+  ;; this assumes the footnote container is a paragraph, won't work for lists
+  (node :sidenote (-> content first :content) nil (cond-> {:ref ref} label (assoc :label label))))
+
+(defn insert-sidenote-containers
+  "Handles footnotes as sidenotes.
+
+   Takes and returns a parsed document. When the document has footnotes, wraps every top-level block which contains footnote references
+   with a `:footnote-container` node, into each of such nodes, adds a `:sidenote-column` node containing a `:sidenote` node for each found ref.
+   Renames type `:footnote-ref` to `:sidenote-ref."
+  [{:as doc ::keys [path] :keys [footnotes]}]
+  (if-not (seq footnotes)
+    doc
+    (let [root (->zip doc)]
+      (loop [loc (z/down root) parent root]
+        (cond
+          (nil? loc)
+          (-> parent z/node (assoc :sidenotes? true))
+          (contains? #{:plain :paragraph :blockquote :numbered-list :bullet-list :todo-list :heading :table}
+                     (:type (z/node loc)))
+          (if-some [{:keys [node refs]} (node-with-sidenote-refs (z/node loc))]
+            (let [new-loc (-> loc (z/replace {:type :sidenote-container :content []})
+                              (z/append-child node)
+                              (z/append-child {:type :sidenote-column
+                                               ;; TODO: broken in the old implementation
+                                               ;; should be :content (mapv #(footnote->sidenote (get footnotes %)) (distinct refs))}))]
+                                               :content (mapv #(footnote->sidenote (get footnotes %)) refs)}))]
+              (recur (z/right new-loc) (z/up new-loc)))
+            (recur (z/right loc) parent))
+          :else
+          (recur (z/right loc) parent))))))

@@ -49,14 +49,16 @@
 (def empty-doc
   {:type :doc
    :content []
-   ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
-   :nextjournal.markdown.parser.impl/id->index {}
-   ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
-   :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
    :toc {:type :toc}
    :footnotes []
-   :nextjournal.markdown.parser.impl/path [:content -1]     ;; private
-   :text-tokenizers []})
+   :text-tokenizers []
+   ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
+   :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
+
+   ;; private
+   ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
+   :nextjournal.markdown.parser.impl/id->index {}
+   :nextjournal.markdown.parser.impl/path [:content -1]})
 
 (defn text-node [s] {:type :text :text s})
 (defn formula [text] {:type :formula :text text})
@@ -74,11 +76,14 @@
   (z/zipper (every-pred map? :type) :content
             (fn [node cs] (assoc node :content (vec cs)))
             doc))
-
 (def zip? (comp some? :zip/children meta))
+(defn zdepth [loc] (-> loc second :pnodes count))
 
 #_(zip? (->zip {:type :doc :content []}))
 #_(->zip {:type :doc :content []})
+#_(-> {:type :doc :content []} ->zip
+      (z/append-child {:type :heading})
+      z/down zdepth)
 
 ;; TODO: rewrite in terms of zippers
 (def ppop (comp pop pop))
@@ -99,6 +104,87 @@
                          {:doc doc :node node} e)))))
    :clj
    (def push-node z/append-child))
+
+;; ## 🗂️ ToC Handling
+;; region toc:
+;; toc nodes are heading nodes but with `:type` `:toc` and an extra branching
+;; on the key `:children` representing the sub-sections of the document
+
+(defn into-toc [toc {:as toc-item :keys [heading-level]}]
+  (loop [toc toc l heading-level toc-path [:children]]
+    ;; `toc-path` is `[:children i₁ :children i₂ ... :children]`
+    (let [type-path (assoc toc-path (dec (count toc-path)) :type)]
+      (cond
+        ;; insert intermediate default empty :content collections for the final update-in (which defaults to maps otherwise)
+        (not (get-in toc toc-path))
+        (recur (assoc-in toc toc-path []) l toc-path)
+
+        ;; fill in toc types for non-contiguous jumps like h1 -> h3
+        (not (get-in toc type-path))
+        (recur (assoc-in toc type-path :toc) l toc-path)
+
+        (= 1 l)
+        (update-in toc toc-path (fnil conj []) toc-item)
+
+        :else
+        (recur toc
+               (dec l)
+               (conj toc-path
+                     (max 0 (dec (count (get-in toc toc-path)))) ;; select last child at level if it exists
+                     :children))))))
+
+(defn add-to-toc [doc {:as h :keys [heading-level]}]
+  (cond-> doc (pos-int? heading-level) (update :toc into-toc (assoc h :type :toc))))
+
+(defn set-title-when-missing [{:as doc :keys [title]} heading]
+  (cond-> doc (nil? title) (assoc :title (md.transform/->text heading))))
+
+(defn add-title+toc
+  "Computes and adds a :title and a :toc to the document-like structure `doc` which might have not been constructed by means of `parse`."
+  [{:as doc :keys [content]}]
+  (let [rf (fn [doc heading] (-> doc (add-to-toc heading) (set-title-when-missing heading)))
+        xf (filter (comp #{:heading} :type))]
+    (reduce (xf rf) (assoc doc :toc {:type :toc}) content)))
+
+(comment
+  (-> {:type :toc}
+      ;;(into-toc {:heading-level 3 :title "Foo"})
+      ;;(into-toc {:heading-level 2 :title "Section 1"})
+      (into-toc {:heading-level 1 :title "Title" :type :toc})
+      (into-toc {:heading-level 4 :title "Section 2" :type :toc})
+      ;;(into-toc {:heading-level 4 :title "Section 2.1"})
+      ;;(into-toc {:heading-level 2 :title "Section 3"})
+      )
+
+  (-> "# Top _Title_
+
+par
+
+### Three
+
+## Two
+
+par
+- and a nested
+- ### Heading not included
+
+foo
+
+## Two Again
+
+par
+
+# One Again
+
+[[TOC]]
+
+#### Four
+
+end"
+      nextjournal.markdown/parse
+      :toc
+      ))
+;; endregion
 
 ;; ## Parsing Extensibility
 ;;

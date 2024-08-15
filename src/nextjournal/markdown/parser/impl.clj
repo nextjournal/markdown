@@ -100,12 +100,19 @@
   (let [{:keys [text->id+emoji-fn]} (-> ctx current-loc z/root)
         {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
                              (text->id+emoji-fn (-> ctx current-loc z/node)))]
-    (update-current ctx (fn [loc]
-                          (-> loc
-                              (z/edit (fn [node]
-                                        (cond-> node
-                                          id (assoc-in [:attrs :id] id)
-                                          emoji (assoc :emoji emoji)))) z/up)))))
+    (def ctx ctx)
+    (update-current ctx
+                    (fn [loc]
+                      (-> loc
+                          (z/edit (fn [node]
+                                    (cond-> node
+                                      id (assoc-in [:attrs :id] id)
+                                      emoji (assoc :emoji emoji))))
+                          (as-> l
+                            (if (= 1 (u/zdepth l)) ;; only add top level headings to ToC
+                              (-> l z/up (z/edit u/add-to-toc (z/node l)) z/down z/rightmost)
+                              l))
+                          z/up)))))
 
 (defmethod open-node BulletList [ctx ^ListBlock node]
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] #_#_ :tight? (.isTight node)}) z/down z/rightmost))))

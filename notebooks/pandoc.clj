@@ -9,7 +9,7 @@
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.parser :as md.parser]
+            [nextjournal.markdown.parser.impl.utils :as u]
             [nextjournal.markdown.transform :as md.transform]))
 
 ;; From the [docs](https://pandoc.org/MANUAL.html#description):
@@ -161,20 +161,20 @@ this _is_ a
                                    {:type :list-item
                                     :content (keep pandoc->md li)}) (second (:c node)))})
 
-   :Math (fn [node] (let [[_meta latex] (:c node)] (md.parser/block-formula latex)))
+   :Math (fn [node] (let [[_meta latex] (:c node)] (u/block-formula latex)))
    :Code (fn [node]
            (let [[_meta code] (:c node)]
-             {:type :monospace :content [(md.parser/text-node code)]}))
+             {:type :monospace :content [(u/text-node code)]}))
    :CodeBlock (fn [node]
                 (let [[[_id classes _meta] code] (:c node)]
                   {:type :code
-                   :content [(md.parser/text-node code)]}))
+                   :content [(u/text-node code)]}))
    :SoftBreak (constantly {:type :softbreak})
    :RawBlock (constantly nil)
    :RawInline (fn [{:keys [c]}]
                 (cond
                   (and (vector? c) (= "latex" (first c)))
-                  (md.parser/formula (second c))))})
+                  (u/formula (second c))))})
 
 ^{::clerk/visibility {:result :hide}}
 (defn pandoc->md [{:as node :keys [t pandoc-api-version blocks]}]
@@ -226,9 +226,6 @@ this _is_ a
 
 ^{::clerk/visibility {:result :hide :code :hide}}
 (comment
-  (clerk/serve! {:port 9999})
-  (clerk/clear-cache!)
-  (-> *e ex-cause ex-data)
   (json/read-str
    (:out
     (shell/sh "pandoc" "-f" "markdown" "-t" "json" :in markdown-text))

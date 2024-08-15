@@ -50,7 +50,3 @@
          {:tokenizer-fn parsing-extensibility/losange-tokenizer-fn
           :handler (fn [data] {:type :losange :data data})}]
         reference-text))
-
-^{::clerk/visibility {:code :hide :result :hide}}
-(comment
-  (clerk/serve! {:port 8888}))

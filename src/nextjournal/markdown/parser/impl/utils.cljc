@@ -14,6 +14,8 @@
 
 ;; node utils
 (defn text-node [s] {:type :text :text s})
+(defn formula [text] {:type :formula :text text})
+(defn block-formula [text] {:type :block-formula :text text})
 
 #?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
 (defn re-idx-seq

@@ -1,4 +1,4 @@
-(ns nextjournal.markdown.parser.emoji
+(ns nextjournal.markdown.utils.emoji
   "https://github.com/mathiasbynens/emoji-test-regex-pattern
   MIT License
   Copyright Mathias Bynens <https://mathiasbynens.be/>")

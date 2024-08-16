@@ -4,7 +4,7 @@
             [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
             [matcher-combinators.ansi-color]
-            [nextjournal.markdown.parser.impl.utils :as u]
+            [nextjournal.markdown.utils :as u]
             [nextjournal.markdown.transform :as md.transform]))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes

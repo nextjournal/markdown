@@ -7,13 +7,13 @@
 ;; - delete markdown.cljs
 ;; -
 
-(ns nextjournal.markdown.parser.impl
+(ns nextjournal.markdown.impl
   (:require ["/js/markdown" :as md]
             ["markdown-it/lib/token" :as Token]
             [applied-science.js-interop :as j]
             [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
-            [nextjournal.markdown.parser.impl.utils :as u]))
+            [nextjournal.markdown.utils :as u]))
 
 (extend-type Token
   ILookup

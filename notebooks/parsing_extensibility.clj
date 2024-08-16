@@ -4,7 +4,7 @@
    :nextjournal.clerk/no-cache true}
   (:require [nextjournal.clerk :as clerk]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.parser.impl.utils :as u]
+            [nextjournal.markdown.utils :as u]
             [edamame.core :as edamame]
             [clojure.zip :as z]))
 

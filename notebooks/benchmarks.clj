@@ -5,7 +5,7 @@
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.eval :as clerk.eval]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.parser.impl.utils :as u]
+            [nextjournal.markdown.utils :as u]
             [parsing-extensibility]))
 
 (def reference-text (slurp "notebooks/reference.md"))

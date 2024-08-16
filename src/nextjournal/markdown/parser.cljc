@@ -22,7 +22,7 @@
   (:require [clojure.string :as str]
             [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
-            [nextjournal.markdown.parser.emoji :as emoji]
+            [nextjournal.markdown.utils.emoji :as emoji]
             #?@(:cljs [[applied-science.js-interop :as j]
                        [cljs.reader :as reader]])))
 

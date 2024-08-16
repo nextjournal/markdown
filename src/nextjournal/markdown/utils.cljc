@@ -1,8 +1,8 @@
 ;; # Markdown parsing shared utils
-(ns nextjournal.markdown.parser.impl.utils
+(ns nextjournal.markdown.utils
   (:require [clojure.string :as str]
             [clojure.zip :as z]
-            [nextjournal.markdown.parser.emoji :as emoji]
+            [nextjournal.markdown.utils.emoji :as emoji]
             [nextjournal.markdown.transform :as md.transform]))
 
 #?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
@@ -57,8 +57,8 @@
 
    ;; private
    ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
-   :nextjournal.markdown.parser.impl/id->index {}
-   :nextjournal.markdown.parser.impl/path [:content -1]})
+   :nextjournal.markdown.impl/id->index {}
+   :nextjournal.markdown.impl/path [:content -1]})
 
 (defn text-node [s] {:type :text :text s})
 (defn formula [text] {:type :formula :text text})
@@ -104,13 +104,13 @@
 (defn empty-text-node? [{text :text t :type}] (and (= :text t) (empty? text)))
 ;; TODO: unify in terms of zippers
 #?(:cljs
-   (defn push-node [{:as doc :nextjournal.markdown.parser.impl/keys [path]} node]
+   (defn push-node [{:as doc :nextjournal.markdown.impl/keys [path]} node]
      (try
        (cond-> doc
          ;; ⬇ mdit produces empty text tokens at mark boundaries, see edge cases below
          (not (empty-text-node? node))
          (-> #_doc
-          (update :nextjournal.markdown.parser.impl/path inc-last)
+          (update :nextjournal.markdown.impl/path inc-last)
           (update-in (pop path) conj node)))
        (catch js/Error e
          (throw (ex-info (str "nextjournal.markdown cannot add node: " node " at path: " path)
@@ -266,7 +266,7 @@ end"
    (defn current-ancestor-nodes
      "Given an open parsing context `doc`, returns the list of ancestors of the node last parsed into the document, up to but
       not including the top document."
-     [{:as doc :nextjournal.markdown.parser.impl/keys [path]}]
+     [{:as doc :nextjournal.markdown.impl/keys [path]}]
      (assert path "A path is needed in document context to retrieve the current node: `current-ancestor-nodes` cannot be called after `parse`.")
      (loop [p (ppop path) ancestors []]
        (if (seq p)

@@ -1,8 +1,8 @@
-(ns nextjournal.markdown.parser.impl
+(ns nextjournal.markdown.impl
   (:require [clojure.zip :as z]
-            [nextjournal.markdown.parser.impl.types]
-            [nextjournal.markdown.parser.impl.formulas :as formulas]
-            [nextjournal.markdown.parser.impl.utils :as u])
+            [nextjournal.markdown.impl.types]
+            [nextjournal.markdown.impl.formulas :as formulas]
+            [nextjournal.markdown.utils :as u])
   (:import (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension)
            (org.commonmark.ext.gfm.strikethrough Strikethrough StrikethroughExtension)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
@@ -29,8 +29,8 @@
                                 SoftLineBreak
                                 HardLineBreak
                                 Image)
-           (nextjournal.markdown.parser.impl.types InlineFormula
-                                                   BlockFormula)))
+           (nextjournal.markdown.impl.types InlineFormula
+                                            BlockFormula)))
 
 (set! *warn-on-reflection* true)
 ;; TODO:

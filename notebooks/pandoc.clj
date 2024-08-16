@@ -9,7 +9,7 @@
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.parser.impl.utils :as u]
+            [nextjournal.markdown.utils :as u]
             [nextjournal.markdown.transform :as md.transform]))
 
 ;; From the [docs](https://pandoc.org/MANUAL.html#description):

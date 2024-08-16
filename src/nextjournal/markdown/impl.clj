@@ -1,7 +1,7 @@
 (ns nextjournal.markdown.impl
   (:require [clojure.zip :as z]
             [nextjournal.markdown.impl.types]
-            [nextjournal.markdown.impl.formulas :as formulas]
+            [nextjournal.markdown.impl.extensions :as extensions]
             [nextjournal.markdown.utils :as u])
   (:import (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension)
            (org.commonmark.ext.gfm.strikethrough Strikethrough StrikethroughExtension)
@@ -29,8 +29,7 @@
                                 SoftLineBreak
                                 HardLineBreak
                                 Image)
-           (nextjournal.markdown.impl.types InlineFormula
-                                            BlockFormula)))
+           (nextjournal.markdown.impl.types BlockFormula InlineFormula ToC)))
 
 (set! *warn-on-reflection* true)
 ;; TODO:
@@ -55,7 +54,7 @@
 (def ^Parser parser
   (.. Parser
       builder
-      (extensions [(formulas/extension)
+      (extensions [(extensions/extension)
                    (TaskListItemsExtension/create)
                    (TablesExtension/create)
                    (StrikethroughExtension/create)
@@ -243,6 +242,7 @@
                    ThematicBreak (swap! !ctx update-current z/append-child {:type :ruler})
                    SoftLineBreak (swap! !ctx update-current z/append-child {:type :softbreak})
                    HardLineBreak (swap! !ctx update-current z/append-child {:type :hardbreak})
+                   ToC (swap! !ctx update-current z/append-child {:type :toc})
                    TaskListItemMarker (swap! !ctx update-current handle-todo-list node)
                    InlineFormula (swap! !ctx update-current z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
                    BlockFormula (swap! !ctx update-current z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
@@ -292,6 +292,12 @@
       (parse "some para^[with other note]"))
 
   (parse "some `marks` inline and inline $formula$ with a [link _with_ em](https://what.tfk)")
+  (parse "some
+
+[[TOC]]
+
+what")
+
   (parse "# Ahoi
 
 > par

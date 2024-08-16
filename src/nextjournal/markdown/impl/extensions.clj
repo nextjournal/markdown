@@ -1,7 +1,7 @@
-(ns nextjournal.markdown.impl.formulas
+(ns nextjournal.markdown.impl.extensions
   (:require [clojure.string :as str])
-  (:import (java.util.regex Matcher)
-           (nextjournal.markdown.impl.types InlineFormula BlockFormula)
+  (:import (java.util.regex Matcher Pattern)
+           (nextjournal.markdown.impl.types InlineFormula BlockFormula ToC)
            (org.commonmark.parser Parser$ParserExtension Parser$Builder SourceLine)
            (org.commonmark.parser.beta InlineContentParser InlineContentParserFactory ParsedInline InlineParserState)
            (org.commonmark.parser.block AbstractBlockParser BlockContinue BlockParserFactory BlockStart ParserState BlockParser)))
@@ -9,6 +9,15 @@
 (set! *warn-on-reflection* true)
 
 (def block-formula-delimiter-regex (re-pattern "^\\$\\$"))
+(def block-toc-delimiter-regex (re-pattern "^\\[\\[TOC\\]\\]"))
+
+(defn delimiter-matcher ^Matcher [^Pattern regex ^ParserState state]
+  (let [^SourceLine line (.getLine state)
+        next-non-space (.getNextNonSpaceIndex state)]
+    (re-matcher regex (subs (.getContent line) next-non-space))))
+
+(defn block-formula-delimiter-matcher ^Matcher [^ParserState s] (delimiter-matcher block-formula-delimiter-regex s))
+(defn block-toc-delimiter-matcher ^Matcher [^ParserState s] (delimiter-matcher block-toc-delimiter-regex s))
 
 (defn inline-formula-parser []
   (proxy [InlineContentParser] []
@@ -22,11 +31,6 @@
           (let [^String content (.getContent (.getSource scanner open-pos (.position scanner)))]
             (.next scanner)
             (ParsedInline/of (new InlineFormula content) (.position scanner))))))))
-
-(defn block-formula-delimiter-matcher ^Matcher [^ParserState state]
-  (let [^SourceLine line (.getLine state)
-        next-non-space (.getNextNonSpaceIndex state)]
-    (re-matcher block-formula-delimiter-regex (subs (.getContent line) next-non-space))))
 
 (defn close-block-formula? [state !lines]
   ;; we allow 1-liner blocks like A)
@@ -42,7 +46,7 @@
   (or #_A (when-some [l (last @!lines)] (str/ends-with? (str/trimr l) "$$"))
       #_B (some? (re-find (block-formula-delimiter-matcher state)))))
 
-(defn block-parser ^BlockParser []
+(defn block-formula-parser ^BlockParser []
   (let [block-formula (new BlockFormula)
         !lines (atom [])]
     (proxy [AbstractBlockParser] []
@@ -63,7 +67,7 @@
             (BlockContinue/finished)
             (BlockContinue/atIndex non-space)))))))
 
-(def block-parser-factory
+(def block-formula-parser-factory
   (proxy [BlockParserFactory] []
     (tryStart [^ParserState state _matchedBlockParser]
       (if (<= 4 (.getIndent state))
@@ -71,14 +75,34 @@
         (let [next-non-space (.getNextNonSpaceIndex state)
               m (block-formula-delimiter-matcher state)]
           (if (re-find m)
-            (.atIndex (BlockStart/of (into-array [(block-parser)]))
+            (.atIndex (BlockStart/of (into-array [(block-formula-parser)]))
+                      (+ next-non-space (.end m)))
+            (BlockStart/none)))))))
+
+(defn block-toc-parser ^BlockParser []
+  (let [toc (new ToC)]
+    (proxy [AbstractBlockParser] []
+      (getBlock [] toc)
+      ;; close immediately
+      (tryContinue [^ParserState _state] (BlockContinue/finished)))))
+
+(def block-toc-parser-factory
+  (proxy [BlockParserFactory] []
+    (tryStart [^ParserState state _matchedBlockParser]
+      (if (<= 4 (.getIndent state))
+        (BlockStart/none)
+        (let [next-non-space (.getNextNonSpaceIndex state)
+              m (block-toc-delimiter-matcher state)]
+          (if (re-find m)
+            (.atIndex (BlockStart/of (into-array [(block-toc-parser)]))
                       (+ next-non-space (.end m)))
             (BlockStart/none)))))))
 
 (defn extension []
   (proxy [Object Parser$ParserExtension] []
     (extend [^Parser$Builder pb]
-      (.customBlockParserFactory pb block-parser-factory)
+      (.customBlockParserFactory pb block-toc-parser-factory)
+      (.customBlockParserFactory pb block-formula-parser-factory)
       (.customInlineContentParserFactory pb (reify InlineContentParserFactory
                                               (getTriggerCharacters [_] #{\$})
                                               (create [_] (inline-formula-parser)))))))

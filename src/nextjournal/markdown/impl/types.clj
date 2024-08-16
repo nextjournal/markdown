@@ -29,5 +29,10 @@
 (defn block-formula-getLiteral [this] @(.state this))
 (defn block-formula-setLiteral [this val] (reset! (.state this) val))
 
+(gen-class
+ :name nextjournal.markdown.impl.types.ToC
+ :extends org.commonmark.node.CustomBlock
+ :constructors {[] []})
+
 (comment
   (compile 'nextjournal.markdown.impl.types))

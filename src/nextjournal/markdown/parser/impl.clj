@@ -20,7 +20,6 @@
                                 Paragraph
                                 Emphasis
                                 StrongEmphasis
-
                                 ListBlock
                                 ListItem
                                 Link
@@ -40,7 +39,7 @@
 ;; - [x] task lists
 ;; - [x] footnotes
 ;; - [ ] strikethroughs ext
-;; - [ ] tables
+;; - [x] tables
 ;; - [x] fenced code info
 ;; - [ ] html nodes
 ;; - [ ] auto link
@@ -185,8 +184,8 @@
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-row
                                                          :content []}) z/down z/rightmost))))
 
-(defmethod open-node TableCell [ctx ^TableCell _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-data
+(defmethod open-node TableCell [ctx ^TableCell node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type (if (.isHeader node) :table-header :table-data)
                                                          :content []}) z/down z/rightmost))))
 
 #_(defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]

@@ -13,15 +13,13 @@
 (defmacro time-ms [& expr]
   `(-> (clerk.eval/time-ms (dotimes [_# 100] ~@expr)) :time-ms (/ 100)))
 
-(comment
-  (macroexpand '(time-ms do-this)))
 
 ;; Compare with different set of tokenizers
 (defn parse
   ([text] (parse [] text))
   ([extra-tokenizers text]
-   (md/parse (assoc u/empty-doc :text-tokenizers extra-tokenizers)
-             text)))
+   (md/parse* (assoc u/empty-doc :text-tokenizers extra-tokenizers)
+              text)))
 
 (-> (parse reference-text) :content count)
 

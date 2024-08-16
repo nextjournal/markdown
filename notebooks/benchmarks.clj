@@ -23,11 +23,12 @@
    (md/parse (assoc u/empty-doc :text-tokenizers extra-tokenizers)
              text)))
 
-;; Default set of tokenizers
-(time-ms (parse reference-text))
+(-> (parse reference-text) :content count)
 
-(-> (parse reference-text)
-    :content count)
+;; Default set of tokenizers, warmup
+[(time-ms (parse reference-text))
+ (time-ms (parse reference-text))
+ (time-ms (parse reference-text))]
 
 ;; With an extra brace-brace parser
 (time-ms (parse [{:regex #"\{\{([^\{]+)\}\}"

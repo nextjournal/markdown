@@ -103,28 +103,31 @@
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :heading :content [] :heading-level (.getLevel node)}) z/down z/rightmost))))
 
 (defmethod close-node Heading [ctx ^Heading _node]
-  (let [{:keys [text->id+emoji-fn]} (-> ctx current-loc z/root)
+  (let [{:keys [text->id+emoji-fn] ::keys [id->index]} ctx
         {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
-                             (text->id+emoji-fn (-> ctx current-loc z/node)))]
-    (def ctx ctx)
-    (update-current ctx
-                    (fn [loc]
-                      (-> loc
-                          (z/edit (fn [node]
-                                    (cond-> node
-                                      id (assoc-in [:attrs :id] id)
-                                      emoji (assoc :emoji emoji))))
-                          (as-> l
-                            ;; only add top level headings to ToC
-                            (if (= 1 (u/zdepth l))
-                              (let [heading-node (z/node l)]
-                                (-> l z/up
-                                    (z/edit (fn [doc]
-                                              (-> doc
-                                                  (u/add-to-toc (assoc heading-node :path (u/zpath l)))
-                                                  (u/set-title-when-missing heading-node)))) z/down z/rightmost))
-                              l))
-                          z/up)))))
+                             (text->id+emoji-fn (-> ctx current-loc z/node)))
+        existing-idx (when id (get id->index id))]
+
+    ;; TODO: unify in utils
+    (-> ctx
+        (update ::id->index update id (fnil inc 0))
+        (update-current (fn [loc]
+                          (-> loc
+                              (z/edit (fn [node]
+                                        (cond-> node
+                                          id (assoc-in [:attrs :id] (cond-> id existing-idx (str "-" (inc existing-idx))))
+                                          emoji (assoc :emoji emoji))))
+                              (as-> l
+                                ;; only add top level headings to ToC
+                                (if (= 1 (u/zdepth l))
+                                  (let [heading-node (z/node l)]
+                                    (-> l z/up
+                                        (z/edit (fn [doc]
+                                                  (-> doc
+                                                      (u/add-to-toc (assoc heading-node :path (u/zpath l)))
+                                                      (u/set-title-when-missing heading-node)))) z/down z/rightmost))
+                                  l))
+                              z/up))))))
 
 (defmethod open-node BulletList [ctx ^ListBlock node]
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] #_#_:tight? (.isTight node)}) z/down z/rightmost))))

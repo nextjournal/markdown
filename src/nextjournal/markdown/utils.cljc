@@ -98,6 +98,18 @@
       (vec (when (seq idxs)
              (cons :content (interpose :content idxs)))))))
 
+(comment
+  (def loc
+    (-> {:type :doc} ->zip
+        (z/append-child {:type :paragraph})
+        (z/append-child {:type :paragraph})
+        z/down z/rightmost
+        (z/append-child {:type :text :text "ahoi"})
+        z/down))
+  (-> loc z/node)
+  (-> loc second)
+  )
+
 ;; TODO: rewrite in terms of zippers
 (def ppop (comp pop pop))
 (defn inc-last [path] (update path (dec (count path)) inc))

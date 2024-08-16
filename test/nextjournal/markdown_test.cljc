@@ -497,12 +497,13 @@ par with #really_nice #useful-123 tags
 * two")))))
 
 (deftest unique-heading-ids
-  (is (match? {:content (m/embeds [{:type :heading :attrs {:id "introduction"}}
-                                   {:type :heading :attrs {:id "quantum-physics"} :emoji "👩‍🔬"}
-                                   {:type :heading :attrs {:id "references-📕"}}
-                                   {:type :heading :attrs {:id "quantum-physics-2"} :emoji "⚛"}])}
+  (is (match? (m/embeds [{:type :heading :attrs {:id "introduction"}}
+                         {:type :heading :attrs {:id "quantum-physics"} :emoji "👩‍🔬"}
+                         {:type :heading :attrs {:id "references-📕"}}
+                         {:type :heading :attrs {:id "quantum-physics-2"} :emoji "⚛"}
+                         {:type :heading :attrs {:id "quantum-physics-3"}}])
 
-              (md/parse "
+              (:content (md/parse "
 ## Introduction
 Lorem ipsum et cetera.
 ### 👩‍🔬 Quantum Physics
@@ -511,7 +512,9 @@ Dolor sit and so on.
 It's important to cite your references!
 ### ⚛ Quantum Physics
 Particularly for quantum physics!
-"))))
+#### Quantum Physics
+Did we mention qtmphysics?
+")))))
 
 (deftest per-node-text-transform
 

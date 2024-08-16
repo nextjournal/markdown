@@ -2,7 +2,6 @@
 (ns benchmarks
   {:nextjournal.clerk/no-cache true}
   (:require [clojure.test :refer :all]
-            [nextjournal.clerk :as clerk]
             [nextjournal.clerk.eval :as clerk.eval]
             [nextjournal.markdown :as md]
             [nextjournal.markdown.graaljs :as old-md]

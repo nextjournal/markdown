@@ -262,7 +262,7 @@
                        (swap! !ctx open-node node)
                        (proxy-super visitChildren node)
                        (swap! !ctx close-node node))
-                     (prn :open-node/not-implemented node))))))
+                     (prn ::not-implemented node))))))
 
     (let [{:as ctx :keys [title toc label->footnote-ref]} (deref !ctx)]
       (-> ctx

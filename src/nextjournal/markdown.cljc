@@ -53,12 +53,16 @@
   (-> (nextjournal.markdown.graaljs/parse "[alt](https://this/is/a.link)") :content first :content first)
   (-> (parse "[alt](https://this/is/a.link)") :content first :content first)
 
-  (with-new-parser
-   (parse "# Hello Markdown
+  (parse "# Hello Markdown
 - [ ] what
 - [ ] [nice](very/nice/thing)
 - [x] ~~thing~~
-"))
+")
+
+  (->> (with-out-str
+        (let [reference-text (slurp "notebooks/reference.md")]
+          (time (dotimes [_ 100] (parse reference-text)))))
+      (re-find #"\d+.\d+") parse-double ((fn [d] (/ d 100))))
 
   (->hiccup "# Hello Markdown
 

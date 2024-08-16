@@ -104,30 +104,22 @@
 
 (defmethod close-node Heading [ctx ^Heading _node]
   (let [{:keys [text->id+emoji-fn] ::keys [id->index]} ctx
+        heading-loc (current-loc ctx)
+        heading (z/node heading-loc)
         {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
-                             (text->id+emoji-fn (-> ctx current-loc z/node)))
-        existing-idx (when id (get id->index id))]
+                             (text->id+emoji-fn heading))
+        existing-idx (when id (get id->index id))
+        heading' (cond-> heading
+                   id (assoc-in [:attrs :id] (cond-> id existing-idx (str "-" (inc existing-idx))))
+                   emoji (assoc :emoji emoji))]
 
     ;; TODO: unify in utils
     (-> ctx
         (update ::id->index update id (fnil inc 0))
-        (update-current (fn [loc]
-                          (-> loc
-                              (z/edit (fn [node]
-                                        (cond-> node
-                                          id (assoc-in [:attrs :id] (cond-> id existing-idx (str "-" (inc existing-idx))))
-                                          emoji (assoc :emoji emoji))))
-                              (as-> l
-                                ;; only add top level headings to ToC
-                                (if (= 1 (u/zdepth l))
-                                  (let [heading-node (z/node l)]
-                                    (-> l z/up
-                                        (z/edit (fn [doc]
-                                                  (-> doc
-                                                      (u/add-to-toc (assoc heading-node :path (u/zpath l)))
-                                                      (u/set-title-when-missing heading-node)))) z/down z/rightmost))
-                                  l))
-                              z/up))))))
+        (cond-> (= 1 (u/zdepth heading-loc))
+          (-> (u/add-to-toc (assoc heading' :path (u/zpath heading-loc)))
+              (u/set-title-when-missing heading')))
+        (update-current (fn [loc] (-> loc (z/replace heading') z/up))))))
 
 (defmethod open-node BulletList [ctx ^ListBlock node]
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] #_#_:tight? (.isTight node)}) z/down z/rightmost))))
@@ -272,9 +264,11 @@
                        (swap! !ctx close-node node))
                      (prn :open-node/not-implemented node))))))
 
-    (let [{:as ctx :keys [label->footnote-ref]} (deref !ctx)]
+    (let [{:as ctx :keys [title toc label->footnote-ref]} (deref !ctx)]
       (-> ctx
           :doc z/root
+          (assoc :toc toc)
+          (cond-> title (assoc :title title))
           (assoc :label->footnote-ref label->footnote-ref
                  :footnotes
                  ;; there will never be references without definitions, but the contrary may happen

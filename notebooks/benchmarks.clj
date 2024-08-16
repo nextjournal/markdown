@@ -5,6 +5,7 @@
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.eval :as clerk.eval]
             [nextjournal.markdown :as md]
+            [nextjournal.markdown.graaljs :as old-md]
             [nextjournal.markdown.utils :as u]
             [parsing-extensibility]))
 
@@ -29,6 +30,11 @@
 [(time-ms (parse reference-text))
  (time-ms (parse reference-text))
  (time-ms (parse reference-text))]
+
+;; GraalJS based implementation
+[(time-ms (old-md/parse reference-text))
+ (time-ms (old-md/parse reference-text))
+ (time-ms (old-md/parse reference-text))]
 
 ;; With an extra brace-brace parser
 (time-ms (parse [{:regex #"\{\{([^\{]+)\}\}"

@@ -31,7 +31,7 @@
 
  :aliases
  {:nextjournal/clerk
-  {:extra-paths ["notebooks"]
+  {:extra-paths ["notebooks" "dev"]
    :extra-deps {io.github.nextjournal/clerk {:git/sha "e8f275b5cf077ec9441e404c1885ff0b6ee0aef9"
                                              :exclusions [io.github.nextjournal/markdown]}}
    :jvm-opts ["-Dclojure.main.report=stderr"
@@ -49,6 +49,9 @@
 
   :quiet
   {:jvm-opts ["-Dpolyglot.engine.WarnInterpreterOnly=false"]}
+
+  :dev
+  {:extra-paths ["dev"]}
 
   :test
   {:extra-paths ["test"]

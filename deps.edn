@@ -69,7 +69,10 @@
   {:extra-paths ["sci"]
    :main-opts ["-m" "shadow.cljs.devtools.cli"]
    :jvm-opts ["-Dclerk.resource_manifest={\"/js/viewer.js\" \"http://localhost:8021/viewer.js\"}"]
-   :extra-deps {io.github.nextjournal/clerk.render {:git/url "https://github.com/nextjournal/clerk"
+   :extra-deps {
+                ;; FIXME: on clerk side, move sci.nrepl to render deps
+                io.github.babashka/sci.nrepl {:git/sha "630062b76a4a9ca7d2565fd494d7baaf3460554b"}
+                io.github.nextjournal/clerk.render {:git/url "https://github.com/nextjournal/clerk"
                                                     :git/sha "c55021fb6f5823ed1b2afae70d14ec269f3c493c"
                                                     :deps/root "render"}}}
 

@@ -4,12 +4,12 @@
             [nextjournal.markdown.utils :as u]
             [nextjournal.markdown.transform :as markdown.transform]))
 
-;; TODO: remove fixme (shadow compile warnings)
-(defn tokenize [_] [])
+(def empty-doc u/empty-doc)
 
 (defn parse*
   "Turns a markdown string into a nested clojure structure.
-  Allows to append (-> ctx (parse* text-1) (parse* text-2))"
+  Allows to parse multiple strings into the same document
+  e.g. `(-> u/empty-doc (parse* text-1) (parse* text-2))`."
   ([markdown-text] (parse* u/empty-doc markdown-text))
   ([ctx markdown-text]
    (-> ctx
@@ -18,14 +18,23 @@
 
 (defn parse
   "Turns a markdown string into a nested clojure structure."
-  ([markdown-text] (parse u/empty-doc markdown-text))
-  ([ctx markdown-text]
-   (dissoc (parse* ctx markdown-text)
-           :label->footnote-ref
-           :nextjournal.markdown.impl/id->index
-           :nextjournal.markdown.impl/path
-           :text-tokenizers
-           :text->id+emoji-fn)))
+  [markdown-text]
+  (-> u/empty-doc
+      (parse* markdown-text)
+      (dissoc :label->footnote-ref
+              :nextjournal.markdown.impl/id->index
+              :nextjournal.markdown.impl/path
+              :text-tokenizers
+              :text->id+emoji-fn)))
+
+(comment
+  (-> u/empty-doc
+      (parse* "# title
+* one
+* two
+  ")
+      (parse* "new par")
+      (parse* "new par")))
 
 (defn ->hiccup
   "Turns a markdown string into hiccup."

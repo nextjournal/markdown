@@ -44,12 +44,12 @@ $$\\int_a^bf(t)dt$$
 ")
 
 (defn parse-internal-links [text]
-  (md/parse (update u/empty-doc :text-tokenizers conj u/internal-link-tokenizer)
-            text))
+  (md/parse* (update u/empty-doc :text-tokenizers conj u/internal-link-tokenizer)
+             text))
 
 (defn parse-hashtags [text]
-  (md/parse (update u/empty-doc :text-tokenizers conj u/hashtag-tokenizer)
-            text))
+  (md/parse* (update u/empty-doc :text-tokenizers conj u/hashtag-tokenizer)
+             text))
 
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"

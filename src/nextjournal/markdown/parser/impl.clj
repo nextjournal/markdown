@@ -3,9 +3,10 @@
             [nextjournal.markdown.parser.impl.types]
             [nextjournal.markdown.parser.impl.formulas :as formulas]
             [nextjournal.markdown.parser.impl.utils :as u])
-  (:import (org.commonmark.parser Parser)
+  (:import (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension)
+           (org.commonmark.ext.gfm.strikethrough Strikethrough StrikethroughExtension)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
-           (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension)
+           (org.commonmark.parser Parser)
    #_(org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
            (org.commonmark.node Node AbstractVisitor
                                 Document
@@ -57,6 +58,7 @@
       (extensions [(formulas/extension)
                    (TaskListItemsExtension/create)
                    (TablesExtension/create)
+                   (StrikethroughExtension/create)
                    #_(.. (FootnotesExtension/builder)
                          (inlineFootnotes true)
                          (build))])
@@ -143,6 +145,9 @@
   (update-current ctx (fn [loc] (-> loc (z/append-child {:type :monospace
                                                          :content [{:type :text
                                                                     :text (.getLiteral node)}]}) z/down z/rightmost))))
+
+(defmethod open-node Strikethrough [ctx _node]
+  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :strikethrough :content []}) z/down z/rightmost))))
 
 (defmethod open-node Link [ctx ^Link node]
   (update-current ctx (fn [loc]

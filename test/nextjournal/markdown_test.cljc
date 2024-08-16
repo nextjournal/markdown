@@ -188,6 +188,15 @@ $$\\int_a^bf(t)dt$$
              "two"]]]]
          (md/->hiccup markdown-text))))
 
+(deftest strikethrough-test
+  (testing "single tilde")
+  ;; Here markdown-it follows Pandoc and uses single ~ for 'sub' (enabled by default https://github.com/markdown-it/markdown-it/tree/master?tab=readme-ov-file#syntax-extensions).
+  ;; It differs from GFM spec https://github.github.com/gfm/#strikethrough-extension- which allows signle tilde syntax
+  (testing "double tilde"
+    (is (= {:type :paragraph, :content [{:type :text, :text "some "} {:type :strikethrough, :content [{:type :text, :text "not ok"}]} {:type :text, :text " text"}]}
+           (-> (md/parse "some ~~not ok~~ text")
+               :content first)))))
+
 (deftest tables-test
   (is (= {:type :doc
           :content [{:type :table

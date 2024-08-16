@@ -93,13 +93,14 @@
 (defmethod close-node Document [ctx _node] ctx)
 
 (defmethod open-node Paragraph [ctx _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type (paragraph-type) :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type (paragraph-type)}))))
 
 (defmethod open-node BlockQuote [ctx _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :blockquote :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :blockquote}))))
 
 (defmethod open-node Heading [ctx ^Heading node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :heading :content [] :heading-level (.getLevel node)}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :heading
+                                                   :heading-level (.getLevel node)}))))
 
 (defmethod close-node Heading [ctx ^Heading _node]
   (let [{:keys [text->id+emoji-fn] ::keys [id->index]} ctx
@@ -121,71 +122,64 @@
         (update-current (fn [loc] (-> loc (z/replace heading') z/up))))))
 
 (defmethod open-node BulletList [ctx ^ListBlock node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :bullet-list :content [] #_#_:tight? (.isTight node)}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :bullet-list :content [] #_#_:tight? (.isTight node)}))))
 
 (defmethod open-node OrderedList [ctx _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :numbered-list :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :numbered-list :content []}))))
 
 (defmethod open-node ListItem [ctx _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :list-item :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :list-item :content []}))))
 
 (defmethod open-node Emphasis [ctx _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :em :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :em :content []}))))
 
 (defmethod open-node StrongEmphasis [ctx _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :strong :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :strong :content []}))))
 
 (defmethod open-node Code [ctx ^Code node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :monospace
-                                                         :content [{:type :text
-                                                                    :text (.getLiteral node)}]}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :monospace
+                                                   :content [{:type :text
+                                                              :text (.getLiteral node)}]}))))
 
 (defmethod open-node Strikethrough [ctx _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :strikethrough :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :strikethrough :content []}))))
 
 (defmethod open-node Link [ctx ^Link node]
   (update-current ctx (fn [loc]
-                        (-> loc (z/append-child {:type :link
-                                                 :content []
-                                                 :attrs (cond-> {:href (.getDestination node)}
-                                                          (.getTitle node)
-                                                          (assoc :title (.getTitle node)))}) z/down z/rightmost))))
+                        (u/zopen-node loc {:type :link
+                                           :attrs (cond-> {:href (.getDestination node)}
+                                                    (.getTitle node)
+                                                    (assoc :title (.getTitle node)))}))))
 
 (defmethod open-node IndentedCodeBlock [ctx ^IndentedCodeBlock node]
   (update-current ctx (fn [loc]
-                        (-> loc (z/append-child {:type :code
-                                                 :content [{:type :text
-                                                            :text (.getLiteral node)}]}) z/down z/rightmost))))
+                        (u/zopen-node loc {:type :code
+                                           :content [{:type :text
+                                                      :text (.getLiteral node)}]}))))
 
 (defmethod open-node FencedCodeBlock [ctx ^FencedCodeBlock node]
   (update-current ctx (fn [loc]
-                        (-> loc (z/append-child (merge {:type :code
-                                                        :info (.getInfo node)
-                                                        :content [{:type :text
-                                                                   :text (.getLiteral node)}]}
-                                                       (u/parse-fence-info (.getInfo node)))) z/down z/rightmost))))
+                        (u/zopen-node loc (merge {:type :code
+                                                  :info (.getInfo node)
+                                                  :content [{:type :text
+                                                             :text (.getLiteral node)}]}
+                                                 (u/parse-fence-info (.getInfo node)))))))
 
 (defmethod open-node Image [ctx ^Image node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :image
-                                                         :attrs {:src (.getDestination node) :title (.getTitle node)}
-                                                         :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :image
+                                                   :attrs {:src (.getDestination node) :title (.getTitle node)}}))))
 
 (defmethod open-node TableBlock [ctx ^TableBlock _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table
-                                                         :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :table}))))
 (defmethod open-node TableHead [ctx ^TableHead _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-head
-                                                         :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :table-head}))))
 (defmethod open-node TableBody [ctx ^TableBody _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-body
-                                                         :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :table-body}))))
 (defmethod open-node TableRow [ctx ^TableRow _node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type :table-row
-                                                         :content []}) z/down z/rightmost))))
-
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type :table-row}))))
 (defmethod open-node TableCell [ctx ^TableCell node]
-  (update-current ctx (fn [loc] (-> loc (z/append-child {:type (if (.isHeader node) :table-header :table-data)
-                                                         :content []}) z/down z/rightmost))))
+  (update-current ctx (fn [loc] (u/zopen-node loc {:type (if (.isHeader node) :table-header :table-data)
+                                                   :content []}))))
 
 #_(defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
     (-> ctx

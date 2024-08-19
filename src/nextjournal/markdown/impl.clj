@@ -171,7 +171,7 @@
                                                  :content []}) z/down z/rightmost)))))
 #_(defmethod close-node FootnoteDefinition [ctx ^FootnoteDefinition _node]
     (-> ctx (u/update-current-loc z/up) (assoc ::root :doc)))
-#_(defmethod open-node InlineFootnote [{:as ctx :keys [label->footnote-ref]} ^InlineFootnote _node]
+#_(defmethod open-node InlineFootnote [{:as ctx ::keys [label->footnote-ref]} ^InlineFootnote _node]
     (let [label (str "note-" (count label->footnote-ref))
           footnote-ref {:type :footnote-ref
                         :inline? true
@@ -179,7 +179,7 @@
                         :label label}]
       (-> ctx
           (u/update-current-loc z/append-child footnote-ref)
-          (update :label->footnote-ref assoc label footnote-ref)
+          (update ::label->footnote-ref assoc label footnote-ref)
           (assoc ::root :footnotes)
           (u/update-current-loc (fn [loc]
                               (-> loc
@@ -196,14 +196,14 @@
       z/up (z/edit assoc :type :todo-list)
       z/down z/rightmost))
 
-(defn node->data [{:as ctx :keys [footnotes]} ^Node node]
-  (assert (:type ctx) ":type must be set on initial doc")
-  (assert (:content ctx) ":content must be set on initial doc")
-  (assert (::root ctx) "context needs a ::root")
-  (let [!ctx (atom (-> ctx
-                       (update :label->footnote-ref #(or % {}))
-                       (assoc :doc (u/->zip ctx)
-                              :footnotes (u/->zip {:type :footnotes :content (or footnotes [])}))))]
+(defn node->data [{:as ctx-in :keys [footnotes]} ^Node node]
+  (assert (:type ctx-in) ":type must be set on initial doc")
+  (assert (:content ctx-in) ":content must be set on initial doc")
+  (assert (::root ctx-in) "context needs a ::root")
+  ;; TODO: unify pre/post parse across impls
+  (let [!ctx (atom (assoc ctx-in
+                          :doc (u/->zip ctx-in)
+                          :footnotes (u/->zip {:type :footnotes :content (or footnotes [])})))]
     (.accept node
              (proxy [AbstractVisitor] []
                ;; proxy can't overload method by arg type, while gen-class can: https://groups.google.com/g/clojure/c/TVRsy4Gnf70
@@ -220,7 +220,7 @@
                    TaskListItemMarker (swap! !ctx u/update-current-loc handle-todo-list node)
                    InlineFormula (swap! !ctx u/update-current-loc z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
                    BlockFormula (swap! !ctx u/update-current-loc z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
-                   #_#_FootnoteReference (swap! !ctx (fn [{:as ctx :keys [label->footnote-ref]}]
+                   #_#_FootnoteReference (swap! !ctx (fn [{:as ctx ::keys [label->footnote-ref]}]
                                                        (let [label (.getLabel ^FootnoteReference node)
                                                              footnote-ref (or (get label->footnote-ref label)
                                                                               {:type :footnote-ref
@@ -228,22 +228,25 @@
                                                                                :label label})]
                                                          (-> ctx
                                                              (u/update-current-loc z/append-child footnote-ref)
-                                                             (update :label->footnote-ref assoc label footnote-ref)))))
+                                                             (update ::label->footnote-ref assoc label footnote-ref)))))
 
                    ;; else branch nodes
                    (if (get-method open-node (class node))
                      (with-tight-list node
-                                      (swap! !ctx open-node node)
-                                      (proxy-super visitChildren node)
-                                      (swap! !ctx close-node node))
+                       (swap! !ctx open-node node)
+                       (proxy-super visitChildren node)
+                       (swap! !ctx close-node node))
                      (prn ::not-implemented node))))))
 
-    (let [{:as ctx :keys [title toc label->footnote-ref footnotes]} (deref !ctx)]
-      (-> ctx
-          :doc z/root
-          (assoc :toc toc)
-          (cond-> title (assoc :title title))
-          (assoc :label->footnote-ref label->footnote-ref
+    (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]} (deref !ctx)]
+      (-> ctx-out
+          (dissoc :doc)
+          (cond->
+            (and title (not (:title ctx-in)))
+            (assoc :title title))
+          (assoc :toc toc
+                 :content (:content (z/root doc))
+                 ::label->footnote-ref label->footnote-ref
                  :footnotes
                  ;; there will never be references without definitions, but the contrary may happen
                  (->> footnotes z/root :content

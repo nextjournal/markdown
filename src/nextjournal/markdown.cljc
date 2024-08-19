@@ -21,8 +21,7 @@
   [markdown-text]
   (-> u/empty-doc
       (parse* markdown-text)
-      (dissoc :label->footnote-ref
-              :text-tokenizers
+      (dissoc :text-tokenizers
               :text->id+emoji-fn
               :nextjournal.markdown.impl/footnote-offset
               :nextjournal.markdown.impl/id->index

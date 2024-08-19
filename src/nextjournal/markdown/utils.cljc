@@ -162,7 +162,7 @@
     (reduce (xf rf) (assoc doc :toc {:type :toc}) content)))
 
 (defn handle-close-heading [ctx]
-  (let [{:keys [text->id+emoji-fn] ::keys [id->index]} ctx
+  (let [{:keys [text->id+emoji-fn] :nextjournal.markdown.impl/keys [id->index]} ctx
         heading-loc (current-loc ctx)
         heading (z/node heading-loc)
         {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
@@ -172,7 +172,7 @@
                    id (assoc-in [:attrs :id] (cond-> id existing-idx (str "-" (inc existing-idx))))
                    emoji (assoc :emoji emoji))]
     (-> ctx
-        (update ::id->index update id (fnil inc 0))
+        (update :nextjournal.markdown.impl/id->index update id (fnil inc 0))
         (cond-> (= 1 (zdepth heading-loc))
           (-> (add-to-toc (assoc heading' :path (zpath heading-loc)))
               (set-title-when-missing heading')))

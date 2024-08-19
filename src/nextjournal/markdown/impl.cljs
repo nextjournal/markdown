@@ -260,22 +260,22 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
   ([markdown] (parse u/empty-doc markdown))
   ([ctx-in markdown]
    ;; TODO: unify implementations
-   (let [{:as ctx-out :keys [title toc footnotes] ::keys [label->footnote-ref]}
+   (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]}
          (-> ctx-in
              (assoc ::footnote-offset (count (::label->footnote-ref ctx-in)))
              (update :text-tokenizers (partial map u/normalize-tokenizer))
-             #_ (update ::label->footnote-ref #(or % {}))
              (assoc :doc (u/->zip ctx-in)
                     :footnotes (u/->zip {:type :footnotes
                                          :content (or (:footnotes ctx-in) [])}))
              (apply-tokens (md/tokenize markdown)))]
      (-> ctx-out
-         :doc z/root
-         (assoc :toc toc)
+         (dissoc :doc)
          (cond->
            (and title (not (:title ctx-in)))
            (assoc :title title))
-         (assoc ::label->footnote-ref label->footnote-ref
+         (assoc :toc toc
+                :content (:content (z/root doc))
+                ::label->footnote-ref label->footnote-ref
                 :footnotes
                 ;; there will never be references without definitions, but the contrary may happen
                 (->> footnotes z/root :content

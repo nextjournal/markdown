@@ -22,11 +22,13 @@
   (-> u/empty-doc
       (parse* markdown-text)
       (dissoc :label->footnote-ref
-              :nextjournal.markdown.impl/id->index
-              :nextjournal.markdown.impl/path
-              :nextjournal.markdown.impl/root
               :text-tokenizers
-              :text->id+emoji-fn)))
+              :text->id+emoji-fn
+              :nextjournal.markdown.impl/footnote-offset
+              :nextjournal.markdown.impl/id->index
+              :nextjournal.markdown.impl/label->footnote-ref
+              :nextjournal.markdown.impl/path
+              :nextjournal.markdown.impl/root)))
 
 (comment
   (-> u/empty-doc

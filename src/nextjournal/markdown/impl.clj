@@ -1,3 +1,4 @@
+;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
   (:require [clojure.zip :as z]
             [nextjournal.markdown.impl.types]
@@ -95,26 +96,10 @@
 
 (defmethod open-node Heading [ctx ^Heading node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :heading
-                                                     :heading-level (.getLevel node)}))))
+                                                         :heading-level (.getLevel node)}))))
 
 (defmethod close-node Heading [ctx ^Heading _node]
-  (let [{:keys [text->id+emoji-fn] ::keys [id->index]} ctx
-        heading-loc (u/current-loc ctx)
-        heading (z/node heading-loc)
-        {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
-                             (text->id+emoji-fn heading))
-        existing-idx (when id (get id->index id))
-        heading' (cond-> heading
-                   id (assoc-in [:attrs :id] (cond-> id existing-idx (str "-" (inc existing-idx))))
-                   emoji (assoc :emoji emoji))]
-
-    ;; TODO: unify in utils
-    (-> ctx
-        (update ::id->index update id (fnil inc 0))
-        (cond-> (= 1 (u/zdepth heading-loc))
-          (-> (u/add-to-toc (assoc heading' :path (u/zpath heading-loc)))
-              (u/set-title-when-missing heading')))
-        (u/update-current-loc (fn [loc] (-> loc (z/replace heading') z/up))))))
+  (u/handle-close-heading ctx))
 
 (defmethod open-node BulletList [ctx ^ListBlock node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :bullet-list :content [] #_#_:tight? (.isTight node)}))))
@@ -227,7 +212,7 @@
                    ;; leaf nodes
                    LinkReferenceDefinition :ignore
                    ;;Text (swap! !ctx u/update-current z/append-child {:type :text :text (.getLiteral ^Text node)})
-                   Text (swap! !ctx u/update-current-loc u/handle-text-token (.getLiteral ^Text node))
+                   Text (swap! !ctx u/handle-text-token (.getLiteral ^Text node))
                    ThematicBreak (swap! !ctx u/update-current-loc z/append-child {:type :ruler})
                    SoftLineBreak (swap! !ctx u/update-current-loc z/append-child {:type :softbreak})
                    HardLineBreak (swap! !ctx u/update-current-loc z/append-child {:type :hardbreak})
@@ -253,7 +238,7 @@
                                       (swap! !ctx close-node node))
                      (prn ::not-implemented node))))))
 
-    (let [{:as ctx :keys [title toc label->footnote-ref]} (deref !ctx)]
+    (let [{:as ctx :keys [title toc label->footnote-ref footnotes]} (deref !ctx)]
       (-> ctx
           :doc z/root
           (assoc :toc toc)
@@ -261,7 +246,7 @@
           (assoc :label->footnote-ref label->footnote-ref
                  :footnotes
                  ;; there will never be references without definitions, but the contrary may happen
-                 (->> @!ctx :footnotes z/root :content
+                 (->> footnotes z/root :content
                       (keep (fn [{:as footnote :keys [label]}]
                               (when (contains? label->footnote-ref label)
                                 (assoc footnote :ref (:ref (label->footnote-ref label))))))
@@ -270,7 +255,8 @@
 
 (defn parse
   ([md] (parse u/empty-doc md))
-  ([ctx md] (node->data ctx (.parse parser md))))
+  ([ctx md] (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))
+                        (.parse parser md))))
 
 (comment
   (remove-all-methods open-node)
@@ -281,6 +267,8 @@
       (parse "some para^[with other note]"))
 
   (parse "some `marks` inline and inline $formula$ with a [link _with_ em](https://what.tfk)")
+  (parse (assoc u/empty-doc :text-tokenizers [u/internal-link-tokenizer])
+         "what a [[link]] is this")
   (parse "what the <em>real</em> deal is")
   (parse "some
 

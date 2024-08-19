@@ -67,6 +67,13 @@
 - [x] ~~thing~~
 ")
 
+  (parse "some text[^note] and some other[^other] but again[^note]
+
+[^other]: some other
+[^note]: some story
+")
+
+
   (->hiccup "# Hello Markdown
 
 * What's _going_ on?

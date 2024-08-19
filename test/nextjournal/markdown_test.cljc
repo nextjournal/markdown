@@ -740,7 +740,7 @@ Par.
                  "1"]
                 " and"
                 [:sup.sidenote-ref
-                 {:data-label nil}
+                 {:data-label "inline-note-1"}
                  "2"]
                 "."]
                [:div.sidenote-column
@@ -777,6 +777,39 @@ Par.
                   "3"]
                  "Explain 2"]]]]
              (md.transform/->hiccup parsed+sidenotes))))))
+
+(deftest parse-multiple-inputs
+  (testing "adding to the ToC"
+    (is (match? {:type :doc
+                 :toc {:type :toc
+                       :children [{:attrs {:id "title"}
+                                   :heading-level 1,
+                                   :children [{:attrs {:id "section"}
+                                               :heading-level 2}]}]}}
+                (-> (md/parse* "# Title")
+                    (md/parse* "## Section")))))
+
+  (testing "footnote defs"
+    (is (match? {:type :doc
+                 :footnotes [{:type :footnote :ref 0 :label "n1"}
+                             {:type :footnote :ref 1 :label "n2"}
+                             {:type :footnote :ref 2 :label "n3"}]}
+                (-> (md/parse* "some text[^n1] and[^n2].
+
+[^n1]: Some _nice_ explanation
+[^n2]: Some _nicer_ explanation
+")
+                    (md/parse* "some new text[^n2] and some own[^n3].
+
+[^n3]: Some _own_ explanation")))))
+
+  (testing "inline footnotes"
+    (is (match? {:type :doc
+                 :content [{:type :paragraph} {:type :paragraph}]
+                 :footnotes [{:type :footnote :label "inline-note-0"}
+                             {:type :footnote :label "inline-note-1"}]}
+                (-> (md/parse* "some text^[with am inline note]")
+                    (md/parse* "some new text^[with another inline note]"))))))
 
 (deftest commonmark-compliance
   ;; we need an extra [:div] for embedding purposes, which might be dropped e.g. by configuring the `:doc` type renderer to use a react fragment `[:<>]`

@@ -59,8 +59,7 @@
    ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
    :nextjournal.markdown.impl/id->index {}
    ;; allow to swap between :doc or :footnotes
-   :nextjournal.markdown.impl/root :doc
-   :nextjournal.markdown.impl/path [:content -1]})
+   :nextjournal.markdown.impl/root :doc})
 
 (defn current-loc [{:as ctx :nextjournal.markdown.impl/keys [root]}] (get ctx root))
 (defn update-current-loc [{:as ctx :nextjournal.markdown.impl/keys [root]} f & args]
@@ -120,22 +119,6 @@
 ;; TODO: rewrite in terms of zippers
 (def ppop (comp pop pop))
 (defn inc-last [path] (update path (dec (count path)) inc))
-(defn empty-text-node? [{text :text t :type}] (and (= :text t) (empty? text)))
-;; TODO: unify in terms of zippers
-#?(:cljs
-   (defn push-node [{:as doc :nextjournal.markdown.impl/keys [path]} node]
-     (try
-       (cond-> doc
-         ;; ⬇ mdit produces empty text tokens at mark boundaries, see edge cases below
-         (not (empty-text-node? node))
-         (-> #_doc
-          (update :nextjournal.markdown.impl/path inc-last)
-          (update-in (pop path) conj node)))
-       (catch js/Error e
-         (throw (ex-info (str "nextjournal.markdown cannot add node: " node " at path: " path)
-                         {:doc doc :node node} e)))))
-   :clj
-   (def push-node z/append-child))
 
 ;; ## 🗂️ ToC Handling
 ;; region toc:
@@ -177,6 +160,23 @@
   (let [rf (fn [doc heading] (-> doc (add-to-toc heading) (set-title-when-missing heading)))
         xf (filter (comp #{:heading} :type))]
     (reduce (xf rf) (assoc doc :toc {:type :toc}) content)))
+
+(defn handle-close-heading [ctx]
+  (let [{:keys [text->id+emoji-fn] ::keys [id->index]} ctx
+        heading-loc (current-loc ctx)
+        heading (z/node heading-loc)
+        {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
+                             (text->id+emoji-fn heading))
+        existing-idx (when id (get id->index id))
+        heading' (cond-> heading
+                   id (assoc-in [:attrs :id] (cond-> id existing-idx (str "-" (inc existing-idx))))
+                   emoji (assoc :emoji emoji))]
+    (-> ctx
+        (update ::id->index update id (fnil inc 0))
+        (cond-> (= 1 (zdepth heading-loc))
+          (-> (add-to-toc (assoc heading' :path (zpath heading-loc)))
+              (set-title-when-missing heading')))
+        (update-current-loc (fn [loc] (-> loc (z/replace heading') z/up))))))
 
 (comment
   (-> {:type :toc}
@@ -229,16 +229,16 @@ end"
 ;;    TokenizerFn :: String -> [IndexedMatch]
 ;;    DocHandler :: Doc -> {:match :: Match} -> Doc
 
-(defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} doc {:as node :keys [text]}]
+(defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} ctx {:as node :keys [text]}]
   ;; TokenizerFn -> HNode -> [HNode]
   (assert (and (fn? tokenizer-fn)
                (fn? doc-handler)
                (fn? pred)
                (string? text))
           {:text text :tokenizer tkz})
-  (let [idx-seq (when (pred doc) (tokenizer-fn text))]
+  (let [idx-seq (when (pred (current-loc ctx)) (tokenizer-fn text))]
     (if (seq idx-seq)
-      (let [text-hnode (fn [s] (assoc (text-node s) :doc-handler push-node))
+      (let [text-hnode (fn [s] (assoc (text-node s) :doc-handler z/append-child))
             {:keys [nodes remaining-text]}
             (reduce (fn [{:as acc :keys [remaining-text]} [match start end]]
                       (-> acc
@@ -256,16 +256,15 @@ end"
           (conj (text-hnode remaining-text))))
       [node])))
 
-(defn handle-text-token [{:as doc :keys [text-tokenizers]} text]
-  (let [text-tokenizers (:text-tokenizers (if (zip? doc) (z/root doc) doc))]
-    (reduce (fn [doc {:as node :keys [doc-handler]}] (doc-handler doc (dissoc node :doc-handler)))
-            doc
-            (reduce (fn [nodes tokenizer]
-                      (mapcat (fn [{:as node :keys [type]}]
-                                (if (= :text type) (tokenize-text-node tokenizer doc node) [node]))
-                              nodes))
-                    [{:type :text :text text :doc-handler push-node}]
-                    text-tokenizers))))
+(defn handle-text-token [{:as ctx :keys [text-tokenizers]} text]
+  (reduce (fn [ctx {:as node :keys [doc-handler]}] (update-current-loc ctx doc-handler (dissoc node :doc-handler)))
+          ctx
+          (reduce (fn [nodes tokenizer]
+                    (mapcat (fn [{:as node :keys [type]}]
+                              (if (= :text type) (tokenize-text-node tokenizer ctx node) [node]))
+                            nodes))
+                  [{:type :text :text text :doc-handler z/append-child}]
+                  text-tokenizers)))
 
 ;; clj
 #_(handle-text-token (->zip {:type :doc :content []}) "some-text")
@@ -276,28 +275,16 @@ end"
   [{:as tokenizer :keys [doc-handler pred handler regex tokenizer-fn]}]
   (assert (and (or doc-handler handler) (or regex tokenizer-fn)))
   (cond-> tokenizer
-    (not doc-handler) (assoc :doc-handler (fn [doc {:keys [match]}] (push-node doc (handler match))))
+    (not doc-handler) (assoc :doc-handler (fn [doc {:keys [match]}] (z/append-child doc (handler match))))
     (not tokenizer-fn) (assoc :tokenizer-fn (partial re-idx-seq regex))
     (not pred) (assoc :pred (constantly true))))
 
-;; TODO: rewrite in terms of zippers
-#?(:cljs
-   (defn current-ancestor-nodes
-     "Given an open parsing context `doc`, returns the list of ancestors of the node last parsed into the document, up to but
-      not including the top document."
-     [{:as doc :nextjournal.markdown.impl/keys [path]}]
-     (assert path "A path is needed in document context to retrieve the current node: `current-ancestor-nodes` cannot be called after `parse`.")
-     (loop [p (ppop path) ancestors []]
-       (if (seq p)
-         (recur (ppop p) (conj ancestors (get-in doc p)))
-         ancestors)))
-   :clj
-   (defn current-ancestor-nodes [loc]
-     (loop [loc loc ancestors []]
-       (let [parent (z/up loc)]
-         (if (and parent (not= :doc (:type (z/node parent))))
-           (recur parent (conj ancestors (z/node parent)))
-           ancestors)))))
+(defn current-ancestor-nodes [loc]
+  (loop [loc loc ancestors []]
+    (let [parent (z/up loc)]
+      (if (and parent (not= :doc (:type (z/node parent))))
+        (recur parent (conj ancestors (z/node parent)))
+        ancestors))))
 
 (def hashtag-tokenizer
   {:regex #"(^|\B)#[\w-]+"
@@ -388,7 +375,7 @@ end"
    Takes and returns a parsed document. When the document has footnotes, wraps every top-level block which contains footnote references
    with a `:footnote-container` node, into each of such nodes, adds a `:sidenote-column` node containing a `:sidenote` node for each found ref.
    Renames type `:footnote-ref` to `:sidenote-ref."
-  [{:as doc ::keys [path] :keys [footnotes]}]
+  [{:as doc :keys [footnotes]}]
   (if-not (seq footnotes)
     doc
     (let [root (->zip doc)]

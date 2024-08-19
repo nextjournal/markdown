@@ -54,7 +54,7 @@
 (def ^Parser parser
   (.. Parser
       builder
-      (extensions [(extensions/extension)
+      (extensions [(extensions/create)
                    (TaskListItemsExtension/create)
                    (TablesExtension/create)
                    (StrikethroughExtension/create)
@@ -82,29 +82,24 @@
 (defmulti open-node (fn [_ctx node] (type node)))
 (defmulti close-node (fn [_ctx node] (type node)))
 
-(defn current-loc [{:as ctx :keys [root]}] (get ctx root))
-(defn update-current [{:as ctx :keys [root]} f & args]
-  (assert root (str "Missing root: '" (keys ctx) "'"))
-  (apply update ctx root f args))
-
-(defmethod close-node :default [ctx _node] (update-current ctx z/up))
+(defmethod close-node :default [ctx _node] (u/update-current-loc ctx z/up))
 
 (defmethod open-node Document [ctx _node] ctx)
 (defmethod close-node Document [ctx _node] ctx)
 
 (defmethod open-node Paragraph [ctx _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type (paragraph-type)}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type (paragraph-type)}))))
 
 (defmethod open-node BlockQuote [ctx _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :blockquote}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :blockquote}))))
 
 (defmethod open-node Heading [ctx ^Heading node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :heading
-                                                   :heading-level (.getLevel node)}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :heading
+                                                     :heading-level (.getLevel node)}))))
 
 (defmethod close-node Heading [ctx ^Heading _node]
   (let [{:keys [text->id+emoji-fn] ::keys [id->index]} ctx
-        heading-loc (current-loc ctx)
+        heading-loc (u/current-loc ctx)
         heading (z/node heading-loc)
         {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
                              (text->id+emoji-fn heading))
@@ -119,78 +114,78 @@
         (cond-> (= 1 (u/zdepth heading-loc))
           (-> (u/add-to-toc (assoc heading' :path (u/zpath heading-loc)))
               (u/set-title-when-missing heading')))
-        (update-current (fn [loc] (-> loc (z/replace heading') z/up))))))
+        (u/update-current-loc (fn [loc] (-> loc (z/replace heading') z/up))))))
 
 (defmethod open-node BulletList [ctx ^ListBlock node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :bullet-list :content [] #_#_:tight? (.isTight node)}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :bullet-list :content [] #_#_:tight? (.isTight node)}))))
 
 (defmethod open-node OrderedList [ctx _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :numbered-list :content []}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :numbered-list :content []}))))
 
 (defmethod open-node ListItem [ctx _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :list-item :content []}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :list-item :content []}))))
 
 (defmethod open-node Emphasis [ctx _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :em :content []}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :em :content []}))))
 
 (defmethod open-node StrongEmphasis [ctx _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :strong :content []}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :strong :content []}))))
 
 (defmethod open-node Code [ctx ^Code node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :monospace
-                                                   :content [{:type :text
-                                                              :text (.getLiteral node)}]}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :monospace
+                                                     :content [{:type :text
+                                                                :text (.getLiteral node)}]}))))
 
 (defmethod open-node Strikethrough [ctx _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :strikethrough :content []}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :strikethrough :content []}))))
 
 (defmethod open-node Link [ctx ^Link node]
-  (update-current ctx (fn [loc]
-                        (u/zopen-node loc {:type :link
-                                           :attrs (cond-> {:href (.getDestination node)}
-                                                    (.getTitle node)
-                                                    (assoc :title (.getTitle node)))}))))
+  (u/update-current-loc ctx (fn [loc]
+                          (u/zopen-node loc {:type :link
+                                             :attrs (cond-> {:href (.getDestination node)}
+                                                      (.getTitle node)
+                                                      (assoc :title (.getTitle node)))}))))
 
 (defmethod open-node IndentedCodeBlock [ctx ^IndentedCodeBlock node]
-  (update-current ctx (fn [loc]
-                        (u/zopen-node loc {:type :code
-                                           :content [{:type :text
-                                                      :text (.getLiteral node)}]}))))
+  (u/update-current-loc ctx (fn [loc]
+                          (u/zopen-node loc {:type :code
+                                             :content [{:type :text
+                                                        :text (.getLiteral node)}]}))))
 
 (defmethod open-node FencedCodeBlock [ctx ^FencedCodeBlock node]
-  (update-current ctx (fn [loc]
-                        (u/zopen-node loc (merge {:type :code
-                                                  :info (.getInfo node)
-                                                  :content [{:type :text
-                                                             :text (.getLiteral node)}]}
-                                                 (u/parse-fence-info (.getInfo node)))))))
+  (u/update-current-loc ctx (fn [loc]
+                          (u/zopen-node loc (merge {:type :code
+                                                    :info (.getInfo node)
+                                                    :content [{:type :text
+                                                               :text (.getLiteral node)}]}
+                                                   (u/parse-fence-info (.getInfo node)))))))
 
 (defmethod open-node Image [ctx ^Image node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :image
-                                                   :attrs {:src (.getDestination node) :title (.getTitle node)}}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :image
+                                                     :attrs {:src (.getDestination node) :title (.getTitle node)}}))))
 
 (defmethod open-node TableBlock [ctx ^TableBlock _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :table}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table}))))
 (defmethod open-node TableHead [ctx ^TableHead _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :table-head}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table-head}))))
 (defmethod open-node TableBody [ctx ^TableBody _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :table-body}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table-body}))))
 (defmethod open-node TableRow [ctx ^TableRow _node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type :table-row}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table-row}))))
 (defmethod open-node TableCell [ctx ^TableCell node]
-  (update-current ctx (fn [loc] (u/zopen-node loc {:type (if (.isHeader node) :table-header :table-data)
-                                                   :content []}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type (if (.isHeader node) :table-header :table-data)
+                                                     :content []}))))
 
 #_(defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
     (-> ctx
-        (assoc :root :footnotes)
-        (update-current (fn [loc]
-                          (-> loc
-                              (z/append-child {:type :footnote
-                                               :label (.getLabel node)
-                                               :content []}) z/down z/rightmost)))))
+        (assoc ::root :footnotes)
+        (u/update-current-loc (fn [loc]
+                            (-> loc
+                                (z/append-child {:type :footnote
+                                                 :label (.getLabel node)
+                                                 :content []}) z/down z/rightmost)))))
 #_(defmethod close-node FootnoteDefinition [ctx ^FootnoteDefinition _node]
-    (-> ctx (update-current z/up) (assoc :root :doc)))
+    (-> ctx (u/update-current-loc z/up) (assoc ::root :doc)))
 #_(defmethod open-node InlineFootnote [{:as ctx :keys [label->footnote-ref]} ^InlineFootnote _node]
     (let [label (str "note-" (count label->footnote-ref))
           footnote-ref {:type :footnote-ref
@@ -198,17 +193,17 @@
                         :ref (count label->footnote-ref)
                         :label label}]
       (-> ctx
-          (update-current z/append-child footnote-ref)
+          (u/update-current-loc z/append-child footnote-ref)
           (update :label->footnote-ref assoc label footnote-ref)
-          (assoc :root :footnotes)
-          (update-current (fn [loc]
-                            (-> loc
-                                (z/append-child {:type :footnote
-                                                 :inline? true
-                                                 :label label
-                                                 :content []}) z/down z/rightmost))))))
+          (assoc ::root :footnotes)
+          (u/update-current-loc (fn [loc]
+                              (-> loc
+                                  (z/append-child {:type :footnote
+                                                   :inline? true
+                                                   :label label
+                                                   :content []}) z/down z/rightmost))))))
 #_(defmethod close-node InlineFootnote [ctx ^FootnoteDefinition _node]
-    (-> ctx (update-current z/up) (assoc :root :doc)))
+    (-> ctx (u/update-current-loc z/up) (assoc ::root :doc)))
 
 (defn handle-todo-list [loc ^TaskListItemMarker node]
   (-> loc
@@ -219,11 +214,11 @@
 (defn node->data [{:as ctx :keys [footnotes]} ^Node node]
   (assert (:type ctx) ":type must be set on initial doc")
   (assert (:content ctx) ":content must be set on initial doc")
+  (assert (::root ctx) "context needs a ::root")
   (let [!ctx (atom (-> ctx
                        (update :label->footnote-ref #(or % {}))
                        (assoc :doc (u/->zip ctx)
-                              :footnotes (u/->zip {:type :footnotes :content (or footnotes [])})
-                              :root :doc)))]
+                              :footnotes (u/->zip {:type :footnotes :content (or footnotes [])}))))]
     (.accept node
              (proxy [AbstractVisitor] []
                ;; proxy can't overload method by arg type, while gen-class can: https://groups.google.com/g/clojure/c/TVRsy4Gnf70
@@ -231,15 +226,15 @@
                  (condp instance? node
                    ;; leaf nodes
                    LinkReferenceDefinition :ignore
-                   ;;Text (swap! !ctx update-current z/append-child {:type :text :text (.getLiteral ^Text node)})
-                   Text (swap! !ctx update-current u/handle-text-token (.getLiteral ^Text node))
-                   ThematicBreak (swap! !ctx update-current z/append-child {:type :ruler})
-                   SoftLineBreak (swap! !ctx update-current z/append-child {:type :softbreak})
-                   HardLineBreak (swap! !ctx update-current z/append-child {:type :hardbreak})
-                   ToC (swap! !ctx update-current z/append-child {:type :toc})
-                   TaskListItemMarker (swap! !ctx update-current handle-todo-list node)
-                   InlineFormula (swap! !ctx update-current z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
-                   BlockFormula (swap! !ctx update-current z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
+                   ;;Text (swap! !ctx u/update-current z/append-child {:type :text :text (.getLiteral ^Text node)})
+                   Text (swap! !ctx u/update-current-loc u/handle-text-token (.getLiteral ^Text node))
+                   ThematicBreak (swap! !ctx u/update-current-loc z/append-child {:type :ruler})
+                   SoftLineBreak (swap! !ctx u/update-current-loc z/append-child {:type :softbreak})
+                   HardLineBreak (swap! !ctx u/update-current-loc z/append-child {:type :hardbreak})
+                   ToC (swap! !ctx u/update-current-loc z/append-child {:type :toc})
+                   TaskListItemMarker (swap! !ctx u/update-current-loc handle-todo-list node)
+                   InlineFormula (swap! !ctx u/update-current-loc z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
+                   BlockFormula (swap! !ctx u/update-current-loc z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
                    #_#_FootnoteReference (swap! !ctx (fn [{:as ctx :keys [label->footnote-ref]}]
                                                        (let [label (.getLabel ^FootnoteReference node)
                                                              footnote-ref (or (get label->footnote-ref label)
@@ -247,15 +242,15 @@
                                                                                :ref (count label->footnote-ref)
                                                                                :label label})]
                                                          (-> ctx
-                                                             (update-current z/append-child footnote-ref)
+                                                             (u/update-current-loc z/append-child footnote-ref)
                                                              (update :label->footnote-ref assoc label footnote-ref)))))
 
                    ;; else branch nodes
                    (if (get-method open-node (class node))
                      (with-tight-list node
-                       (swap! !ctx open-node node)
-                       (proxy-super visitChildren node)
-                       (swap! !ctx close-node node))
+                                      (swap! !ctx open-node node)
+                                      (proxy-super visitChildren node)
+                                      (swap! !ctx close-node node))
                      (prn ::not-implemented node))))))
 
     (let [{:as ctx :keys [title toc label->footnote-ref]} (deref !ctx)]
@@ -286,6 +281,7 @@
       (parse "some para^[with other note]"))
 
   (parse "some `marks` inline and inline $formula$ with a [link _with_ em](https://what.tfk)")
+  (parse "what the <em>real</em> deal is")
   (parse "some
 
 [[TOC]]

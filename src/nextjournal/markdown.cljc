@@ -24,6 +24,7 @@
       (dissoc :label->footnote-ref
               :nextjournal.markdown.impl/id->index
               :nextjournal.markdown.impl/path
+              :nextjournal.markdown.impl/root
               :text-tokenizers
               :text->id+emoji-fn)))
 
@@ -60,9 +61,10 @@
 ")
 
   (->> (with-out-str
-        (let [reference-text (slurp "notebooks/reference.md")]
-          (time (dotimes [_ 100] (parse reference-text)))))
-      (re-find #"\d+.\d+") parse-double ((fn [d] (/ d 100))))
+         (time (dotimes [_ 100] (parse (slurp "notebooks/reference.md")))))
+      (re-find #"\d+.\d+")
+       parse-double
+       ((fn [d] (/ d 100))))
 
   (->hiccup "# Hello Markdown
 

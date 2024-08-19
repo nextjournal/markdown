@@ -58,7 +58,14 @@
    ;; private
    ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
    :nextjournal.markdown.impl/id->index {}
+   ;; allow to swap between :doc or :footnotes
+   :nextjournal.markdown.impl/root :doc
    :nextjournal.markdown.impl/path [:content -1]})
+
+(defn current-loc [{:as ctx :nextjournal.markdown.impl/keys [root]}] (get ctx root))
+(defn update-current-loc [{:as ctx :nextjournal.markdown.impl/keys [root]} f & args]
+  (assert root (str "Missing root: '" (keys ctx) "'"))
+  (apply update ctx root f args))
 
 (defn text-node [s] {:type :text :text s})
 (defn formula [text] {:type :formula :text text})

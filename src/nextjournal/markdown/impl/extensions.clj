@@ -98,7 +98,7 @@
                       (+ next-non-space (.end m)))
             (BlockStart/none)))))))
 
-(defn extension []
+(defn create []
   (proxy [Object Parser$ParserExtension] []
     (extend [^Parser$Builder pb]
       (.customBlockParserFactory pb block-toc-parser-factory)

@@ -51,7 +51,9 @@
   {:jvm-opts ["-Dpolyglot.engine.WarnInterpreterOnly=false"]}
 
   :dev
-  {:extra-paths ["dev"]}
+  {:extra-paths ["dev"]
+   :extra-deps {org.babashka/http-client {:mvn/version "0.3.11"}
+                org.clojure/test.check {:mvn/version "1.1.1"}}}
 
   :test
   {:extra-paths ["test"]

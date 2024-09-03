@@ -101,7 +101,9 @@
 
 (defn parse-fence-info [info-str]
   (try
-    (when (string? info-str)
+    ;; NOTE: this fix is backported
+    ;; from the new implementation 👇
+    (when (and (string? info-str) (seq info-str))
       (let [tokens (-> info-str
                        str/trim
                        (str/replace #"[\{\}\,]" "")         ;; remove Pandoc/Rmarkdown brackets and commas

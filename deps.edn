@@ -2,25 +2,16 @@
  :mvn/repos {"jitpack.io" {:url "https://jitpack.io"}}
  :deps {applied-science/js-interop {:mvn/version "0.3.3"}
         org.clojure/data.json {:mvn/version "2.4.0"}
-
-        ;; commonmark
         org.commonmark/commonmark {:mvn/version "0.23.0"}
         org.commonmark/commonmark-ext-footnotes {:mvn/version "0.23.0"}
         org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.23.0"}
         org.commonmark/commonmark-ext-gfm-tables {:mvn/version "0.23.0"}
-        org.commonmark/commonmark-ext-gfm-strikethrough {:mvn/version "0.23.0"}
-
-        ;; use jitpack until release
-        ;;com.github.commonmark/commonmark-java {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
-        ;;com.github.commonmark.commonmark-java/commonmark-ext-task-list-items {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
-        ;;com.github.commonmark.commonmark-java/commonmark-ext-gfm-tables {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
-        ;;com.github.commonmark.commonmark-java/commonmark-ext-gfm-strikethrough {:mvn/version "faea2a2a61cfa1b1f26a4e914532b651b3602e34"}
-        }
+        org.commonmark/commonmark-ext-gfm-strikethrough {:mvn/version "0.23.0"}}
 
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks" "dev"]
-   :extra-deps {io.github.nextjournal/clerk {:git/sha "04efbaf0954f577071d02cda65883c2fe2279502"
+   :extra-deps {io.github.nextjournal/clerk {:git/sha "56fe94c3def9d94bf632d0ff6368376c9fd42137"
                                              :exclusions [io.github.nextjournal/markdown]}}
    :jvm-opts ["-Dclojure.main.report=stderr"
               "-Dclerk.resource_manifest={\"/js/viewer.js\" \"js/viewer.js\"}"] ;;
@@ -61,7 +52,7 @@
    :main-opts ["-m" "shadow.cljs.devtools.cli"]
    :jvm-opts ["-Dclerk.resource_manifest={\"/js/viewer.js\" \"http://localhost:8021/viewer.js\"}"]
    :extra-deps {io.github.nextjournal/clerk.render {:git/url "https://github.com/nextjournal/clerk"
-                                                    :git/sha "04efbaf0954f577071d02cda65883c2fe2279502"
+                                                    :git/sha "56fe94c3def9d94bf632d0ff6368376c9fd42137"
                                                     :deps/root "render"}}}
 
   :build

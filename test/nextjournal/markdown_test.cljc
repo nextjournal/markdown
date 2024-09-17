@@ -43,6 +43,13 @@ $$\\int_a^bf(t)dt$$
 [link]:/path/to/something
 ")
 
+(deftest autolinks
+  (is (match? {:type :doc
+               :content [{:type :paragraph
+                          :content [{:type :link
+                                     :content [{:type :text, :text "https://clerk.vision"}]}]}]}
+              (md/parse "https://clerk.vision"))))
+
 (defn parse-internal-links [text]
   (md/parse* (update u/empty-doc :text-tokenizers conj u/internal-link-tokenizer)
              text))

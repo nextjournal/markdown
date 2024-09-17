@@ -9,6 +9,9 @@
             [clojure.test.check.clojure-test :refer [defspec]]))
 
 (comment
+  (= (md/parse "https://github.com")
+     (md-old/parse "https://github.com"))
+
   (:body (http/get "https://jaspervdj.be/lorem-markdownum/markdown.txt?fenced-code-blocks=on"))
 
   (let [sample (:body (http/get "https://jaspervdj.be/lorem-markdownum/markdown.txt?num-blocks=1000&fenced-code-blocks=on"))]

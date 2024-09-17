@@ -4,11 +4,11 @@
             [nextjournal.markdown.impl.types]
             [nextjournal.markdown.impl.extensions :as extensions]
             [nextjournal.markdown.utils :as u])
-  (:import (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension)
-           (org.commonmark.ext.gfm.strikethrough Strikethrough StrikethroughExtension)
-           (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
-           (org.commonmark.parser Parser)
+  (:import (org.commonmark.ext.autolink AutolinkExtension)
            (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
+           (org.commonmark.ext.gfm.strikethrough Strikethrough StrikethroughExtension)
+           (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension)
+           (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
            (org.commonmark.node Node AbstractVisitor
                                 Document
                                 BlockQuote
@@ -30,6 +30,7 @@
                                 SoftLineBreak
                                 HardLineBreak
                                 Image)
+           (org.commonmark.parser Parser)
            (nextjournal.markdown.impl.types BlockFormula InlineFormula ToC)))
 
 (set! *warn-on-reflection* true)
@@ -56,6 +57,7 @@
   (.. Parser
       builder
       (extensions [(extensions/create)
+                   (AutolinkExtension/create)
                    (TaskListItemsExtension/create)
                    (TablesExtension/create)
                    (StrikethroughExtension/create)

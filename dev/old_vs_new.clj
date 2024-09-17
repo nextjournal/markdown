@@ -37,7 +37,7 @@
 
 (def md-generator
   (gen/sized (fn [size]
-               (prn :size size)
+               #_(prn :size size)
                (gen/fmap #(size+opts->random-md-str size %)
                          (gen/fmap (partial zipmap feature-keys) (gen/vector gen/boolean 12))))))
 
@@ -51,6 +51,6 @@
 #_(tc/quick-check 100 compare-old-vs-new-parse-implementations)
 
 (defspec test-old-vs-new-implem 100
-  compare-old-vs-new-parse-implementations )
+  compare-old-vs-new-parse-implementations)
 
 #_(test-old-vs-new-implem)

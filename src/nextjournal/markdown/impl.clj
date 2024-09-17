@@ -174,7 +174,7 @@
   (-> ctx (u/update-current-loc z/up) (assoc ::root :doc)))
 
 (defmethod open-node InlineFootnote [{:as ctx ::keys [label->footnote-ref]} ^InlineFootnote _node]
-  (let [label (str "note-" (count label->footnote-ref))
+  (let [label (str "inline-note-" (count label->footnote-ref))
         footnote-ref {:type :footnote-ref
                       :inline? true
                       :ref (count label->footnote-ref)
@@ -185,12 +185,11 @@
         (assoc ::root :footnotes)
         (u/update-current-loc (fn [loc]
                                 (-> loc
-                                    (z/append-child {:type :footnote
-                                                     :inline? true
-                                                     :label label
-                                                     :content []}) z/down z/rightmost))))))
+                                    (u/zopen-node {:type :footnote :inline? true :label label :content []})
+                                    (u/zopen-node {:type :paragraph :content []})))))))
+
 (defmethod close-node InlineFootnote [ctx ^FootnoteDefinition _node]
-  (-> ctx (u/update-current-loc z/up) (assoc ::root :doc)))
+  (-> ctx (u/update-current-loc (comp z/up z/up)) (assoc ::root :doc)))
 
 (defn handle-todo-list [loc ^TaskListItemMarker node]
   (-> loc
@@ -264,8 +263,15 @@
                         (.parse parser md))))
 
 (comment
+  (import '[org.commonmark.renderer.html HtmlRenderer])
   (remove-all-methods open-node)
   (remove-all-methods close-node)
+
+  (.render (.build (HtmlRenderer/builder))
+           (.parse parser "some text^[and a note]"))
+
+  (parse "some text^[and a note]")
+
   (-> {}
       (parse "# Title")
       (parse "some para^[with note]")

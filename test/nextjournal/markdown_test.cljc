@@ -646,14 +646,14 @@ c[^note3] d.
 
   (testing "Turning footnotes into sidenotes"
 
-    (let [parsed+sidenotes (-> "Text[^note1] and^[inline _note_ here].
+    (let [parsed+sidenotes (-> "Text[^firstnote] and^[inline _note_ here].
 
 Par.
 
 - again[^note2]
 - here
 
-[^note1]: Explain 1
+[^firstnote]: Explain 1
 [^note2]: Explain 2
 "
                                      md/parse
@@ -664,7 +664,7 @@ Par.
                               :content [{:type :paragraph
                                          :content [{:text "Text"
                                                     :type :text}
-                                                   {:label "note1"
+                                                   {:label "firstnote"
                                                     :ref 0
                                                     :type :sidenote-ref}
                                                    {:text " and"
@@ -677,7 +677,7 @@ Par.
                                          :content [{:type :sidenote
                                                     :ref 0
                                                     :content [{:text "Explain 1" :type :text}]
-                                                    :label "note1"}
+                                                    :label "firstnote"}
                                                    {:type :sidenote
                                                     :ref 1
                                                     :content [{:text "inline " :type :text}
@@ -709,7 +709,7 @@ Par.
                    :footnotes [{:content [{:content [{:text "Explain 1"
                                                       :type :text}]
                                            :type :paragraph}]
-                                :label "note1"
+                                :label "firstnote"
                                 :ref 0
                                 :type :footnote}
                                {:content [{:content [{:text "inline "
@@ -736,7 +736,7 @@ Par.
                [:p
                 "Text"
                 [:sup.sidenote-ref
-                 {:data-label "note1"}
+                 {:data-label "firstnote"}
                  "1"]
                 " and"
                 [:sup.sidenote-ref

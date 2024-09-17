@@ -150,7 +150,7 @@ jobs:
           folder: public/build # The folder the action should deploy.
 
       - name: 📤 Upload Pdf demo notebook
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: demo
           path: notebooks/demo.pdf
@@ -203,7 +203,7 @@ jobs:
           echo "##[set-output name=version;]${JAR_VERSION}"
 
       - name: 📤 Upload JAR
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: markdown-${{ steps.jar-version.outputs.version }}.jar
           path: target/markdown-${{ steps.jar-version.outputs.version }}.jar

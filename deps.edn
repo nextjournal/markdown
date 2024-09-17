@@ -61,7 +61,7 @@
    :main-opts ["-m" "shadow.cljs.devtools.cli"]
    :jvm-opts ["-Dclerk.resource_manifest={\"/js/viewer.js\" \"http://localhost:8021/viewer.js\"}"]
    :extra-deps {io.github.nextjournal/clerk.render {:git/url "https://github.com/nextjournal/clerk"
-                                                    :git/sha "2f3e141be05a1e66643efa30e707a41862fa8ebe"
+                                                    :git/sha "04efbaf0954f577071d02cda65883c2fe2279502"
                                                     :deps/root "render"}}}
 
   :build

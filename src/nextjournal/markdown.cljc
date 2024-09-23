@@ -1,7 +1,6 @@
 (ns nextjournal.markdown
   "Markdown as data"
   (:require
-   [nextjournal.markdown.impl.types]
    [nextjournal.markdown.impl :as impl]
    [nextjournal.markdown.utils :as u]
    [nextjournal.markdown.transform :as markdown.transform]))

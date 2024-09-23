@@ -1,8 +1,10 @@
 (ns nextjournal.markdown
   "Markdown as data"
-  (:require [nextjournal.markdown.impl :as impl]
-            [nextjournal.markdown.utils :as u]
-            [nextjournal.markdown.transform :as markdown.transform]))
+  (:require
+   [nextjournal.markdown.impl.types]
+   [nextjournal.markdown.impl :as impl]
+   [nextjournal.markdown.utils :as u]
+   [nextjournal.markdown.transform :as markdown.transform]))
 
 (def empty-doc u/empty-doc)
 

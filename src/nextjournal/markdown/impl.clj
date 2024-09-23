@@ -1,7 +1,7 @@
 ;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
   (:require [clojure.zip :as z]
-            [nextjournal.markdown.impl.types]
+            [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.impl.extensions :as extensions]
             [nextjournal.markdown.utils :as u])
   (:import (org.commonmark.ext.autolink AutolinkExtension)
@@ -30,8 +30,7 @@
                                 SoftLineBreak
                                 HardLineBreak
                                 Image)
-           (org.commonmark.parser Parser)
-           (nextjournal.markdown.impl.types BlockFormula InlineFormula ToC)))
+           (org.commonmark.parser Parser)))
 
 (set! *warn-on-reflection* true)
 ;; TODO:
@@ -219,10 +218,12 @@
                    ThematicBreak (swap! !ctx u/update-current-loc z/append-child {:type :ruler})
                    SoftLineBreak (swap! !ctx u/update-current-loc z/append-child {:type :softbreak})
                    HardLineBreak (swap! !ctx u/update-current-loc z/append-child {:type :hardbreak})
-                   ToC (swap! !ctx u/update-current-loc z/append-child {:type :toc})
                    TaskListItemMarker (swap! !ctx u/update-current-loc handle-todo-list node)
-                   InlineFormula (swap! !ctx u/update-current-loc z/append-child {:type :formula :text (.getLiteral ^InlineFormula node)})
-                   BlockFormula (swap! !ctx u/update-current-loc z/append-child {:type :block-formula :text (.getLiteral ^BlockFormula node)})
+                   nextjournal.markdown.impl.types.CustomNode
+                   (case (t/nodeType node)
+                     :block-formula (swap! !ctx u/update-current-loc z/append-child {:type :block-formula :text (t/getLiteral node)})
+                     :inline-formula (swap! !ctx u/update-current-loc z/append-child {:type :formula :text (t/getLiteral node)})
+                     :toc (swap! !ctx u/update-current-loc z/append-child {:type :toc}))
                    FootnoteReference (swap! !ctx (fn [{:as ctx ::keys [label->footnote-ref]}]
                                                    (let [label (.getLabel ^FootnoteReference node)
                                                          footnote-ref (or (get label->footnote-ref label)

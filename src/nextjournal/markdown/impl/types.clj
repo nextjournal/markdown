@@ -3,36 +3,46 @@
 ;; See also
 ;; https://github.com/noties/Markwon/blob/master/markwon-ext-latex/src/main/java/io/noties/markwon/ext/latex/JLatexMathBlockParser.java
 
-(gen-class
- :name nextjournal.markdown.impl.types.InlineFormula
- :extends org.commonmark.node.CustomNode
- :constructors {[String] []}
- :init init
- :state state
- :methods [[getLiteral [] String]]
- :prefix "inline-formula-")
+(set! *warn-on-reflection* true)
 
-(defn inline-formula-init [lit] [[] (ref {:literal lit})])
-(defn inline-formula-getLiteral [this] (:literal @(.state this)))
+(definterface CustomNode
+  (getLiteral [])
+  (setLiteral [v])
+  (nodeType []))
 
-(gen-class
- :name nextjournal.markdown.impl.types.BlockFormula
- :extends org.commonmark.node.CustomBlock
- :constructors {[] []}
- :init init
- :state state
- :prefix "block-formula-"
- :methods [[getLiteral [] String]
-           [setLiteral [String] String]])
+(defn ->InlineFormula [lit]
+  (let [state (atom lit)]
+    (proxy [org.commonmark.node.CustomNode nextjournal.markdown.impl.types.CustomNode] []
+      (getLiteral [] @state)
+      (nodeType [] :inline-formula))))
 
-(defn block-formula-init [] [[] (atom nil)])
-(defn block-formula-getLiteral [this] @(.state this))
-(defn block-formula-setLiteral [this val] (reset! (.state this) val))
+(defn ->BlockFormula
+  ([] (->BlockFormula nil))
+  ([lit]
+   (let [state (atom lit)]
+     (proxy [org.commonmark.node.CustomBlock nextjournal.markdown.impl.types.CustomNode] []
+       (getLiteral [] @state)
+       (setLiteral [v] (do (reset! state v)
+                           this))
+       (nodeType [] :block-formula)))))
 
-(gen-class
- :name nextjournal.markdown.impl.types.ToC
- :extends org.commonmark.node.CustomBlock
- :constructors {[] []})
+(defn ->ToC []
+  (proxy [org.commonmark.node.CustomBlock nextjournal.markdown.impl.types.CustomNode] []
+    (nodeType [] :toc)))
+
+(defn setLiteral [^CustomNode n lit]
+  (.setLiteral n lit))
+
+(defn getLiteral [^CustomNode n]
+  (.getLiteral n))
+
+(defn nodeType [^CustomNode n]
+  (.nodeType n))
 
 (comment
-  (compile 'nextjournal.markdown.impl.types))
+  (def i (->InlineFormula "1+1"))
+  (instance? nextjournal.markdown.impl.types.CustomNode i)
+  (let [b (->BlockFormula)]
+    (-> (setLiteral b "dude")
+        (getLiteral)))
+  )

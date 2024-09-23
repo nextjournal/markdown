@@ -1,8 +1,7 @@
 (ns nextjournal.markdown.impl.extensions
   (:require [clojure.string :as str]
-            [nextjournal.markdown.impl])
+            [nextjournal.markdown.impl.types :as t])
   (:import (java.util.regex Matcher Pattern)
-           (nextjournal.markdown.impl.types InlineFormula BlockFormula ToC)
            (org.commonmark.parser Parser$ParserExtension Parser$Builder SourceLine)
            (org.commonmark.parser.beta InlineContentParser InlineContentParserFactory ParsedInline InlineParserState)
            (org.commonmark.parser.block AbstractBlockParser BlockContinue BlockParserFactory BlockStart ParserState BlockParser)))
@@ -31,7 +30,7 @@
           (ParsedInline/none)
           (let [^String content (.getContent (.getSource scanner open-pos (.position scanner)))]
             (.next scanner)
-            (ParsedInline/of (new InlineFormula content) (.position scanner))))))))
+            (ParsedInline/of (t/->InlineFormula content) (.position scanner))))))))
 
 (defn close-block-formula? [state !lines]
   ;; we allow 1-liner blocks like A)
@@ -48,7 +47,7 @@
       #_B (some? (re-find (block-formula-delimiter-matcher state)))))
 
 (defn block-formula-parser ^BlockParser []
-  (let [block-formula (new BlockFormula)
+  (let [block-formula (t/->BlockFormula)
         !lines (atom [])]
     (proxy [AbstractBlockParser] []
       (isContainer [] false)
@@ -58,10 +57,10 @@
         (when-some [l (not-empty (str/trim (.getContent line)))]
           (swap! !lines conj l)))
       (closeBlock []
-        (.setLiteral block-formula (let [formula-body (str/join \newline @!lines)]
-                                     (cond-> formula-body
-                                       (str/ends-with? formula-body "$$")
-                                       (subs 0 (- (count formula-body) 2))))))
+        (t/setLiteral block-formula (let [formula-body (str/join \newline @!lines)]
+                                      (cond-> formula-body
+                                        (str/ends-with? formula-body "$$")
+                                        (subs 0 (- (count formula-body) 2))))))
       (tryContinue [^ParserState state]
         (let [non-space (.getNextNonSpaceIndex state)]
           (if (close-block-formula? state !lines)
@@ -81,7 +80,7 @@
             (BlockStart/none)))))))
 
 (defn block-toc-parser ^BlockParser []
-  (let [toc (new ToC)]
+  (let [toc (t/->ToC)]
     (proxy [AbstractBlockParser] []
       (getBlock [] toc)
       ;; close immediately

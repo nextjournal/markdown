@@ -1,5 +1,6 @@
 (ns nextjournal.markdown.impl.extensions
-  (:require [clojure.string :as str])
+  (:require [clojure.string :as str]
+            [nextjournal.markdown.impl])
   (:import (java.util.regex Matcher Pattern)
            (nextjournal.markdown.impl.types InlineFormula BlockFormula ToC)
            (org.commonmark.parser Parser$ParserExtension Parser$Builder SourceLine)

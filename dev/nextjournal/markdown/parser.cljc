@@ -22,7 +22,7 @@
   (:require [clojure.string :as str]
             [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
-            [nextjournal.markdown.parser.emoji :as emoji]
+            [nextjournal.markdown.utils.emoji :as emoji]
             #?@(:cljs [[applied-science.js-interop :as j]
                        [cljs.reader :as reader]])))
 
@@ -101,7 +101,9 @@
 
 (defn parse-fence-info [info-str]
   (try
-    (when (string? info-str)
+    ;; NOTE: this fix is backported
+    ;; from the new implementation 👇
+    (when (and (string? info-str) (seq info-str))
       (let [tokens (-> info-str
                        str/trim
                        (str/replace #"[\{\}\,]" "")         ;; remove Pandoc/Rmarkdown brackets and commas
@@ -417,6 +419,8 @@ end"
             (let [new-loc (-> loc (z/replace {:type :sidenote-container :content []})
                               (z/append-child node)
                               (z/append-child {:type :sidenote-column
+                                               ;; TODO: broken in the old implementation
+                                               ;; should be :content (mapv #(footnote->sidenote (get footnotes %)) (distinct refs))}))]
                                                :content (mapv #(footnote->sidenote (get footnotes %)) refs)}))]
               (recur (z/right new-loc) (z/up new-loc)))
             (recur (z/right loc) parent))

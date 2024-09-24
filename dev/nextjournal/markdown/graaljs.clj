@@ -1,4 +1,4 @@
-(ns nextjournal.markdown
+(ns nextjournal.markdown.graaljs
   "Facility functions for handling markdown conversions"
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
@@ -66,6 +66,13 @@
 - [ ] [nice](very/nice/thing)
 - [x] ~~thing~~
 ")
+
+  (parse "some text[^note] and some other[^other] but again[^note]
+
+[^other]: some other
+[^note]: some story
+")
+
 
   (->hiccup "# Hello Markdown
 

@@ -4,9 +4,9 @@
    :nextjournal.clerk/no-cache true}
   (:require [nextjournal.clerk :as clerk]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.parser :as md.parser]
+            [nextjournal.markdown.utils :as u]
             [edamame.core :as edamame]
-            [clojure.string :as str]))
+            [clojure.zip :as z]))
 
 ^{:nextjournal.clerk/visibility {:code :hide :result :hide}}
 (def show-text
@@ -18,23 +18,22 @@
 ;;
 ;; ## Regex-based tokenization
 ;;
-;; A `Tokenizer` is a map with keys `:doc-handler` and `:tokenizer-fn`. For convenience, the function `md.parser/normalize-tokenizer` will fill in the missing keys
+;; A `Tokenizer` is a map with keys `:doc-handler` and `:tokenizer-fn`. For convenience, the function `u/normalize-tokenizer` will fill in the missing keys
 ;; starting from a map with a `:regex` and a `:handler`:
 
 (def internal-link-tokenizer
-  (md.parser/normalize-tokenizer
+  (u/normalize-tokenizer
    {:regex #"\[\[([^\]]+)\]\]"
     :handler (fn [match] {:type :internal-link
                           :text (match 1)})}))
 
 ((:tokenizer-fn internal-link-tokenizer) "some [[set]] of [[wiki]] link")
 
-(md.parser/tokenize-text-node internal-link-tokenizer {} {:text "some [[set]] of [[wiki]] link"})
-
+(u/tokenize-text-node internal-link-tokenizer {} {:text "some [[set]] of [[wiki]] link"})
 
 ;; In order to opt-in of the extra tokenization above, we need to configure the document context as follows:
-(md/parse (update md.parser/empty-doc :text-tokenizers conj internal-link-tokenizer)
-          "some [[set]] of [[wiki]] link")
+(md/parse* (update u/empty-doc :text-tokenizers conj internal-link-tokenizer)
+           "some [[set]] of [[wiki]] link")
 
 ;; We provide an `internal-link-tokenizer` as well as a `hashtag-tokenizer` as part of the `nextjournal.markdown.parser` namespace. By default, these are not used during parsing and need to be opted-in for like explained above.
 
@@ -76,16 +75,16 @@ existing [[links]] or #tags")
 (losange-tokenizer-fn "non matching text")
 
 (def losange-tokenizer
-  (md.parser/normalize-tokenizer
+  (u/normalize-tokenizer
    {:tokenizer-fn losange-tokenizer-fn
     :handler (fn [clj-data] {:type :losange
                              :data clj-data})}))
 
-(md.parser/tokenize-text-node losange-tokenizer {} {:text text})
+(u/tokenize-text-node losange-tokenizer {} {:text text})
 
-;; putting it all together and giving losange topmost priority wrt other tokens
-(md.parser/parse (update md.parser/empty-doc :text-tokenizers #(cons losange-tokenizer %))
-                 (md/tokenize text))
+;; putting it all together
+(md/parse* (update u/empty-doc :text-tokenizers conj losange-tokenizer)
+           text)
 
 ;; ## Parsing with Document Handlers
 ;;
@@ -101,36 +100,29 @@ and adds a flag to its text.
 * `strong`: makes the text ◊(strong much more impactful) indeeed.
 ")
 
-(defn add-meta [{:as doc ::md.parser/keys [path]} meta]
-  (-> doc
-      (update-in (md.parser/ppop path) merge meta)
-      (update-in (conj (md.parser/ppop path) :content)
-                 (fn [content]
-                   (-> content
-                       (update-in [(dec (count content)) :text]
-                                  #(-> % str/trimr (str "🚩️"))))))))
+(defn add-meta [doc-loc meta]
+  (-> doc-loc (z/edit merge meta)
+      z/down (z/edit update :text str "🚩️")
+      z/up))
 
 (defn strong [doc & terms]
   (-> doc
-      (md.parser/open-node :strong)
-      (md.parser/push-node (md.parser/text-node (apply str (interpose " " terms))))
-      md.parser/close-node))
+      (z/append-child {:type :strong}) z/down z/rightmost   ;; open-node
+      (z/insert-child (u/text-node (apply str (interpose " " terms))))
+      z/up)) ;; close-node
 
 (def data
-  (md.parser/parse
-   (-> md.parser/empty-doc
-       (dissoc :text->id+emoji-fn)
-       (update :text-tokenizers conj
-               (assoc losange-tokenizer
-                      :doc-handler (fn [doc {:keys [match]}]
-                                     (apply (eval (first match)) doc (rest match))))))
-   (md/tokenize text-with-meta)))
+  (md/parse* (-> u/empty-doc
+                 (update :text-tokenizers conj
+                         (assoc losange-tokenizer
+                                :doc-handler (fn [doc {:keys [match]}]
+                                               (apply (eval (first match)) doc (rest match))))))
+             text-with-meta))
 
 (clerk/md data)
 
 ^{::clerk/visibility {:code :hide :result :hide}}
 (comment
-  (clerk/serve! {:port 8888})
   ;;    Tokenizer :: {:tokenizer-fn :: TokenizerFn,
   ;;                  :doc-handler :: DocHandler}
   ;;    normalize-tokenizer :: {:regex, :doc-handler} |

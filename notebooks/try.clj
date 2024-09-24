@@ -30,7 +30,3 @@
                                    [:div.m-2.p-2.bg-slate-50.viewer-markdown
                                     [nextjournal.clerk.viewer/html (:hiccup @!state)]]]))}}
 (Object.)
-
-
-(comment
-  (clerk/serve! {:port 8023}))

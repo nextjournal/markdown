@@ -3,14 +3,10 @@
   {:nextjournal.clerk/toc :collapsed
    :nextjournal.clerk/no-cache true}
   (:require [clojure.data.json :as json]
-            [clojure.java.io :as io]
             [clojure.java.shell :as shell]
-            [clojure.string :as str]
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]
-            [nextjournal.markdown :as md]
-            [nextjournal.markdown.parser :as md.parser]
-            [nextjournal.markdown.transform :as md.transform]))
+            [nextjournal.markdown :as md]))
 
 ;; Markdown (commonmark) distingushes between [loose and tight lists](https://spec.commonmark.org/0.30/#loose)
 ;;
@@ -35,40 +31,6 @@
 ;;     * to hide paragraphs.
 ;;     **/
 ;;     this.hidden = false
-;;
-;; so when a paragraph is marked as hidden, markdown-it will unwrap its contents.
-
-(defn flat-tokenize [text]
-  (into []
-        (comp
-         (mapcat (partial tree-seq (comp seq :children) :children))
-         (map #(select-keys % [:type :content :hidden :level :info])))
-        (md/tokenize text)))
-
-;; Some examples follow of a
-;; * tight list
-(flat-tokenize "
-- one
-- two")
-
-;; * loose list because of an inner paragraph
-(flat-tokenize "
-- one
-
-  inner par
-- two")
-
-;; * loose list with 2-newline separated items
-(flat-tokenize "
-- one
-
-- two")
-
-(flat-tokenize "
-- one
-  * thight sub one
-- two
-")
 
 ;; ## Pandoc to the Rescue
 ;;
@@ -144,9 +106,6 @@
 ;;   one-two
 ;; * two
 ;; * three
-
-^{::clerk/visibility {:code :hide :result :hide}}
-(comment
-  (clerk/clear-cache!)
-  (clerk/serve! {:port 9999})
-  (-> *e ex-cause ex-data))
+;;   * a tight list
+;;   * in a loose
+;;   * one

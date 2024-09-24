@@ -1,15 +1,29 @@
 (ns nextjournal.markdown-test
   (:require [clojure.test :as t :refer [deftest testing is]]
             [matcher-combinators.test :refer [match?]]
-            [matcher-combinators.standalone :as standalone]
             [matcher-combinators.matchers :as m]
             [nextjournal.markdown :as md]
             [matcher-combinators.ansi-color]
-            [nextjournal.markdown.parser :as md.parser]
+            [nextjournal.markdown.utils :as u]
             [nextjournal.markdown.transform :as md.transform]))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
-(matcher-combinators.ansi-color/disable!)
+#?(:cljs (matcher-combinators.ansi-color/disable!))
+
+(deftest simple-parsing
+  (is (match? {:type :doc,
+               :content [{:type :heading
+                          :heading-level 1
+                          :content [{:type :text, :text "Ahoi"}]}
+                         {:type :bullet-list,
+                          :content [{:type :list-item, :content [{:type :plain, :content [{:type :text, :text "one"}]}]}
+                                    {:type :list-item, :content [{:type :plain, :content [{:type :em, :content [{:type :text, :text "nice"}]}]}]}
+                                    {:type :list-item, :content [{:type :plain, :content [{:type :text, :text "list"}]}]}]}]
+               :footnotes []}
+              (md/parse "# Ahoi
+* one
+* _nice_
+* list"))))
 
 (def markdown-text
   "# 🎱 Hello
@@ -29,17 +43,25 @@ $$\\int_a^bf(t)dt$$
 [link]:/path/to/something
 ")
 
+(deftest autolinks
+  (is (match? {:type :doc
+               :content [{:type :paragraph
+                          :content [{:type :link
+                                     :content [{:type :text, :text "https://clerk.vision"}]}]}]}
+              (md/parse "https://clerk.vision"))))
+
 (defn parse-internal-links [text]
-  (md/parse (update md.parser/empty-doc :text-tokenizers conj md.parser/internal-link-tokenizer)
-            text))
+  (md/parse* (update u/empty-doc :text-tokenizers conj u/internal-link-tokenizer)
+             text))
 
 (defn parse-hashtags [text]
-  (md/parse (update md.parser/empty-doc :text-tokenizers conj md.parser/hashtag-tokenizer)
-            text))
+  (md/parse* (update u/empty-doc :text-tokenizers conj u/hashtag-tokenizer)
+             text))
 
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"
-    (is (match? {:type :doc
+    (is (= {:type :doc
+            :footnotes []
             :title "🎱 Hello"
             :content [{:content [{:text "🎱 Hello"
                                   :type :text}]
@@ -85,73 +107,60 @@ $$\\int_a^bf(t)dt$$
                                              :type :paragraph}]
                                   :type :list-item}]
                        :type :bullet-list}]
-            :toc {:children [{:content [{:text "🎱 Hello"
-                                         :type :text}]
+            :toc {:type :toc
+                  :children [{:type :toc
+                              :content [{:type :text, :text "🎱 Hello"}]
                               :heading-level 1
-                              :path [:content 0]
-                              :type :toc}]
-                  :type :toc}}
+                              :attrs {:id "hello"}
+                              :emoji "🎱"
+                              :path [:content 0]}]}}
            (md/parse markdown-text))))
 
-
   (testing "parses internal links / plays well with todo lists"
-    (is (match? {:toc {:type :toc}
-            :type :doc
-            :content [{:type :paragraph
-                       :content [{:text "a "
-                                  :type :text}
-                                 {:text "wikistyle"
-                                  :type :internal-link}
-                                 {:text " link"
-                                  :type :text}]}]}
+    (is (match? {:type :doc
+                 :content [{:type :paragraph
+                            :content [{:text "a "
+                                       :type :text}
+                                      {:text "wikistyle"
+                                       :type :internal-link}
+                                      {:text " link"
+                                       :type :text}]}]}
                 (parse-internal-links "a [[wikistyle]] link")))
 
     (is (match? {:type :doc
-            :title "a wikistyle link in title"
-            :content [{:heading-level 1
-                       :type :heading
-                       :content [{:text "a "
-                                  :type :text}
-                                 {:text "wikistyle"
-                                  :type :internal-link}
-                                 {:text " link in title"
-                                  :type :text}]}]
-            :toc {:type :toc
-                  :children [{:type :toc
-                              :content [{:text "a "
-                                         :type :text}
-                                        {:text "wikistyle"
-                                         :type :internal-link}
-                                        {:text " link in title"
-                                         :type :text}]
-                              :heading-level 1
-                              :path [:content 0]}]}}
+                 :content [{:heading-level 1
+                            :type :heading
+                            :content [{:text "a "
+                                       :type :text}
+                                      {:text "wikistyle"
+                                       :type :internal-link}
+                                      {:text " link in title"
+                                       :type :text}]}]}
                 (parse-internal-links "# a [[wikistyle]] link in title")))
 
     (is (match? {:type :doc
-            :toc {:type :toc}
-            :content [{:type :todo-list
-                       :attrs {:has-todos true}
-                       :content [{:type :todo-item
-                                  :attrs {:checked true :todo true}
-                                  :content [{:content [{:text "done "
-                                                        :type :text}
-                                                       {:text "linkme"
-                                                        :type :internal-link}
-                                                       {:text " to"
-                                                        :type :text}]
-                                             :type :plain}]}
-                                 {:type :todo-item
-                                  :attrs {:checked false :todo true}
-                                  :content [{:type :plain
-                                             :content [{:text "pending"
-                                                        :type :text}]}]}
-                                 {:type :todo-item
-                                  :attrs {:checked false :todo true}
-                                  :content [{:type :plain
-                                             :content [{:text "pending"
-                                                        :type :text}]}]}]}]}
-           (parse-internal-links "- [x] done [[linkme]] to
+                 :toc {:type :toc}
+                 :content [{:type :todo-list
+                            :content [{:type :todo-item
+                                       :attrs {:checked true}
+                                       :content [{:content [{:text "done "
+                                                             :type :text}
+                                                            {:text "linkme"
+                                                             :type :internal-link}
+                                                            {:text " to"
+                                                             :type :text}]
+                                                  :type :plain}]}
+                                      {:type :todo-item
+                                       :attrs {:checked false}
+                                       :content [{:type :plain
+                                                  :content [{:text "pending"
+                                                             :type :text}]}]}
+                                      {:type :todo-item
+                                       :attrs {:checked false}
+                                       :content [{:type :plain
+                                                  :content [{:text "pending"
+                                                             :type :text}]}]}]}]}
+                (parse-internal-links "- [x] done [[linkme]] to
 - [ ] pending
 - [ ] pending")))))
 
@@ -186,6 +195,30 @@ $$\\int_a^bf(t)dt$$
              "two"]]]]
          (md/->hiccup markdown-text))))
 
+(deftest strikethrough-test
+  (testing "single tilde")
+  ;; Here markdown-it follows Pandoc and uses single ~ for 'sub' (enabled by default https://github.com/markdown-it/markdown-it/tree/master?tab=readme-ov-file#syntax-extensions).
+  ;; It differs from GFM spec https://github.github.com/gfm/#strikethrough-extension- which allows signle tilde syntax
+  (testing "double tilde"
+    (is (= {:type :paragraph, :content [{:type :text, :text "some "} {:type :strikethrough, :content [{:type :text, :text "not ok"}]} {:type :text, :text " text"}]}
+           (-> (md/parse "some ~~not ok~~ text")
+               :content first)))))
+
+(deftest tables-test
+  (is (= {:type :doc
+          :content [{:type :table
+                     :content [{:type :table-head :content [{:type :table-row, :content [{:type :table-header, :content [{:type :text, :text "x"}]} {:type :table-header, :content [{:type :text, :text "y"}]}]}]}
+                               {:type :table-body :content [{:type :table-row, :content [{:type :table-data, :content [{:type :text, :text "1"}]} {:type :table-data, :content [{:type :text, :text "2"}]}]} {:type :table-row, :content [{:type :table-data, :content [{:type :text, :text "3"}]} {:type :table-data, :content [{:type :text, :text "4"}]}]}]}]}]
+          :toc {:type :toc}
+          :footnotes []}
+
+         (md/parse "
+|  x |  y |
+|----|----|
+|  1 |  2 |
+|  3 |  4 |
+"))))
+
 (deftest table-with-empty-cells
   (is (match? [:div [:table
                      [:thead
@@ -199,6 +232,25 @@ $$\\int_a^bf(t)dt$$
 |  1 |  2 |
 |    |  4 |
 "))))
+
+(deftest table-alignment
+  (is (match? [:div [:table
+                     [:thead
+                      [:tr
+                       [:th {:style {:text-align "left"}} "x"]
+                       [:th {:style {:text-align "center"}} "y"]
+                       [:th {:style {:text-align "right"}} "z"]]]
+                     [:tbody
+                      [:tr
+                       [:td {:style {:text-align "left"}} "1"]
+                       [:td {:style {:text-align "center"}} "2"]
+                       [:td {:style {:text-align "right"}} "3"]]]]]
+              (md/->hiccup "
+| x |  y | z |
+|:--|:--:|--:|
+| 1 |  2 | 3 |
+"))))
+
 
 (deftest hard-breaks
   (is (= [:div [:p "Please don't inter" [:br] "rupt me when I'm writing."]]
@@ -347,32 +399,25 @@ rupt me when I'm writing."))))
   - [ ] nested
 ")))))
 
-(deftest tags-text
+(deftest hashtags-test
   (testing "parsing tags"
     (is (match? {:type :doc
-            :title "Hello Tags"
-            :content [{:content [{:text "Hello Tags"
-                                  :type :text}]
-                       :heading-level 1
-                       :type :heading}
-                      {:content [{:text "par with "
-                                  :type :text}
-                                 {:text "really_nice"
-                                  :type :hashtag}
-                                 {:text " "
-                                  :type :text}
-                                 {:text "useful-123"
-                                  :type :hashtag}
-                                 {:text " tags"
-                                  :type :text}]
-                       :type :paragraph}]
-            :toc {:type :toc
-                  :children [{:type :toc
-                              :content [{:text "Hello Tags"
-                                         :type :text}]
-                              :heading-level 1
-                              :path [:content 0]}]}}
-           (parse-hashtags "# Hello Tags
+                 :content [{:content [{:text "Hello Tags"
+                                       :type :text}]
+                            :heading-level 1
+                            :type :heading}
+                           {:content [{:text "par with "
+                                       :type :text}
+                                      {:text "really_nice"
+                                       :type :hashtag}
+                                      {:text " "
+                                       :type :text}
+                                      {:text "useful-123"
+                                       :type :hashtag}
+                                      {:text " tags"
+                                       :type :text}]
+                            :type :paragraph}]}
+                (parse-hashtags "# Hello Tags
 par with #really_nice #useful-123 tags
 "))))
 
@@ -478,12 +523,13 @@ par with #really_nice #useful-123 tags
 * two")))))
 
 (deftest unique-heading-ids
-  (is (match? {:content (m/embeds [{:type :heading :attrs {:id "introduction"}}
-                                   {:type :heading :attrs {:id "quantum-physics"} :emoji "👩‍🔬"}
-                                   {:type :heading :attrs {:id "references-📕"}}
-                                   {:type :heading :attrs {:id "quantum-physics-2"} :emoji "⚛"}])}
+  (is (match? (m/embeds [{:type :heading :attrs {:id "introduction"}}
+                         {:type :heading :attrs {:id "quantum-physics"} :emoji "👩‍🔬"}
+                         {:type :heading :attrs {:id "references-📕"}}
+                         {:type :heading :attrs {:id "quantum-physics-2"} :emoji "⚛"}
+                         {:type :heading :attrs {:id "quantum-physics-3"}}])
 
-              (md/parse "
+              (:content (md/parse "
 ## Introduction
 Lorem ipsum et cetera.
 ### 👩‍🔬 Quantum Physics
@@ -492,7 +538,9 @@ Dolor sit and so on.
 It's important to cite your references!
 ### ⚛ Quantum Physics
 Particularly for quantum physics!
-"))))
+#### Quantum Physics
+Did we mention qtmphysics?
+")))))
 
 (deftest per-node-text-transform
 
@@ -624,25 +672,25 @@ c[^note3] d.
 
   (testing "Turning footnotes into sidenotes"
 
-    (let [parsed+sidenotes (-> "Text[^note1] and^[inline _note_ here].
+    (let [parsed+sidenotes (-> "Text[^firstnote] and^[inline _note_ here].
 
 Par.
 
 - again[^note2]
 - here
 
-[^note1]: Explain 1
+[^firstnote]: Explain 1
 [^note2]: Explain 2
 "
                                      md/parse
-                                     md.parser/insert-sidenote-containers)]
+                                     u/insert-sidenote-containers)]
       (is (match? {:type :doc
                    :sidenotes? true
                    :content [{:type :sidenote-container
                               :content [{:type :paragraph
                                          :content [{:text "Text"
                                                     :type :text}
-                                                   {:label "note1"
+                                                   {:label "firstnote"
                                                     :ref 0
                                                     :type :sidenote-ref}
                                                    {:text " and"
@@ -655,7 +703,7 @@ Par.
                                          :content [{:type :sidenote
                                                     :ref 0
                                                     :content [{:text "Explain 1" :type :text}]
-                                                    :label "note1"}
+                                                    :label "firstnote"}
                                                    {:type :sidenote
                                                     :ref 1
                                                     :content [{:text "inline " :type :text}
@@ -687,7 +735,7 @@ Par.
                    :footnotes [{:content [{:content [{:text "Explain 1"
                                                       :type :text}]
                                            :type :paragraph}]
-                                :label "note1"
+                                :label "firstnote"
                                 :ref 0
                                 :type :footnote}
                                {:content [{:content [{:text "inline "
@@ -714,11 +762,11 @@ Par.
                [:p
                 "Text"
                 [:sup.sidenote-ref
-                 {:data-label "note1"}
+                 {:data-label "firstnote"}
                  "1"]
                 " and"
                 [:sup.sidenote-ref
-                 {:data-label nil}
+                 {:data-label "inline-note-1"}
                  "2"]
                 "."]
                [:div.sidenote-column
@@ -755,6 +803,39 @@ Par.
                   "3"]
                  "Explain 2"]]]]
              (md.transform/->hiccup parsed+sidenotes))))))
+
+(deftest parse-multiple-inputs
+  (testing "adding to the ToC"
+    (is (match? {:type :doc
+                 :toc {:type :toc
+                       :children [{:attrs {:id "title"}
+                                   :heading-level 1,
+                                   :children [{:attrs {:id "section"}
+                                               :heading-level 2}]}]}}
+                (-> (md/parse* "# Title")
+                    (md/parse* "## Section")))))
+
+  (testing "footnote defs"
+    (is (match? {:type :doc
+                 :footnotes [{:type :footnote :ref 0 :label "n1"}
+                             {:type :footnote :ref 1 :label "n2"}
+                             {:type :footnote :ref 2 :label "n3"}]}
+                (-> (md/parse* "some text[^n1] and[^n2].
+
+[^n1]: Some _nice_ explanation
+[^n2]: Some _nicer_ explanation
+")
+                    (md/parse* "some new text[^n2] and some own[^n3].
+
+[^n3]: Some _own_ explanation")))))
+
+  (testing "inline footnotes"
+    (is (match? {:type :doc
+                 :content [{:type :paragraph} {:type :paragraph}]
+                 :footnotes [{:type :footnote :label "inline-note-0"}
+                             {:type :footnote :label "inline-note-1"}]}
+                (-> (md/parse* "some text^[with am inline note]")
+                    (md/parse* "some new text^[with another inline note]"))))))
 
 (deftest commonmark-compliance
   ;; we need an extra [:div] for embedding purposes, which might be dropped e.g. by configuring the `:doc` type renderer to use a react fragment `[:<>]`
@@ -795,7 +876,141 @@ $$p(z\\\\mid x) = \\\\frac{p(x\\\\mid z)p(z)}{p(x)}.$$\n\n
 ## SubTitle
 ")))))
 
+
+(deftest formulas
+  (is (match? {:type :doc
+               :content [{:type :heading}
+                         {:type :paragraph
+                          :content [{:type :text, :text "This is an "}
+                                    {:type :formula, :text "\\mathit{inline}"}
+                                    {:type :text, :text " formula."}]}
+                         {:type :block-formula, :text string?}
+                         {:type :block-formula, :text "\\bigoplus"}]}
+              (md/parse "# Title
+This is an $\\mathit{inline}$ formula.
+
+$$
+\\begin{equation}
+\\dfrac{1}{128\\pi^{2}}
+\\end{equation}
+$$
+
+$$\\bigoplus$$
+"))))
+
+(deftest toc-test
+  (testing "extracts toc structure"
+    (is (match? {:type :toc,
+                 :children [{:type :toc,
+                             :content [{:type :text, :text "Title"}],
+                             :heading-level 1,
+                             :attrs {:id "title"},
+                             :path [:content 0],
+                             :children [{:type :toc,
+                                         :content [{:type :text, :text "Section One"}],
+                                         :heading-level 2,
+                                         :attrs {:id "section-one"},
+                                         :path [:content 1],
+                                         :children [{:type :toc,
+                                                     :content [{:type :text, :text "Section 1.1"}],
+                                                     :heading-level 3,
+                                                     :attrs {:id "section-1.1"},
+                                                     :path [:content 3]}
+                                                    {:type :toc,
+                                                     :content [{:type :text, :text "Section 1.2"}],
+                                                     :heading-level 3,
+                                                     :attrs {:id "section-1.2"},
+                                                     :path [:content 4]}]}
+                                        {:type :toc,
+                                         :content [{:type :text, :text "Section Two"}],
+                                         :heading-level 2,
+                                         :attrs {:id "section-two"},
+                                         :path [:content 6],
+                                         :children [{:type :toc,
+                                                     :content [{:type :text, :text "Section 2.1"}],
+                                                     :heading-level 3,
+                                                     :attrs {:id "section-2.1"},
+                                                     :path [:content 8],
+                                                     :children [{:type :toc,
+                                                                 :content [{:type :text, :text "Section 3.1"}],
+                                                                 :heading-level 4,
+                                                                 :attrs {:id "section-3.1"},
+                                                                 :path [:content 9]}]}]}]}]}
+                (:toc (md/parse "# Title
+## Section One
+some text
+### Section 1.1
+### Section 1.2
+some text
+## Section Two
+some text
+### Section 2.1
+#### Section 3.1
+"))))))
+
+
+(deftest link-test
+  (testing "links with a title"
+    (is (= {:type :link
+            :attrs {:href "/some/path" :title "this is the link title"}
+            :content [{:type :text :text "ahoi"}]}
+           (-> (md/parse "[ahoi](/some/path 'this is the link title')")
+               :content first :content first))))
+  (testing "links with no title"
+    (is (= {:type :link
+            :attrs {:href "/some/path"}
+            :content [{:type :text :text "ahoi"}]}
+           (-> (md/parse "[ahoi](/some/path)")
+               :content first :content first))))
+  (testing "links with nested content"
+    (is (= {:type :link
+            :attrs {:href "/some/path"}
+            :content [{:type :text :text "some "}
+                      {:type :em :content [{:type :text :text "markup"}]}
+                      {:type :text :text " here"}]}
+           (-> (md/parse "[some _markup_ here](/some/path)")
+               :content first :content first)))))
+
+(deftest code-test
+  (testing "inline code"
+    (is (= {:type :paragraph
+            :content [{:type :text :text "some "}
+                      {:type :monospace :content [{:text "inline code" :type :text}]}
+                      {:type :text :text " here"}]}
+           (-> (md/parse "some `inline code` here")
+               :content first))))
+  (testing "indented code blocks"
+    (is (= {:type :code
+            :content [{:type :text :text "and indented\ncode here\n"}]}
+           (-> (md/parse "some text
+
+    and indented
+    code here
+
+back to text") :content second)))
+
+    (testing "fenced code blocks"
+      (is (= {:type :code :info ""
+              :content [{:type :text :text "and fenced\ncode here\n"}]}
+             (-> (md/parse "some text
+```
+and fenced
+code here
+```
+back to text") :content second)))
+
+      (is (= {:type :code
+              :content [{:type :text :text "(this is code)\n"}]
+              :info "clojure id=12345 no-exec"
+              :language "clojure" :id "12345" :no-exec true}
+             (-> (md/parse "```clojure id=12345 no-exec
+(this is code)
+```")
+                 :content first))))))
+
 (comment
+  (clojure.test/run-test-var #'formulas)
+  (shadow.cljs.devtools.api/repl :browser-test)
   (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
   (clojure.test/run-tests)
   (run-tests 'nextjournal.markdown-test)

@@ -2,7 +2,7 @@
 
 ## 0.6 Unreleased
 
-* We're swapping out GraalJS in favour of [commonmark-java]() on the JVM side. The cljs implementation stays the same.
+* We're swapping out GraalJS in favour of [commonmark-java](https://github.com/markdown-it/markdown-it) on the JVM side. The cljs implementation stays the same.
 * Comply with commonmark's suggested rendering of images by default ([#18](https://github.com/nextjournal/markdown/issues/18)). This is a breaking change.
 
 ## 0.5.148

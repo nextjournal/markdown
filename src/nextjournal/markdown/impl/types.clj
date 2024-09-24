@@ -5,10 +5,11 @@
 
 (set! *warn-on-reflection* true)
 
-(definterface CustomNode
-  (getLiteral [])
-  (setLiteral [v])
-  (nodeType []))
+(defonce _
+  (definterface CustomNode
+    (getLiteral [])
+    (setLiteral [v])
+    (nodeType [])))
 
 (defn ->InlineFormula [lit]
   (let [state (atom lit)]

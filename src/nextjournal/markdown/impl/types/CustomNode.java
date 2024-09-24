@@ -1,7 +1,7 @@
 package nextjournal.markdown.impl.types;
 
 // rebuild with:
-// javac src/nextjournal/markdown/impl/types/CustomNode.java
+// javac -source 8 -target 1.8 src/nextjournal/markdown/impl/types/CustomNode.java
 
 public interface CustomNode {
 

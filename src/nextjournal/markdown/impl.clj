@@ -211,6 +211,18 @@
       z/up (z/edit assoc :type :todo-list)
       z/down z/rightmost))
 
+(def clazzes (atom #{}))
+
+(comment
+  @clazzes
+  )
+
+(def ^:private visitChildren-meth
+  ;; cached reflection only happens once
+  (delay (let [meth (.getDeclaredMethod AbstractVisitor "visitChildren" (into-array [Node]))]
+           (.setAccessible meth true)
+           meth)))
+
 (defn node->data [{:as ctx-in :keys [footnotes]} ^Node node]
   (assert (:type ctx-in) ":type must be set on initial doc")
   (assert (:content ctx-in) ":content must be set on initial doc")
@@ -249,10 +261,12 @@
 
                    ;; else branch nodes
                    (if (get-method open-node (class node))
-                     (with-tight-list node
-                       (swap! !ctx open-node node)
-                       (proxy-super visitChildren node)
-                       (swap! !ctx close-node node))
+                     (do
+                       (swap! clazzes conj (class node))
+                       (with-tight-list node
+                         (swap! !ctx open-node node)
+                         (.invoke ^java.lang.reflect.Method @visitChildren-meth this (into-array Object [node]))
+                         (swap! !ctx close-node node)))
                      (prn ::not-implemented node))))))
 
     (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]} (deref !ctx)]

@@ -233,6 +233,25 @@ $$\\int_a^bf(t)dt$$
 |    |  4 |
 "))))
 
+(deftest table-alignment
+  (is (match? [:div [:table
+                     [:thead
+                      [:tr
+                       [:th {:style {:text-align "left"}} "x"]
+                       [:th {:style {:text-align "center"}} "y"]
+                       [:th {:style {:text-align "right"}} "z"]]]
+                     [:tbody
+                      [:tr
+                       [:td {:style {:text-align "left"}} "1"]
+                       [:td {:style {:text-align "center"}} "2"]
+                       [:td {:style {:text-align "right"}} "3"]]]]]
+              (md/->hiccup "
+| x |  y | z |
+|:--|:--:|--:|
+| 1 |  2 | 3 |
+"))))
+
+
 (deftest hard-breaks
   (is (= [:div [:p "Please don't inter" [:br] "rupt me when I'm writing."]]
          (md/->hiccup "Please don't inter  \nrupt me when I'm writing.")
@@ -991,7 +1010,7 @@ back to text") :content second)))
 
 (comment
   (clojure.test/run-test-var #'formulas)
-
+  (shadow.cljs.devtools.api/repl :browser-test)
   (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
   (clojure.test/run-tests)
   (run-tests 'nextjournal.markdown-test)

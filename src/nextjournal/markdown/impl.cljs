@@ -120,7 +120,6 @@
 
 (defn footnote-label [{:as _ctx ::keys [footnote-offset]} token]
   ;; TODO: consider initial offset in case we're parsing multiple inputs
-  (prn :label/offset footnote-offset)
   (or (j/get-in token [:meta :label])
       ;; inline labels won't have a label
       (str "inline-note-" (+ footnote-offset (j/get-in token [:meta :id])))))

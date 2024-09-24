@@ -7,7 +7,7 @@
   (:import (org.commonmark.ext.autolink AutolinkExtension)
            (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
            (org.commonmark.ext.gfm.strikethrough Strikethrough StrikethroughExtension)
-           (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension)
+           (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension TableCell$Alignment)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
            (org.commonmark.node Node AbstractVisitor
                                 Document
@@ -158,9 +158,22 @@
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table-body}))))
 (defmethod open-node TableRow [ctx ^TableRow _node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table-row}))))
+
+(defn alignment->keyword [enum]
+  (condp = enum
+    TableCell$Alignment/LEFT :left
+    TableCell$Alignment/CENTER :center
+    TableCell$Alignment/RIGHT :right))
+
 (defmethod open-node TableCell [ctx ^TableCell node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type (if (.isHeader node) :table-header :table-data)
-                                                     :content []}))))
+  (u/update-current-loc ctx (fn [loc]
+                              (let [alignment (some-> (.getAlignment node) alignment->keyword)]
+                                (u/zopen-node loc (cond-> {:type (if (.isHeader node) :table-header :table-data)
+                                                           :content []}
+                                                    alignment
+                                                    (assoc :alignment alignment
+                                                           ;; TODO: drop/deprecate this, compute in transform
+                                                           :attrs {:style (str "text-align:" (name alignment))})))))))
 
 (defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
   (-> ctx

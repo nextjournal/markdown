@@ -211,12 +211,6 @@
       z/up (z/edit assoc :type :todo-list)
       z/down z/rightmost))
 
-(def clazzes (atom #{}))
-
-(comment
-  @clazzes
-  )
-
 (def ^:private visitChildren-meth
   ;; cached reflection only happens once
   (delay (let [meth (.getDeclaredMethod AbstractVisitor "visitChildren" (into-array [Node]))]
@@ -261,12 +255,10 @@
 
                    ;; else branch nodes
                    (if (get-method open-node (class node))
-                     (do
-                       (swap! clazzes conj (class node))
-                       (with-tight-list node
-                         (swap! !ctx open-node node)
-                         (.invoke ^java.lang.reflect.Method @visitChildren-meth this (into-array Object [node]))
-                         (swap! !ctx close-node node)))
+                     (with-tight-list node
+                       (swap! !ctx open-node node)
+                       (.invoke ^java.lang.reflect.Method @visitChildren-meth this (into-array Object [node]))
+                       (swap! !ctx close-node node))
                      (prn ::not-implemented node))))))
 
     (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]} (deref !ctx)]

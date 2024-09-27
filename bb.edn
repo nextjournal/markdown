@@ -17,6 +17,13 @@
 
           (defn version [] (format "%d.%d.%d" major minor (inc (+ (rev-count) rev-count-offset))))
 
+          (defn update-changelog []
+            (->> (str/replace (slurp "CHANGELOG.md")
+                   (re-pattern "## [Uu]nreleased")
+                   (str "## Unreleased\n\n...\n\n"
+                     (format "## %s" (version))))
+              (spit "CHANGELOG.md")))
+
           (defn read-version [] (-> (slurp meta-inf-file) edn/read-string :version)))
 
   yarn-install
@@ -90,13 +97,21 @@
   publish {:doc "Prepares repo for publishing via CI"
            :task (do
                    (run 'update-meta)
-                   (println "Preparing repo for Release.\n Updated worktree will be added and committed (e.g. changes to CHANGELOG)" (read-version))
+                   (println "Preparing repo for Release.\n Updated worktree has been committed (e.g. changes to CHANGELOG)" (read-version))
+                   (run 'link-changelog)
+                   (update-changelog)
                    (shell "git add -u")
                    (shell (str "git commit -m v" (read-version)))
                    (run 'tag)
                    (println "\n\nRun:\n\n" "  git push --atomic"
                      "origin" "main" (str "v" (read-version))
                      "\n\nto push the release and let CI build it!"))}
+
+  undo:publish {:doc "Reset to state prior to `bb publish`"
+                :task (do
+                        (run 'delete-tag)
+                        (shell "git reset HEAD~1")
+                        (shell "git co -- resources/META-INF/nextjournal/markdown/meta.edn"))}
 
   -current-tag (->> (shell {:out :string} "git tag --points-at HEAD")
                  :out

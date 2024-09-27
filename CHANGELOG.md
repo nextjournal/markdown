@@ -1,9 +1,14 @@
 # Changelog
 
-## 0.6 Unreleased
+## Unreleased
 
-* We're swapping out GraalJS in favour of [commonmark-java](https://github.com/markdown-it/markdown-it) on the JVM side. The cljs implementation stays the same.
-* Comply with commonmark's suggested rendering of images by default ([#18](https://github.com/nextjournal/markdown/issues/18)). This is a breaking change.
+...
+
+## 0.6.157
+
+* Swap out GraalJS ([#28](https://github.com/nextjournal/markdown/issues/28)) in favour of [commonmark-java](https://github.com/markdown-it/markdown-it) on the JVM side.
+  This makes the library compatible with Java 22 and yields an approximate speedup of 10x. The clojurescript implementation stays the same.
+* Comply with commonmark rendering of images by default (see [#18](https://github.com/nextjournal/markdown/issues/18)).
 
 ## 0.5.148
 

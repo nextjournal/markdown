@@ -2,17 +2,25 @@
 (ns nextjournal.markdown.impl
   (:require ["/js/markdown" :as md]
             ["markdown-it/lib/token" :as Token]
-            [applied-science.js-interop :as j]
             [clojure.zip :as z]
+            [goog.object]
             [nextjournal.markdown.utils :as u]))
+
+(defn goget [o k]
+  (goog.object/get o (cond-> k (keyword? k) name)))
+
+(defn get-token-attr [token key]
+  (cond-> (goget token key)
+    (= :attrs key)
+    (->> (into {} (map (juxt (comp keyword first) second))))
+    (= :meta key)
+    (js->clj :keywordize-keys true)))
 
 (extend-type Token
   ILookup
   (-lookup
-    ([this key] (j/get this key))
-    ([this key not-found]
-     (js/console.log :ilookup/not-found this key not-found)
-     (j/get this key not-found))))
+    ([this key] (get-token-attr this key))
+    ([this key not-found] (or (get-token-attr this key) not-found))))
 
 (defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second js/parseInt)))
 
@@ -120,15 +128,15 @@
 
 (defn footnote-label [{:as _ctx ::keys [footnote-offset]} token]
   ;; TODO: consider initial offset in case we're parsing multiple inputs
-  (or (j/get-in token [:meta :label])
+  (or (get-in token [:meta :label])
       ;; inline labels won't have a label
-      (str "inline-note-" (+ footnote-offset (j/get-in token [:meta :id])))))
+      (str "inline-note-" (+ footnote-offset (get-in token [:meta :id])))))
 
 ;; footnotes
 (defmethod apply-token "footnote_ref" [{:as ctx ::keys [label->footnote-ref]} token]
   (let [label (footnote-label ctx token)
         footnote-ref (or (get label->footnote-ref label)
-                         {:type :footnote-ref :inline? (not (j/get-in token [:meta :label]))
+                         {:type :footnote-ref :inline? (not (get-in token [:meta :label]))
                           :ref (count label->footnote-ref)  ;; was (+ (count footnotes) (j/get-in token [:meta :id])) ???
                           :label label})]
     (-> ctx
@@ -141,7 +149,7 @@
     (-> ctx
         (u/update-current-loc (fn [loc]
                                 (u/zopen-node loc {:type :footnote
-                                                   :inline? (not (j/get-in token [:meta :label]))
+                                                   :inline? (not (get-in token [:meta :label]))
                                                    :label label}))))))
 
 ;; inline footnotes^[like this one]
@@ -160,20 +168,7 @@
 (defmethod apply-token "footnote_anchor" [doc _token] doc)
 
 (comment
-  (-> "some text^[inline note]
-"
-      md/tokenize flatten-tokens
-      #_ parse
-      #_ u/insert-sidenote-containers)
-
-  (-> empty-doc
-      (update :text-tokenizers (partial map u/normalize-tokenizer))
-      (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
-      insert-sidenote-columns
-      (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
-      insert-sidenote-columns
-      (apply-tokens (nextjournal.markdown/tokenize "is^[this thing]"))
-      insert-sidenote-columns))
+  (parse "some text^[inline note]"))
 
 ;; tables
 ;; table data tokens might have {:style "text-align:right|left"} attrs, maybe better nested node > :attrs > :style ?
@@ -250,10 +245,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 ;; endregion
 
 ;; region data builder api
-(defn pairs->kmap [pairs] (into {} (map (juxt (comp keyword first) second)) pairs))
-(defn apply-tokens [doc tokens]
-  (let [mapify-attrs-xf (map (fn [x] (j/update! x :attrs pairs->kmap)))]
-    (reduce (mapify-attrs-xf apply-token) doc tokens)))
+(defn apply-tokens [doc tokens] (reduce apply-token doc tokens))
 
 (defn parse
   ([markdown] (parse u/empty-doc markdown))

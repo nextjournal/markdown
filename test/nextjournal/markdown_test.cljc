@@ -11,16 +11,24 @@
 #?(:cljs (matcher-combinators.ansi-color/disable!))
 
 (deftest simple-parsing
-  (is (match? {:type :doc,
-               :content [{:type :heading
-                          :heading-level 1
-                          :content [{:type :text, :text "Ahoi"}]}
-                         {:type :bullet-list,
-                          :content [{:type :list-item, :content [{:type :plain, :content [{:type :text, :text "one"}]}]}
-                                    {:type :list-item, :content [{:type :plain, :content [{:type :em, :content [{:type :text, :text "nice"}]}]}]}
-                                    {:type :list-item, :content [{:type :plain, :content [{:type :text, :text "list"}]}]}]}]
-               :footnotes []}
-              (md/parse "# Ahoi
+  (is (= {:type :doc
+          :title "Ahoi"
+          :toc {:type :toc,
+                :children [{:type :toc,
+                            :heading-level 1,
+                            :content [{:type :text, :text "Ahoi"}],
+                            :attrs {:id "ahoi"},
+                            :path [:content 0]}]}
+          :content [{:type :heading
+                     :heading-level 1
+                     :attrs {:id "ahoi"}
+                     :content [{:type :text, :text "Ahoi"}]}
+                    {:type :bullet-list,
+                     :content [{:type :list-item, :content [{:type :plain, :content [{:type :text, :text "one"}]}]}
+                               {:type :list-item, :content [{:type :plain, :content [{:type :em, :content [{:type :text, :text "nice"}]}]}]}
+                               {:type :list-item, :content [{:type :plain, :content [{:type :text, :text "list"}]}]}]}]
+          :footnotes []}
+         (md/parse "# Ahoi
 * one
 * _nice_
 * list"))))

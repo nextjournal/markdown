@@ -3,14 +3,13 @@
   (:require ["/js/markdown" :as md]
             ["markdown-it/lib/token" :as Token]
             [clojure.zip :as z]
-            [goog.object]
             [nextjournal.markdown.utils :as u]))
 
-(defn goget [o k]
-  (goog.object/get o (cond-> k (keyword? k) name)))
+(defn get* [o k]
+  (unchecked-get o (cond-> k (keyword? k) name)))
 
 (defn get-token-attr [token key]
-  (cond-> (goget token key)
+  (cond-> (get* token key)
     (= :attrs key)
     (->> (into {} (map (juxt (comp keyword first) second))))
     (= :meta key)

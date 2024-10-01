@@ -1,27 +1,40 @@
 (ns build
   (:require [clojure.tools.build.api :as b]
-            [clojure.java.shell :as shell]
-            [clojure.string :as str]
             [deps-deploy.deps-deploy :as dd]))
 
 (def lib 'io.github.nextjournal/markdown)
-(defn scm [version] {:url "https://github.com/nextjournal/markdown" :tag (str "v" version)})
+
+(defn scm [version]
+  {:url "https://github.com/nextjournal/markdown"
+   :tag (str "v" version)
+   :connection "scm:git:git://github.com/nextjournal/markdown.git"
+   :developerConnection "scm:git:ssh://git@github.com/nextjournal/markdown.git"})
+
 (def class-dir "target/classes")
+
 (def basis (b/create-basis {:project "deps.edn"}))
+
 (defn jar-file [version] (format "target/%s-%s.jar" (name lib) version))
 
 (defn clean [_] (b/delete {:path "target"}))
 
 (defn jar [{:keys [version]}]
-  (println "buildig jar: " (jar-file version))
+  (b/delete {:path "target"})
+  (println "Producing jar: " (jar-file version))
   (b/write-pom {:basis basis
                 :class-dir class-dir
                 :lib lib
                 :scm (scm version)
                 :src-dirs ["src"]
-                :version version})
+                :version version
+                :pom-data
+                [[:licenses
+                  [:license
+                   [:name "ISC License"]
+                   [:url "https://opensource.org/license/isc-license-txt"]]]]})
   (b/copy-dir {:src-dirs ["src" "resources"]
-               :target-dir class-dir})
+               :target-dir class-dir
+               :replace {}})
   (b/jar {:class-dir class-dir
           :jar-file (jar-file version)}))
 

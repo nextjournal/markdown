@@ -8,27 +8,31 @@
 (def empty-doc u/empty-doc)
 
 (defn parse*
-  "Turns a markdown string into a nested clojure structure.
+  "Turns a markdown string into an AST of nested clojure data.
   Allows to parse multiple strings into the same document
   e.g. `(-> u/empty-doc (parse* text-1) (parse* text-2))`."
-  ([markdown-text] (parse* u/empty-doc markdown-text))
+  ([markdown-text] (parse* empty-doc markdown-text))
   ([ctx markdown-text]
    (-> ctx
        (update :text-tokenizers (partial map u/normalize-tokenizer))
        (impl/parse markdown-text))))
 
 (defn parse
-  "Turns a markdown string into a nested clojure structure."
-  [markdown-text]
-  (-> u/empty-doc
-      (parse* markdown-text)
-      (dissoc :text-tokenizers
-              :text->id+emoji-fn
-              :nextjournal.markdown.impl/footnote-offset
-              :nextjournal.markdown.impl/id->index
-              :nextjournal.markdown.impl/label->footnote-ref
-              :nextjournal.markdown.impl/path
-              :nextjournal.markdown.impl/root)))
+  "Turns a markdown string into an AST of nested clojure data.
+
+  Accept options:
+    - `:text-tokenizers` to customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
+  "
+  ([markdown-text] (parse empty-doc markdown-text))
+  ([ctx markdown-text]
+   (-> (parse* ctx markdown-text)
+       (dissoc :text-tokenizers
+               :text->id+emoji-fn
+               ::impl/footnote-offset
+               ::impl/id->index
+               ::impl/label->footnote-ref
+               ::impl/path
+               ::impl/root))))
 
 (comment
   (-> u/empty-doc

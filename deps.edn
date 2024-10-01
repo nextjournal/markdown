@@ -1,4 +1,4 @@
-{:paths ["src" "resources" "classes"]
+{:paths ["src" "resources"]
  :deps {org.commonmark/commonmark {:mvn/version "0.23.0"}
         org.commonmark/commonmark-ext-autolink {:mvn/version "0.23.0"}
         org.commonmark/commonmark-ext-footnotes {:mvn/version "0.23.0"}
@@ -57,5 +57,6 @@
 
   :build
   {:ns-default build
-   :deps {io.github.clojure/tools.build {:git/tag "v0.6.1" :git/sha "515b334"}
+   :jvm-opts ["-Dclojure.main.report=stderr"]
+   :deps {io.github.clojure/tools.build {:git/tag "v0.10.3" :git/sha "15ead66"}
           io.github.slipset/deps-deploy {:git/sha "b4359c5d67ca002d9ed0c4b41b710d7e5a82e3bf"}}}}}

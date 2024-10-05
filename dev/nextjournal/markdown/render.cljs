@@ -1,4 +1,4 @@
-(ns nextjournal.clerk.sci-ext
+(ns nextjournal.markdown.render
   (:require ["katex" :as katex]
             ["react" :as react]
             ["@codemirror/view" :refer [EditorView highlightActiveLine highlightSpecialChars ViewPlugin keymap]]
@@ -10,14 +10,11 @@
             [nextjournal.clerk.render :as render]
             [nextjournal.clerk.render.hooks :as hooks]
             [nextjournal.clerk.render.code :as code]
-            [nextjournal.clerk.sci-env]
             [nextjournal.clerk.viewer :as v]
             [nextjournal.clojure-mode :as clojure-mode]
             [nextjournal.markdown :as md]
             [nextjournal.markdown.transform :as md.transform]
-            [reagent.core :as r]
-            [sci.core :as sci]
-            [sci.ctx-store]))
+            [reagent.core :as r]))
 
 (def theme (j/lit {"&.cm-editor.cm-focused" {:outline "none"}
                    ".cm-activeLine" {:background-color "rgb(226 232 240)"}
@@ -31,6 +28,7 @@
 ;; syntax (an LRParser) + support (a set of extensions)
 (def clojure-lang (LanguageSupport. (clojure-mode/syntax)
                                     (.. clojure-mode/default-extensions (slice 1))))
+
 (defn on-change-ext [f]
   (.. EditorState -transactionExtender
       (of (fn [^js tr]
@@ -63,7 +61,7 @@
 
 (defn eval-string [source]
   (when-some [code (not-empty (str/trim source))]
-    (try {:result (sci/eval-string* (sci.ctx-store/get-ctx) code)}
+    (try {:result (eval (read-string code))}
          (catch js/Error e
            {:error (str (.-message e))}))))
 
@@ -90,43 +88,33 @@
          :block-formula (fn [_ctx node]
                           [:div {:dangerouslySetInnerHTML {:__html (.renderToString katex (md.transform/->text node) #js {:displayMode true})}}])))
 
-(defn expand-all-by-default [store]
-  (reify
-    ILookup
-    (-lookup [_ k] (get store k true))
-    IAssociative
-    (-assoc [_ k v] (expand-all-by-default (assoc store k v)))
-    IMap
-    (-dissoc [_ k] (expand-all-by-default (dissoc store k)))))
-
-(sci.ctx-store/swap-ctx! sci/merge-opts
-                         {:namespaces {'md {'parse md/parse}
-                                       'md.transform {'->hiccup md.transform/->hiccup}
-                                       'md.demo {'editor editor
-                                                 'renderers markdown-renderers
-                                                 'inspect-expanded (fn [x]
-                                                                     (r/with-let [expanded-at (r/atom (expand-all-by-default {:hover-path [] :prompt-multi-expand? false}))]
-                                                                       (render/inspect-presented {:!expanded-at expanded-at}
-                                                                                                 (v/present x))))}}})
-
-(comment
-  (js/console.log (new LanguageSupport
-                       (j/obj :language (clojure-mode/syntax)
-                              :extensions (.slice clojure-mode/default-extensions 1))))
-
-  (js/console.log (clojure-mode/syntax) )
-  (do foldGutter )
-  (js/console.log (markdown (j/obj :base markdownLanguage
-                                   :addKeymap false
-                                   :defaultCodeLanguage
-                                   (LanguageSupport. (clojure-mode/syntax)
-                                                     (.. clojure-mode/default-extensions
-                                                         (slice 1))))))
+#_(defn expand-all-by-default [store]
+    (reify
+      ILookup
+      (-lookup [_ k] (get store k true))
+      IAssociative
+      (-assoc [_ k v] (expand-all-by-default (assoc store k v)))
+      IMap
+      (-dissoc [_ k] (expand-all-by-default (dissoc store k)))))
 
 
-  ;; ["@codemirror/language-data" :refer [languages]]
- ;; Closure compilation failed with 1 errors
- ;; --- node_modules/@lezer/php/dist/index.cjs:49
- ;; Illegal redeclared variable: global
+(defn inspect-expanded [x]
+  (r/with-let [expanded-at (r/atom {:hover-path [] :prompt-multi-expand? false})]
+    (render/inspect-presented {:!expanded-at expanded-at}
+                              (v/present x))))
 
- )
+(defn try [init-text]
+  (let [text->state (fn [text]
+                      (let [parsed (md/parse text)]
+                        {:parsed parsed
+                         :hiccup (md.transform/->hiccup markdown-renderers parsed)}))
+        !state (hooks/use-state (text->state init-text))]
+    [:div.grid.grid-cols-2.m-10
+     [:div.m-2.p-2.text-xl.border-2.overflow-y-scroll.bg-slate-100 {:style {:height "20rem"}}
+      [editor {:doc init-text :on-change #(reset! !state (text->state %)) :lang :markdown}]]
+     [:div.m-2.p-2.font-medium.overflow-y-scroll {:style {:height "20rem"}}
+      [inspect-expanded (:parsed @!state)]]
+     [:div.m-2.p-2.overflow-x-scroll
+      [inspect-expanded (:hiccup @!state)]]
+     [:div.m-2.p-2.bg-slate-50.viewer-markdown
+      [v/html (:hiccup @!state)]]]))

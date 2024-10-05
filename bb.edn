@@ -48,7 +48,7 @@
   dev
   {:doc "Boots and watches both shadow browser test and sci builds"
    :depends [yarn-install]
-   :task (clojure "-M:dev:test:nextjournal/clerk:sci watch sci browser-test")}
+   :task (clojure "-M:dev:test:nextjournal/clerk:sci watch browser-test")}
 
   cljs:sci
   {:doc "watches cljs build"

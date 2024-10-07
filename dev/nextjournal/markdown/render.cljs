@@ -12,9 +12,9 @@
    [nextjournal.markdown.transform :as md.transform]
    [nextjournal.clojure-mode :as clojure-mode]
    [nextjournal.clerk.render.code :as code]
-   [reagent.core :as r]
    [clojure.string :as str]
-   [nextjournal.clerk.render :as render]))
+   [nextjournal.clerk.render :as render]
+   [reagent.core :as r]))
 
 (def theme #js {"&.cm-editor.cm-focused" #js {:outline "none"}
                 ".cm-activeLine" #js {:background-color "rgb(226 232 240)"}
@@ -85,14 +85,13 @@
          :block-formula (fn [_ctx node]
                           [:div {:dangerouslySetInnerHTML {:__html (.renderToString katex (md.transform/->text node) #js {:displayMode true})}}])))
 
-(defn try [x]
+(defn inspect-expanded [x]
   (r/with-let [expanded-at (r/atom {:hover-path [] :prompt-multi-expand? false})]
     (render/inspect-presented {:!expanded-at expanded-at}
                               (v/present x))))
 
 (defn try-markdown [init-text]
-  (let [
-        text->state (fn [text]
+  (let [text->state (fn [text]
                       (let [parsed (md/parse text)]
                         {:parsed parsed
                          :hiccup (nextjournal.markdown.transform/->hiccup renderers parsed)}))

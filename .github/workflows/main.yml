@@ -135,7 +135,7 @@ jobs:
       - name: 🔧 Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0.3.0
 
-      - name: 🏗 Build Clerk Notebooks with Bundled SCI Context
+      - name: 🏗 Build Clerk Notebooks
         run: bb build:notebooks ${{ github.sha }}
 
       - name: 📠 Copy static build to bucket under SHA

@@ -5,7 +5,7 @@
 ;; _Edit markdown text, see parsed AST and transformed hiccup live. Preview how Clerk renders it._
 ^{::clerk/width :full
   ::clerk/visibility {:code :fold}}
-(clerk/with-viewer {:render-fn 'nextjournal.markdown.render/try
+(clerk/with-viewer {:render-fn 'nextjournal.markdown.render/try-markdown
                     :require-cljs true}
   "# 👋 Hello Markdown
 

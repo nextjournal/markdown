@@ -42,23 +42,12 @@
 
   build:notebooks
   {:doc "builds a Clerk static with notebooks specified in deps.edn given a specified git SHA"
-   :depends [cljs:sci:release]
    :task (clojure (str "-X:dev:nextjournal/clerk :git/sha '\"" (or (first *command-line-args*) "SHASHASHA") "\"' :browse? false"))}
 
   dev
   {:doc "Boots and watches both shadow browser test and sci builds"
    :depends [yarn-install]
    :task (clojure "-M:dev:test:nextjournal/clerk:sci watch browser-test")}
-
-  cljs:sci
-  {:doc "watches cljs build"
-   :depends [yarn-install]
-   :task (clojure "-M:nextjournal/clerk:sci watch sci")}
-
-  cljs:sci:release
-  {:doc "watches cljs build"
-   :depends [yarn-install]
-   :task (clojure "-M:nextjournal/clerk:sci release sci")}
 
   cljs:compile:tests
   {:doc "compiles tests as node executable"

@@ -41,20 +41,9 @@
    :extra-deps {nubank/matcher-combinators {:mvn/version "3.8.3"}}
    :exec-fn test-runner/run}
 
-  :cljs-test
-  {:extra-paths ["test"]
-   :main-opts ["-m" "shadow.cljs.devtools.cli"]
-   :extra-deps {thheller/shadow-cljs {:mvn/version "2.18.0"}
-                nubank/matcher-combinators {:mvn/version "3.8.3"}}}
-
-  :sci
-  {:extra-paths ["sci"]
-   :main-opts ["-m" "shadow.cljs.devtools.cli"]
-   #_#_:jvm-opts ["-Dclerk.resource_manifest={\"/js/viewer.js\" \"http://localhost:8021/viewer.js\"}"]
-   :extra-deps {thheller/shadow-cljs {:mvn/version "2.18.0"}
-                #_#_io.github.nextjournal/clerk.render {:git/url "https://github.com/nextjournal/clerk"
-                                                        :git/sha "80b3e0832d08b75e13e3b862bd46660cb1c66d5c"
-                                                        :deps/root "render"}}}
+  :shadow
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]
+   :extra-deps {thheller/shadow-cljs {:mvn/version "2.18.0"}}}
 
   :build
   {:ns-default build

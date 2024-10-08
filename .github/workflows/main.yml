@@ -128,14 +128,14 @@ jobs:
             ${{ runner.os }}-shadow-cljs-
 
       - name: 🔐 Google Auth
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v2.1.6
         with:
           credentials_json: ${{ secrets.GCLOUD_SERVICE_KEY }}
 
       - name: 🔧 Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0.3.0
 
-      - name: 🏗 Build Clerk Notebooks with Bundled SCI Context
+      - name: 🏗 Build Clerk Notebooks
         run: bb build:notebooks ${{ github.sha }}
 
       - name: 📠 Copy static build to bucket under SHA

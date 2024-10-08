@@ -89,4 +89,4 @@
 ")
 
   ;; launch shadow cljs repl
-  (shadow.cljs.devtools.api/repl :sci))
+  (shadow.cljs.devtools.api/repl :browser-test))

@@ -1,12 +1,13 @@
 ;; # Tight Lists
 (ns tight-lists
-  {:nextjournal.clerk/toc :collapsed
-   :nextjournal.clerk/no-cache true}
+  {:nextjournal.clerk/no-cache true}
   (:require [clojure.data.json :as json]
             [clojure.java.shell :as shell]
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]
-            [nextjournal.markdown :as md]))
+            [nextjournal.markdown :as md]
+            [hiccup2.core :as h]
+            [nextjournal.markdown.transform :as md.transform]))
 
 ;; Markdown (commonmark) distingushes between [loose and tight lists](https://spec.commonmark.org/0.30/#loose)
 ;;
@@ -15,40 +16,27 @@
 ;; > Otherwise a list is tight. (The difference in HTML output is that paragraphs in a loose list are wrapped in `<p>` tags,
 ;; > while paragraphs in a tight list are not.)
 ;;
-;; We're solving this ambiguity by getting closer to Pandoc types: introduce a `:plain` type, that is a container for
-;; inline elemets which is not a paragraph. The advantage will be two-fold:
-;;
-;; * being able to distinguish among tight and loose lists via markup
-;; * get closer to the Pandoc and ease document format conversions
-;;
-;; ## Markdown-It
-;;
-;; Markdown-it hides handling of tight/loose behind an [obscure `:hidden` property on the token](https://github.com/markdown-it/markdown-it/blob/8bcc82aa74164a5e13a104f433c26671a92ed872/lib/token.js#L111-L116).
-;;
-;;     * Token#hidden -> Boolean
-;;     *
-;;     * If it's true, ignore this element when rendering. Used for tight lists
-;;     * to hide paragraphs.
-;;     **/
-;;     this.hidden = false
-
 ;; ## Pandoc to the Rescue
 ;;
 ;; To comply with this behaviour [Pandoc uses a `Plain` container type](https://github.com/jgm/pandoc-types/blob/694c383dd674dad97557eb9b97adda17079ebb2c/src/Text/Pandoc/Definition.hs#L275-L278), and I think we should follow their advice
 
+^{::clerk/visibility {:result :hide}}
 (defn ->pandoc-ast [text]
-  (json/read-str
-   (:out
-    (shell/sh "pandoc" "-f" "markdown" "-t" "json" :in text))
-   :key-fn keyword))
+  (clerk/html [:pre
+               (with-out-str
+                 (clojure.pprint/pprint
+                  (json/read-str
+                   (:out
+                    (shell/sh "pandoc" "-f" "markdown" "-t" "json" :in text))
+                   :key-fn keyword)))]))
 
-;; Again, tight
+;; tight
 (->pandoc-ast "
 - one
 - two
 ")
 
-;; and loose lists
+;; vs loose lists
 (->pandoc-ast "
 - one
 
@@ -68,15 +56,29 @@
 - two
 ")
 
-;; ## Adding Plain nodes
-;; We're pushing plain nodes into the document when encoutering a paragraph token wiht the `:hidden` flag.
+^{::clerk/visibility {:result :hide}}
+(defn example [md-string]
+  (v/html
+   [:div.flex-col
+    [:pre.code md-string]
+    [:pre.code (with-out-str
+                 (clojure.pprint/pprint
+                  (dissoc (md/parse md-string) :toc :title :footnotes)))]
+    [:pre.code (with-out-str
+                 (clojure.pprint/pprint
+                  (md/->hiccup md-string)))]
+    (v/html (md/->hiccup md-string))
+    ;; TODO: fix in clerk
+    #_
+    (v/html (str (h/html (md/->hiccup md-string))))]))
 
-(md/parse "
+(clerk/present!
+ (example "
 * this
 * is
-* tight!")
+* tight!"))
 
-(md/parse "
+(example "
 * this
 * is
   > very loose
@@ -84,28 +86,18 @@
   indeed
 * fin")
 
-;; in terms of Clerk support, that amounts to introduce a new viewer, the natural candidate for rendering plain nodes is
-;; the empty container `:<>`
-(clerk/add-viewers! [(update v/markdown-viewer
-                             :transform-fn (fn [tx-fn]
-                                             (fn [wv] (-> wv
-                                                          tx-fn
-                                                          (update :nextjournal/viewers
-                                                                  v/add-viewers [{:name ::md/plain
-                                                                                  :transform-fn (v/into-markup [:<>])}])))))])
+(example "* one \\
+  hardbreak
+* two")
 
-;; ## Rendering
-;; ### Tight Lists
-;; * one
-;; * two
-;; * three
-;;
-;; ### Loose Lists
-;; * one
-;;
-;;   one-two
-;; * two
-;; * three
-;;   * a tight list
-;;   * in a loose
-;;   * one
+(example "
+* one
+  softbreak
+* two")
+
+;; https://spec.commonmark.org/0.30/#example-314 (loose list)
+(example "- a\n- b\n\n- c")
+;; https://spec.commonmark.org/0.30/#example-319 (tight with loose sublist inside)
+(example "- a\n  - b\n\n    c\n- d\n")
+;; https://spec.commonmark.org/0.30/#example-320 (tight with blockquote inside)
+(example "* a\n  > b\n  >\n* c")

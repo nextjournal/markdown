@@ -68,7 +68,8 @@ a paragraph
   {:doc (partial into-markup [:div])
    :heading (fn [ctx {:as node :keys [attrs]}] (-> (heading-markup node) (conj attrs) (into-markup ctx node)))
    :paragraph (partial into-markup [:p])
-   :plain (partial into-markup [:<>])
+   :plain (fn [ctx {:keys [content]}]
+            (apply list (map (partial ->hiccup ctx) content)))
    :text (fn [_ {:keys [text]}] text)
    :hashtag (fn [_ {:keys [text]}] [:a.tag {:href (str "/tags/" text)} (str "#" text)]) ;; TODO: make it configurable
    :blockquote (partial into-markup [:blockquote])
@@ -206,3 +207,41 @@ par two"
                      ;; wrap something around the default
                      :paragraph (fn [{:as ctx d :default} node] [:div.p-container (d ctx node)]))))
   )
+
+(comment
+  (require '[hiccup2.core :as h])
+
+  (-> "
+* one
+* two"
+      nextjournal.markdown/parse
+      ->hiccup
+      h/html str
+      )
+
+  (-> "
+* one
+
+* two"
+      nextjournal.markdown/parse
+      ->hiccup
+      h/html str
+      )
+
+  (-> "# foo
+- one \\
+  broken
+- two"
+      nextjournal.markdown/parse
+      ->hiccup
+      h/html str
+      )
+
+  ;; https://spec.commonmark.org/0.30/#example-319
+  (= (str "<div>"
+          "<ul><li>a<ul><li><p>b</p><p>c</p></li></ul></li><li>d</li></ul>"
+          "</div>")
+     (->> "- a\n  - b\n\n    c\n- d"
+          nextjournal.markdown/parse
+          (->hiccup default-hiccup-renderers)
+          h/html str)))

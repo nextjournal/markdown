@@ -28,7 +28,7 @@ jobs:
           cli: '1.10.3.943'
 
       - name: 🗝 maven cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2
@@ -53,11 +53,8 @@ jobs:
         with:
           babashka-version: 0.7.8
 
-      - name: 🗝 Yarn Cache
-        uses: c-hive/gha-yarn-cache@v2
-
       - name: 🗝 Shadow compiler cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: .shadow-cljs
           key: ${{ runner.os }}-shadow-cljs-${{ github.sha }}
@@ -101,7 +98,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🗝 maven cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2
@@ -111,16 +108,13 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: 🗝 Clerk Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: .clerk
           key: ${{ runner.os }}-clerk-cache
 
-      - name: 🗝 Yarn Cache
-        uses: c-hive/gha-yarn-cache@v2
-
       - name: 🗝 Shadow compiler cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: .shadow-cljs
           key: ${{ runner.os }}-shadow-cljs-${{ github.sha }}
@@ -181,7 +175,7 @@ jobs:
           babashka-version: 0.8.156
 
       - name: 🗝 maven cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.m2

@@ -25,7 +25,7 @@ jobs:
       - name: 🔧 Install clojure
         uses: DeLaGuardo/setup-clojure@master
         with:
-          cli: '1.10.3.943'
+          cli: latest
 
       - name: 🗝 maven cache
         uses: actions/cache@v4
@@ -79,7 +79,7 @@ jobs:
       - name: 🔧 Install clojure
         uses: DeLaGuardo/setup-clojure@master
         with:
-          cli: '1.10.3.943'
+          cli: latest
 
       - name: 🔧 Setup Babashka
         uses: turtlequeue/setup-babashka@v1.3.0

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-...
+* Hiccup JVM compatibiltiy for fragments (see [#34](https://github.com/nextjournal/markdown/issues/34))
 
 ## 0.6.157
 

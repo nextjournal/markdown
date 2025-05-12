@@ -386,21 +386,18 @@ rupt me when I'm writing."))))
               [:input
                {:checked true
                 :type "checkbox"}]
-              [:<>
-               "checked"]]
+              '("checked")]
              [:li
               [:input
                {:checked false
                 :type "checkbox"}]
-              [:<>
-               "unchecked"]
+              '("unchecked")
               [:ul.contains-task-list
                [:li
                 [:input
                  {:checked false
                   :type "checkbox"}]
-                [:<>
-                 "nested"]]]]]]
+                '("nested")]]]]]
            (md/->hiccup "# Todos
 - [x] checked
 - [ ] unchecked
@@ -796,14 +793,12 @@ Par.
               [:div.sidenote-container
                [:ul
                 [:li
-                 [:<>
-                  "again"
-                  [:sup.sidenote-ref
-                   {:data-label "note2"}
-                   "3"]]]
+                 '("again"
+                   [:sup.sidenote-ref
+                    {:data-label "note2"}
+                    "3"])]
                 [:li
-                 [:<>
-                  "here"]]]
+                 '("here")]]
                [:div.sidenote-column
                 [:span.sidenote
                  [:sup
@@ -863,11 +858,11 @@ Par.
            (md/->hiccup "- a\n- b\n\n- c")))
 
     ;; https://spec.commonmark.org/0.30/#example-319 (tight with loose sublist inside)
-    (is (= [:div [:ul [:li [:<> "a"] [:ul [:li [:p "b"] [:p "c"]]]] [:li [:<> "d"]]]]
+    (is (= [:div [:ul [:li '("a") [:ul [:li [:p "b"] [:p "c"]]]] [:li '("d")]]]
            (md/->hiccup "- a\n  - b\n\n    c\n- d\n")))
 
     ;; https://spec.commonmark.org/0.30/#example-320 (tight with blockquote inside)
-    (is (= [:div [:ul [:li [:<> "a"] [:blockquote [:p "b"]]] [:li [:<> "c"]]]]
+    (is (= [:div [:ul [:li '("a") [:blockquote [:p "b"]]] [:li '("c")]]]
            (md/->hiccup "* a\n  > b\n  >\n* c")))))
 
 (deftest repro-19-test

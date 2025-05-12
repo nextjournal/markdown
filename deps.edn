@@ -10,7 +10,7 @@
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks" "dev"]
-   :extra-deps {io.github.nextjournal/clerk {:git/sha "80b3e0832d08b75e13e3b862bd46660cb1c66d5c"
+   :extra-deps {io.github.nextjournal/clerk {:git/sha "f4c5488e36c8df11fe352889544e7deb9af73cb7"
                                              :exclusions [io.github.nextjournal/markdown]}}
    :jvm-opts ["-Dclojure.main.report=stderr"
               #_"-Dclerk.resource_manifest={\"/js/viewer.js\" \"js/viewer.js\"}"] ;;
@@ -29,10 +29,14 @@
   {:jvm-opts ["-Dpolyglot.engine.WarnInterpreterOnly=false"]}
 
   :dev
-  {:extra-paths ["dev"]
+  {:extra-paths ["dev" "notebooks"]
    :extra-deps {org.babashka/http-client {:mvn/version "0.3.11"}
                 org.clojure/data.json {:mvn/version "2.4.0"}
                 org.clojure/test.check {:mvn/version "1.1.1"}
+                io.github.nextjournal/clerk {:git/sha "f4c5488e36c8df11fe352889544e7deb9af73cb7"
+                                             :exclusions [io.github.nextjournal/markdown]}
+                nubank/matcher-combinators {:mvn/version "3.8.3"}
+                hiccup/hiccup {:mvn/version "2.0.0-RC5"}
                 org.graalvm.js/js {:mvn/version "21.3.2.1"}}}
 
   :test

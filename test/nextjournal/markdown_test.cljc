@@ -386,21 +386,18 @@ rupt me when I'm writing."))))
               [:input
                {:checked true
                 :type "checkbox"}]
-              [:<>
-               "checked"]]
+              '("checked")]
              [:li
               [:input
                {:checked false
                 :type "checkbox"}]
-              [:<>
-               "unchecked"]
+              '("unchecked")
               [:ul.contains-task-list
                [:li
                 [:input
                  {:checked false
                   :type "checkbox"}]
-                [:<>
-                 "nested"]]]]]]
+                '("nested")]]]]]
            (md/->hiccup "# Todos
 - [x] checked
 - [ ] unchecked
@@ -559,6 +556,20 @@ softbreaks as
 spaces")
              md.transform/->text))))
 
+(def parsed+sidenotes
+  (-> "Text[^firstnote] and^[inline _note_ here].
+
+Par.
+
+- again[^note2]
+- here
+
+[^firstnote]: Explain 1
+[^note2]: Explain 2
+"
+      md/parse
+      u/insert-sidenote-containers))
+
 (deftest footnotes
   (testing "foonotes via references"
     (is (match? {:content [{:attrs {:id "footnotes"}
@@ -680,137 +691,123 @@ c[^note3] d.
 
   (testing "Turning footnotes into sidenotes"
 
-    (let [parsed+sidenotes (-> "Text[^firstnote] and^[inline _note_ here].
-
-Par.
-
-- again[^note2]
-- here
-
-[^firstnote]: Explain 1
-[^note2]: Explain 2
-"
-                                     md/parse
-                                     u/insert-sidenote-containers)]
-      (is (match? {:type :doc
-                   :sidenotes? true
-                   :content [{:type :sidenote-container
-                              :content [{:type :paragraph
-                                         :content [{:text "Text"
+    (is (match? {:type :doc
+                 :sidenotes? true
+                 :content [{:type :sidenote-container
+                            :content [{:type :paragraph
+                                       :content [{:text "Text"
+                                                  :type :text}
+                                                 {:label "firstnote"
+                                                  :ref 0
+                                                  :type :sidenote-ref}
+                                                 {:text " and"
+                                                  :type :text}
+                                                 {:ref 1
+                                                  :type :sidenote-ref}
+                                                 {:text "."
+                                                  :type :text}]}
+                                      {:type :sidenote-column
+                                       :content [{:type :sidenote
+                                                  :ref 0
+                                                  :content [{:text "Explain 1" :type :text}]
+                                                  :label "firstnote"}
+                                                 {:type :sidenote
+                                                  :ref 1
+                                                  :content [{:text "inline " :type :text}
+                                                            {:content [{:text "note"
+                                                                        :type :text}]
+                                                             :type :em}
+                                                            {:text " here"
+                                                             :type :text}]}]}]}
+                           {:type :paragraph
+                            :content [{:text "Par." :type :text}]}
+                           {:type :sidenote-container
+                            :content [{:type :bullet-list
+                                       :content [{:type :list-item
+                                                  :content [{:type :plain
+                                                             :content [{:text "again"
+                                                                        :type :text}
+                                                                       {:label "note2"
+                                                                        :ref 2
+                                                                        :type :sidenote-ref}]}]}
+                                                 {:type :list-item
+                                                  :content [{:content [{:text "here" :type :text}]
+                                                             :type :plain}]}]}
+                                      {:type :sidenote-column
+                                       :content [{:type :sidenote
+                                                  :ref 2
+                                                  :content [{:text "Explain 2"
+                                                             :type :text}]
+                                                  :label "note2"}]}]}]
+                 :footnotes [{:content [{:content [{:text "Explain 1"
+                                                    :type :text}]
+                                         :type :paragraph}]
+                              :label "firstnote"
+                              :ref 0
+                              :type :footnote}
+                             {:content [{:content [{:text "inline "
                                                     :type :text}
-                                                   {:label "firstnote"
-                                                    :ref 0
-                                                    :type :sidenote-ref}
-                                                   {:text " and"
-                                                    :type :text}
-                                                   {:ref 1
-                                                    :type :sidenote-ref}
-                                                   {:text "."
-                                                    :type :text}]}
-                                        {:type :sidenote-column
-                                         :content [{:type :sidenote
-                                                    :ref 0
-                                                    :content [{:text "Explain 1" :type :text}]
-                                                    :label "firstnote"}
-                                                   {:type :sidenote
-                                                    :ref 1
-                                                    :content [{:text "inline " :type :text}
-                                                              {:content [{:text "note"
-                                                                          :type :text}]
-                                                               :type :em}
-                                                              {:text " here"
-                                                               :type :text}]}]}]}
-                             { :type :paragraph
-                              :content [{:text "Par." :type :text}]}
-                             {:type :sidenote-container
-                              :content [{:type :bullet-list
-                                         :content [{:type :list-item
-                                                    :content [{:type :plain
-                                                               :content [{:text "again"
-                                                                          :type :text}
-                                                                         {:label "note2"
-                                                                          :ref 2
-                                                                          :type :sidenote-ref}]}]}
-                                                   {:type :list-item
-                                                    :content [{:content [{:text "here" :type :text}]
-                                                               :type :plain}]}]}
-                                        {:type :sidenote-column
-                                         :content [{:type :sidenote
-                                                    :ref 2
-                                                    :content [{:text "Explain 2"
+                                                   {:content [{:text "note"
                                                                :type :text}]
-                                                    :label "note2"}]}]}]
-                   :footnotes [{:content [{:content [{:text "Explain 1"
-                                                      :type :text}]
-                                           :type :paragraph}]
-                                :label "firstnote"
-                                :ref 0
-                                :type :footnote}
-                               {:content [{:content [{:text "inline "
-                                                      :type :text}
-                                                     {:content [{:text "note"
-                                                                 :type :text}]
-                                                      :type :em}
-                                                     {:text " here"
-                                                      :type :text}]
-                                           :type :paragraph}]
-                                :ref 1
-                                :type :footnote}
-                               {:content [{:content [{:text "Explain 2"
-                                                      :type :text}]
-                                           :type :paragraph}]
-                                :label "note2"
-                                :ref 2
-                                :type :footnote}]}
+                                                    :type :em}
+                                                   {:text " here"
+                                                    :type :text}]
+                                         :type :paragraph}]
+                              :ref 1
+                              :type :footnote}
+                             {:content [{:content [{:text "Explain 2"
+                                                    :type :text}]
+                                         :type :paragraph}]
+                              :label "note2"
+                              :ref 2
+                              :type :footnote}]}
 
-             parsed+sidenotes))
+                parsed+sidenotes))
 
-      (is (= [:div
-              [:div.sidenote-container
-               [:p
-                "Text"
-                [:sup.sidenote-ref
-                 {:data-label "firstnote"}
-                 "1"]
-                " and"
-                [:sup.sidenote-ref
-                 {:data-label "inline-note-1"}
-                 "2"]
-                "."]
-               [:div.sidenote-column
-                [:span.sidenote
-                 [:sup
-                  {:style {:margin-right "3px"}}
-                  "1"]
-                 "Explain 1"]
-                [:span.sidenote
-                 [:sup
-                  {:style {:margin-right "3px"}}
-                  "2"]
-                 "inline "
-                 [:em
-                  "note"]
-                 " here"]]]
-              [:p
-               "Par."]
-              [:div.sidenote-container
-               [:ul
-                [:li
-                 [:<>
-                  "again"
-                  [:sup.sidenote-ref
-                   {:data-label "note2"}
-                   "3"]]]
-                [:li
-                 [:<>
-                  "here"]]]
-               [:div.sidenote-column
-                [:span.sidenote
-                 [:sup
-                  {:style {:margin-right "3px"}}
-                  "3"]
-                 "Explain 2"]]]]
-             (md.transform/->hiccup parsed+sidenotes))))))
+    (is (= [:div
+            [:div.sidenote-container
+             [:p
+              "Text"
+              [:sup.sidenote-ref
+               {:data-label "firstnote"}
+               "1"]
+              " and"
+              [:sup.sidenote-ref
+               {:data-label "inline-note-1"}
+               "2"]
+              "."]
+             [:div.sidenote-column
+              [:span.sidenote
+               [:sup
+                {:style {:margin-right "3px"}}
+                "1"]
+               "Explain 1"]
+              [:span.sidenote
+               [:sup
+                {:style {:margin-right "3px"}}
+                "2"]
+               "inline "
+               [:em
+                "note"]
+               " here"]]]
+            [:p
+             "Par."]
+            [:div.sidenote-container
+             [:ul
+              [:li
+               '("again"
+                 [:sup.sidenote-ref
+                  {:data-label "note2"}
+                  "3"])]
+              [:li
+               '("here")]]
+             [:div.sidenote-column
+              [:span.sidenote
+               [:sup
+                {:style {:margin-right "3px"}}
+                "3"]
+               "Explain 2"]]]]
+           (md.transform/->hiccup parsed+sidenotes)))))
 
 (deftest parse-multiple-inputs
   (testing "adding to the ToC"
@@ -863,11 +860,11 @@ Par.
            (md/->hiccup "- a\n- b\n\n- c")))
 
     ;; https://spec.commonmark.org/0.30/#example-319 (tight with loose sublist inside)
-    (is (= [:div [:ul [:li [:<> "a"] [:ul [:li [:p "b"] [:p "c"]]]] [:li [:<> "d"]]]]
+    (is (= '[:div [:ul [:li ("a") [:ul [:li [:p "b"] [:p "c"]]]] [:li ("d")]]]
            (md/->hiccup "- a\n  - b\n\n    c\n- d\n")))
 
     ;; https://spec.commonmark.org/0.30/#example-320 (tight with blockquote inside)
-    (is (= [:div [:ul [:li [:<> "a"] [:blockquote [:p "b"]]] [:li [:<> "c"]]]]
+    (is (= '[:div [:ul [:li ("a") [:blockquote [:p "b"]]] [:li ("c")]]]
            (md/->hiccup "* a\n  > b\n  >\n* c")))))
 
 (deftest repro-19-test

@@ -69,7 +69,7 @@ a paragraph
    :heading (fn [ctx {:as node :keys [attrs]}] (-> (heading-markup node) (conj attrs) (into-markup ctx node)))
    :paragraph (partial into-markup [:p])
    :plain (fn [ctx {:keys [content]}]
-            (apply list (map (partial ->hiccup ctx) content)))
+            (seq (mapv (partial ->hiccup ctx) content)))
    :text (fn [_ {:keys [text]}] text)
    :hashtag (fn [_ {:keys [text]}] [:a.tag {:href (str "/tags/" text)} (str "#" text)]) ;; TODO: make it configurable
    :blockquote (partial into-markup [:blockquote])

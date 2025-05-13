@@ -5,7 +5,8 @@
         org.commonmark/commonmark-ext-footnotes {:mvn/version "0.23.0"}
         org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.23.0"}
         org.commonmark/commonmark-ext-gfm-tables {:mvn/version "0.23.0"}
-        org.commonmark/commonmark-ext-gfm-strikethrough {:mvn/version "0.23.0"}}
+        org.commonmark/commonmark-ext-gfm-strikethrough {:mvn/version "0.23.0"}
+        org.commonmark/commonmark-ext-yaml-front-matter {:mvn/version "0.23.0"}}
 
  :aliases
  {:nextjournal/clerk

@@ -1,14 +1,15 @@
 ;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
   (:require [clojure.zip :as z]
-            [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.impl.extensions :as extensions]
+            [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.utils :as u])
   (:import (org.commonmark.ext.autolink AutolinkExtension)
            (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
            (org.commonmark.ext.gfm.strikethrough Strikethrough StrikethroughExtension)
            (org.commonmark.ext.gfm.tables TableBlock TableBody TableRow TableHead TableCell TablesExtension TableCell$Alignment)
            (org.commonmark.ext.task.list.items TaskListItemsExtension TaskListItemMarker)
+           (org.commonmark.ext.front.matter YamlFrontMatterExtension YamlFrontMatterBlock YamlFrontMatterNode)
            (org.commonmark.node Node AbstractVisitor
                                 Document
                                 BlockQuote
@@ -31,6 +32,9 @@
                                 HardLineBreak
                                 Image)
            (org.commonmark.parser Parser)))
+
+#_(require '[clojure.repl.deps])
+#_(clojure.repl.deps/sync-deps)
 
 (set! *warn-on-reflection* true)
 ;; TODO:
@@ -62,7 +66,8 @@
                    (StrikethroughExtension/create)
                    (.. (FootnotesExtension/builder)
                        (inlineFootnotes true)
-                       (build))])
+                       (build))
+                   (YamlFrontMatterExtension/create)])
       build))
 
 ;; helpers / ctx
@@ -102,7 +107,7 @@
 (defmethod close-node Heading [ctx ^Heading _node]
   (u/handle-close-heading ctx))
 
-(defmethod open-node BulletList [ctx ^ListBlock node]
+(defmethod open-node BulletList [ctx ^ListBlock _node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :bullet-list :content [] #_#_:tight? (.isTight node)}))))
 
 (defmethod open-node OrderedList [ctx _node]
@@ -211,6 +216,15 @@
       z/up (z/edit assoc :type :todo-list)
       z/down z/rightmost))
 
+(defmethod open-node YamlFrontMatterBlock [ctx ^YamlFrontMatterBlock _node]
+  (-> ctx
+      (u/update-current-loc (fn [loc]
+                              (u/zopen-node loc {:type :frontmatter})
+                              #_(-> loc
+                                  (z/append-child {:type :frontmatter
+                                                   ;; :label (.getLabel node)
+                                                   :content []}))))))
+
 (def ^:private visitChildren-meth
   ;; cached reflection only happens once
   (delay (let [meth (.getDeclaredMethod AbstractVisitor "visitChildren" (into-array [Node]))]
@@ -253,6 +267,9 @@
                                                          (u/update-current-loc z/append-child footnote-ref)
                                                          (update ::label->footnote-ref assoc label footnote-ref)))))
 
+                   YamlFrontMatterNode (swap! !ctx u/update-current-loc z/append-child (let [^YamlFrontMatterNode node node]
+                                                                                         {:key (.getKey node)
+                                                                                          :values (.getValues node)}))
                    ;; else branch nodes
                    (if (get-method open-node (class node))
                      (with-tight-list node
@@ -358,4 +375,20 @@ this should be left as is
 
 another paragraph reusing[^reuse]
 ")
-      md.parser/insert-sidenote-containers))
+      md.parser/insert-sidenote-containers)
+
+
+  (parse "---
+dude: [true, false]
+---
+
+# My title
+
+Paragraph")
+  )
+
+#_(clojure.repl.deps/add-lib 'clj-commons/clj-yaml)
+#_(require '[clj-yaml.core :as yaml])
+#_(yaml/parse-string "dude: [true, false]")
+
+

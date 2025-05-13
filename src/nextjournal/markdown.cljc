@@ -2,8 +2,9 @@
   "Markdown as data"
   (:require
    [nextjournal.markdown.impl :as impl]
-   [nextjournal.markdown.utils :as u]
-   [nextjournal.markdown.transform :as markdown.transform]))
+   [nextjournal.markdown.impl.frontmatter :as frontmatter]
+   [nextjournal.markdown.transform :as markdown.transform]
+   [nextjournal.markdown.utils :as u]))
 
 (def empty-doc u/empty-doc)
 
@@ -33,6 +34,17 @@
                ::impl/label->footnote-ref
                ::impl/path
                ::impl/root))))
+
+(defn parse-frontmatter
+  "Returns a map of :frontmatter and raw :markdown-text.
+  The :frontmatter key contains :type (:yaml, :edn, :multimarkdown) and :value.
+  The :multimarkdown format is documented here: https://fletcher.github.io/MultiMarkdown-4/metadata
+  To parse :yaml you need to provide :yaml-parse-fn (e.g. `clj-yaml.core/parse-string`)"
+  ([markdown-text] (parse-frontmatter nil markdown-text))
+  ([opts markdown-text]
+   (let [[frontmatter markdown-text] (frontmatter/parse-frontmatter markdown-text opts)]
+     {:markdown-text markdown-text
+      :frontmatter frontmatter})))
 
 (comment
   (-> u/empty-doc

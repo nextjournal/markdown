@@ -2,8 +2,8 @@
 (ns nextjournal.markdown.utils
   (:require [clojure.string :as str]
             [clojure.zip :as z]
-            [nextjournal.markdown.utils.emoji :as emoji]
-            [nextjournal.markdown.transform :as md.transform]))
+            [nextjournal.markdown.transform :as md.transform]
+            [nextjournal.markdown.utils.emoji :as emoji]))
 
 #?(:clj (defn re-groups* [m] (let [g (re-groups m)] (cond-> g (not (vector? g)) vector))))
 (defn re-idx-seq
@@ -396,3 +396,6 @@ end"
             (recur (z/right loc) parent))
           :else
           (recur (z/right loc) parent))))))
+
+(defn split-frontmatter [markdown-text]
+  )

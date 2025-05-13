@@ -1,11 +1,12 @@
 (ns nextjournal.markdown-test
-  (:require [clojure.test :as t :refer [deftest testing is]]
-            [matcher-combinators.test :refer [match?]]
-            [matcher-combinators.matchers :as m]
-            [nextjournal.markdown :as md]
+  (:require [clojure.string :as str]
+            [clojure.test :as t :refer [deftest testing is]]
             [matcher-combinators.ansi-color]
-            [nextjournal.markdown.utils :as u]
-            [nextjournal.markdown.transform :as md.transform]))
+            [matcher-combinators.matchers :as m]
+            [matcher-combinators.test :refer [match?]]
+            [nextjournal.markdown :as md]
+            [nextjournal.markdown.transform :as md.transform]
+            [nextjournal.markdown.utils :as u]))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
 #?(:cljs (matcher-combinators.ansi-color/disable!))
@@ -1013,10 +1014,35 @@ back to text") :content second)))
 ```")
                  :content first))))))
 
+(deftest parse-frontmatter-test
+  (testing "yaml"
+    (let [v (md/parse-frontmatter {:yaml-parse-fn identity} "---
+dude: true
+---
+
+# Hello")]
+      (is (= :yaml (:type (:frontmatter v))))
+      (is (= "dude: true" (:value (:frontmatter v))))
+      (is (str/includes? (:markdown-text v) "# Hello"))))
+  (testing "edn"
+    (let [v (md/parse-frontmatter "{
+:dude true
+}
+
+# Hello")]
+      (is (= :edn (:type (:frontmatter v))))
+      (is (= {:dude true} (:value (:frontmatter v))))
+      (is (str/includes? (:markdown-text v) "# Hello"))))
+  (testing "multimarkdown"
+    (let [v (md/parse-frontmatter "Title: Creating an AWS Lambda function with nbb
+Date: 2022-01-08
+Tags: clojure
+# Hello")]
+      (is (= :multimarkdown (:type (:frontmatter v))))
+      (is (= {:title ["Creating an AWS Lambda function with nbb"], :date ["2022-01-08"], :tags ["clojure"]} (:value (:frontmatter v))))
+      (is (str/includes? (:markdown-text v) "# Hello")))))
+
+;;;; Scratch
+
 (comment
-  (clojure.test/run-test-var #'formulas)
-  (shadow.cljs.devtools.api/repl :browser-test)
-  (doseq [[n v] (ns-publics *ns*)] (ns-unmap *ns* n))
-  (clojure.test/run-tests)
-  (run-tests 'nextjournal.markdown-test)
-  (run-test unique-heading-ids))
+  )

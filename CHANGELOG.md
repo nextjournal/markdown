@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Hiccup JVM compatibiltiy for fragments (see [#34](https://github.com/nextjournal/markdown/issues/34))
+* Add `nextjournal.markdown/parse-frontmatter` to parse frontmatters (e.g. for static blogging)
 
 ## 0.6.157
 

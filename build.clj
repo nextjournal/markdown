@@ -38,6 +38,10 @@
   (b/jar {:class-dir class-dir
           :jar-file (jar-file version)}))
 
+(defn install [{:keys [version] :as opts}]
+  (jar opts)
+  (b/install opts))
+
 (defn deploy [{:keys [version] :as opts}]
   (println "Deploying version" (jar-file version) "to Clojars.")
   (jar opts)

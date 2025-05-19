@@ -1,5 +1,6 @@
 (ns nextjournal.markdown-test
   (:require [clojure.test :as t :refer [deftest testing is]]
+            [hiccup2.core :as hiccup]
             [matcher-combinators.ansi-color]
             [matcher-combinators.matchers :as m]
             [matcher-combinators.test :refer [match?]]
@@ -1039,7 +1040,27 @@ Bye") :content)))
                 {:type :em, :content [{:type :text, :text "Dude"}]}
                 {:type :html-inline, :text "</a>"}]}
               (-> (md/parse "Hello <a href=\"dude\">*Dude*</a>")
-                  :content first))))
+                  :content first)))
+  (is (= "<div><p>Hello <a href=\"dude\"><em>Dude</em></a></p></div>"
+         (str (hiccup/html (md/->hiccup
+                            (assoc md.transform/default-hiccup-renderers
+                                   :html-inline (fn [_ {:keys [text]}]
+                                                  (hiccup/raw text))
+                                   :html-block (fn [_ {:keys [text]}]
+                                                 (hiccup/raw text)))
+                            "Hello <a href=\"dude\">*Dude*</a>")))))
+  (is (= "<div><p>Hello <a href=\"dude\">multi</p><p>line</p><p>link</a></p></div>"
+         (str (hiccup/html (md/->hiccup
+                            (assoc md.transform/default-hiccup-renderers
+                                   :html-inline (fn [_ {:keys [text]}]
+                                                  (hiccup/raw text))
+                                   :html-block (fn [_ {:keys [text]}]
+                                                 (hiccup/raw text)))
+                            "Hello <a href=\"dude\">multi
+
+line
+
+link</a>"))))))
 
 
 ;; Hello <a href=\"dude\">*Dude*</a>

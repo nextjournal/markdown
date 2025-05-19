@@ -1,8 +1,8 @@
 ;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
   (:require [clojure.zip :as z]
-            [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.impl.extensions :as extensions]
+            [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.utils :as u])
   (:import (org.commonmark.ext.autolink AutolinkExtension)
            (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)

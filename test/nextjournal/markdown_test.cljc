@@ -1013,6 +1013,27 @@ back to text") :content second)))
 ```")
                  :content first))))))
 
+(deftest html-test
+  (is (= {:type :html-block, :text "<article>\nfoobar\n</article>"}
+         (-> (md/parse "<article>
+foobar
+</article>
+") :content first)))
+  (is (= {:type :html-block, :text "<img src=\"foo\"/>"}
+         (-> (md/parse "<img src=\"foo\"/>
+") :content first)))
+  (is (= {:type :paragraph,
+          :content
+          [{:type :text, :text "Hello "}
+           {:type :html-inline, :text "<a href=\"dude\">"}
+           {:type :em, :content [{:type :text, :text "Dude"}]}
+           {:type :html-inline, :text "</a>"}]}
+         (-> (md/parse "Hello <a href=\"dude\">*Dude*</a>")
+             :content first))))
+
+
+;; Hello <a href=\"dude\">*Dude*</a>
+
 (comment
   (clojure.test/run-test-var #'formulas)
   (shadow.cljs.devtools.api/repl :browser-test)

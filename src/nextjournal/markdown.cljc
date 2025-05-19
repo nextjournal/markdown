@@ -36,24 +36,6 @@
 
 (comment
 
-  (parse "# Foo
-
-*foo*
-
-_bar_
-
-Helo
-
-<article>
-foobar
-</article>
-
-Dude
-
-<img src=\"foo\"/>
-
-Im the following we will discuss <a href=\"dude\">*Dude*</a>")
-  
   (-> u/empty-doc
       (parse* "# title
 * one

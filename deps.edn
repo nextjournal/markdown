@@ -42,7 +42,7 @@
   :test
   {:extra-paths ["test"]
    :jvm-opts ["-Dclojure.main.report=stderr"]
-   :extra-deps {nubank/matcher-combinators {:mvn/version "3.8.3"}}
+   :extra-deps {nubank/matcher-combinators {:mvn/version "3.9.1"}}
    :exec-fn test-runner/run}
 
   :shadow

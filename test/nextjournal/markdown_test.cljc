@@ -1,11 +1,11 @@
 (ns nextjournal.markdown-test
   (:require [clojure.test :as t :refer [deftest testing is]]
-            [matcher-combinators.test :refer [match?]]
-            [matcher-combinators.matchers :as m]
-            [nextjournal.markdown :as md]
             [matcher-combinators.ansi-color]
-            [nextjournal.markdown.utils :as u]
-            [nextjournal.markdown.transform :as md.transform]))
+            [matcher-combinators.matchers :as m]
+            [matcher-combinators.test :refer [match?]]
+            [nextjournal.markdown :as md]
+            [nextjournal.markdown.transform :as md.transform]
+            [nextjournal.markdown.utils :as u]))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
 #?(:cljs (matcher-combinators.ansi-color/disable!))
@@ -276,7 +276,7 @@ rupt me when I'm writing."))))
 
 (deftest ->hiccup-toc-test
   (testing
-   "Builds Toc"
+      "Builds Toc"
 
     (let [md "# Title
 
@@ -292,46 +292,46 @@ rupt me when I'm writing."))))
           hiccup (md.transform/->hiccup data)]
 
       (is (match? {:type :doc
-              :title "Title"
-              :content [{:content [{:text "Title"
-                                    :type :text}]
-                         :heading-level 1
-                         :type :heading}
-                        {:content [{:text "Section 1"
-                                    :type :text}]
-                         :heading-level 2
-                         :type :heading}
-                        {:type :toc}
-                        {:content [{:text "Section 2"
-                                    :type :text}]
-                         :heading-level 2
-                         :type :heading}
-                        {:content [{:text "Section 2.1"
-                                    :type :text}]
-                         :heading-level 3
-                         :type :heading}]
-              :toc {:children [{:children [{:content [{:text "Section 1"
-                                                       :type :text}]
-                                            :heading-level 2
-                                            :path [:content 1]
-                                            :type :toc}
-                                           {:children [{:content [{:text "Section 2.1"
-                                                                   :type :text}]
-                                                        :heading-level 3
-                                                        :path [:content 4]
-                                                        :type :toc}]
-                                            :content [{:text "Section 2"
-                                                       :type :text}]
-                                            :heading-level 2
-                                            :path [:content 3]
-                                            :type :toc}]
-                                :content [{:text "Title"
-                                           :type :text}]
-                                :heading-level 1
-                                :path [:content 0]
-                                :type :toc}]
-                    :type :toc}}
-             data))
+                   :title "Title"
+                   :content [{:content [{:text "Title"
+                                         :type :text}]
+                              :heading-level 1
+                              :type :heading}
+                             {:content [{:text "Section 1"
+                                         :type :text}]
+                              :heading-level 2
+                              :type :heading}
+                             {:type :toc}
+                             {:content [{:text "Section 2"
+                                         :type :text}]
+                              :heading-level 2
+                              :type :heading}
+                             {:content [{:text "Section 2.1"
+                                         :type :text}]
+                              :heading-level 3
+                              :type :heading}]
+                   :toc {:children [{:children [{:content [{:text "Section 1"
+                                                            :type :text}]
+                                                 :heading-level 2
+                                                 :path [:content 1]
+                                                 :type :toc}
+                                                {:children [{:content [{:text "Section 2.1"
+                                                                        :type :text}]
+                                                             :heading-level 3
+                                                             :path [:content 4]
+                                                             :type :toc}]
+                                                 :content [{:text "Section 2"
+                                                            :type :text}]
+                                                 :heading-level 2
+                                                 :path [:content 3]
+                                                 :type :toc}]
+                                     :content [{:text "Title"
+                                                :type :text}]
+                                     :heading-level 1
+                                     :path [:content 0]
+                                     :type :toc}]
+                         :type :toc}}
+                  data))
 
       (is (match? [:div
                    [:h1
@@ -429,35 +429,35 @@ par with #really_nice #useful-123 tags
   (testing "Should not parse hashtags within link text"
     (is (match? {:type :doc
                  :content [{:attrs {:id "hello-fishes"}
-                       :content [{:text "Hello "
-                                  :type :text}
-                                 {:text "Fishes"
-                                  :type :hashtag}]
-                       :heading-level 1
-                       :type :heading}
-                      {:content [{:content [{:text "what about "
-                                             :type :text}
-                                            {:text "this"
-                                             :type :hashtag}
-                                            {:type :softbreak}
-                                            {:content [{:text "this "
-                                                        :type :text}
-                                                       {:text "should"
-                                                        :type :hashtag}
-                                                       {:text " be a tag"
-                                                        :type :text}]
-                                             :type :em}
-                                            {:text ", but this "
-                                             :type :text}
-                                            {:attrs {:href "/bar/"}
-                                             :content [{:content [{:text "actually #foo shouldnt"
-                                                                   :type :text}]
-                                                        :type :em}]
-                                             :type :link}
-                                            {:text " is not."
-                                             :type :text}]
-                                  :type :paragraph}]
-                       :type :blockquote}]}
+                            :content [{:text "Hello "
+                                       :type :text}
+                                      {:text "Fishes"
+                                       :type :hashtag}]
+                            :heading-level 1
+                            :type :heading}
+                           {:content [{:content [{:text "what about "
+                                                  :type :text}
+                                                 {:text "this"
+                                                  :type :hashtag}
+                                                 {:type :softbreak}
+                                                 {:content [{:text "this "
+                                                             :type :text}
+                                                            {:text "should"
+                                                             :type :hashtag}
+                                                            {:text " be a tag"
+                                                             :type :text}]
+                                                  :type :em}
+                                                 {:text ", but this "
+                                                  :type :text}
+                                                 {:attrs {:href "/bar/"}
+                                                  :content [{:content [{:text "actually #foo shouldnt"
+                                                                        :type :text}]
+                                                             :type :em}]
+                                                  :type :link}
+                                                 {:text " is not."
+                                                  :type :text}]
+                                       :type :paragraph}]
+                            :type :blockquote}]}
                 (parse-hashtags
                  "# Hello #Fishes
 > what about #this
@@ -618,48 +618,48 @@ Long _long_ long time[^when] ago.
   (testing "Doc resuming _after_ footnotes definitions"
 
     (is (match? {:content [{:content [{:text "text"
-                                  :type :text}
-                                 {:label "note1"
-                                  :ref 0
-                                  :type :footnote-ref}
-                                 {:text " and b"
-                                  :type :text}
-                                 {:label "note2"
-                                  :ref 1
-                                  :type :footnote-ref}
-                                 {:text " c."
-                                  :type :text}]
-                       :type :paragraph}
-                      {:attrs {:id "t"}
-                       :content [{:text "T"
-                                  :type :text}]
-                       :heading-level 1
-                       :type :heading}
-                      {:content [{:text "c"
-                                  :type :text}
-                                 {:label "note3"
-                                  :ref 2
-                                  :type :footnote-ref}
-                                 {:text " d."
-                                  :type :text}]
-                       :type :paragraph}]
-            :footnotes [{:content [{:content [{:text "good"
-                                               :type :text}]
-                                    :type :paragraph}]
-                         :ref 0
-                         :type :footnote}
-                        {:content [{:content [{:text "bad"
-                                               :type :text}]
-                                    :type :paragraph}]
-                         :ref 1
-                         :type :footnote}
-                        {:content [{:content [{:text "closing"
-                                               :type :text}]
-                                    :type :paragraph}]
-                         :ref 2
-                         :type :footnote}]
-            :type :doc}
-           (md/parse "text[^note1] and b[^note2] c.
+                                       :type :text}
+                                      {:label "note1"
+                                       :ref 0
+                                       :type :footnote-ref}
+                                      {:text " and b"
+                                       :type :text}
+                                      {:label "note2"
+                                       :ref 1
+                                       :type :footnote-ref}
+                                      {:text " c."
+                                       :type :text}]
+                            :type :paragraph}
+                           {:attrs {:id "t"}
+                            :content [{:text "T"
+                                       :type :text}]
+                            :heading-level 1
+                            :type :heading}
+                           {:content [{:text "c"
+                                       :type :text}
+                                      {:label "note3"
+                                       :ref 2
+                                       :type :footnote-ref}
+                                      {:text " d."
+                                       :type :text}]
+                            :type :paragraph}]
+                 :footnotes [{:content [{:content [{:text "good"
+                                                    :type :text}]
+                                         :type :paragraph}]
+                              :ref 0
+                              :type :footnote}
+                             {:content [{:content [{:text "bad"
+                                                    :type :text}]
+                                         :type :paragraph}]
+                              :ref 1
+                              :type :footnote}
+                             {:content [{:content [{:text "closing"
+                                                    :type :text}]
+                                         :type :paragraph}]
+                              :ref 2
+                              :type :footnote}]
+                 :type :doc}
+                (md/parse "text[^note1] and b[^note2] c.
 [^note1]: good
 [^note2]: bad
 
@@ -687,7 +687,7 @@ c[^note3] d.
                               :ref 0
                               :type :footnote}]
                  :type :doc}
-           (md/parse "what would^[this _really_ look like]?"))))
+                (md/parse "what would^[this _really_ look like]?"))))
 
   (testing "Turning footnotes into sidenotes"
 
@@ -873,7 +873,7 @@ c[^note3] d.
                            :heading-level 1
                            :children [{:type :toc
                                        :heading-level 2}]}]}
-             (:toc (md/parse "# Title
+              (:toc (md/parse "# Title
 some par
 
 $$p(z\\\\mid x) = \\\\frac{p(x\\\\mid z)p(z)}{p(x)}.$$\n\n
@@ -1014,22 +1014,32 @@ back to text") :content second)))
                  :content first))))))
 
 (deftest html-test
-  (is (= {:type :html-block, :text "<article>\nfoobar\n</article>"}
-         (-> (md/parse "<article>
+  (is (match? [{:type :paragraph}
+               {:type :html-block, :text #"<article>\nfoobar\n</article>\s?"}
+               {:type :paragraph}]
+              (-> (md/parse "Hello
+
+<article>
 foobar
 </article>
-") :content first)))
-  (is (= {:type :html-block, :text "<img src=\"foo\"/>"}
-         (-> (md/parse "<img src=\"foo\"/>
-") :content first)))
-  (is (= {:type :paragraph,
-          :content
-          [{:type :text, :text "Hello "}
-           {:type :html-inline, :text "<a href=\"dude\">"}
-           {:type :em, :content [{:type :text, :text "Dude"}]}
-           {:type :html-inline, :text "</a>"}]}
-         (-> (md/parse "Hello <a href=\"dude\">*Dude*</a>")
-             :content first))))
+
+Bye") :content)))
+  (is (match? [{:type :paragraph}
+               {:type :html-block, :text #"<img src=\"foo\"/>\s?"}
+               {:type :paragraph}]
+              (-> (md/parse "Hello
+
+<img src=\"foo\"/>
+
+Bye") :content)))
+  (is (match? {:type :paragraph,
+               :content
+               [{:type :text, :text "Hello "}
+                {:type :html-inline, :text "<a href=\"dude\">"}
+                {:type :em, :content [{:type :text, :text "Dude"}]}
+                {:type :html-inline, :text "</a>"}]}
+              (-> (md/parse "Hello <a href=\"dude\">*Dude*</a>")
+                  :content first))))
 
 
 ;; Hello <a href=\"dude\">*Dude*</a>

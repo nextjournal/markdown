@@ -2,11 +2,12 @@
 
 ## Unreleased
 
-* Hiccup JVM compatibiltiy for fragments (see [#34](https://github.com/nextjournal/markdown/issues/34))
+* Hiccup JVM compatibility for fragments (see [#34](https://github.com/nextjournal/markdown/issues/34))
+* Support HTML blocks and inline HTML (see [#7](https://github.com/nextjournal/markdown/issues/7))
 
 ## 0.6.157
 
-* Swap out GraalJS ([#28](https://github.com/nextjournal/markdown/issues/28)) in favour of [commonmark-java](https://github.com/markdown-it/markdown-it) on the JVM side.
+* Swap out GraalJS ([#28](https://github.com/nextjournal/markdown/issues/28)) in favour of [commonmark-java](https://github.com/commonmark/commonmark-java) on the JVM side.
   This makes the library compatible with Java 22 and yields an approximate speedup of 10x. The clojurescript implementation stays the same.
 * Comply with commonmark rendering of images by default (see [#18](https://github.com/nextjournal/markdown/issues/18)).
 

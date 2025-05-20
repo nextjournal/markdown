@@ -1,8 +1,8 @@
 ;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
   (:require [clojure.zip :as z]
-            [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.impl.extensions :as extensions]
+            [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.utils :as u])
   (:import (org.commonmark.ext.autolink AutolinkExtension)
            (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
@@ -29,7 +29,9 @@
                                 ThematicBreak
                                 SoftLineBreak
                                 HardLineBreak
-                                Image)
+                                HtmlInline
+                                Image
+                                HtmlBlock)
            (org.commonmark.parser Parser)))
 
 (set! *warn-on-reflection* true)
@@ -102,7 +104,17 @@
 (defmethod close-node Heading [ctx ^Heading _node]
   (u/handle-close-heading ctx))
 
-(defmethod open-node BulletList [ctx ^ListBlock node]
+(defmethod open-node HtmlInline [ctx ^HtmlInline node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :html-inline
+                                                         :content [{:type :text
+                                                                    :text (.getLiteral node)}]}))))
+
+(defmethod open-node HtmlBlock [ctx ^HtmlBlock node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :html-block
+                                                         :content [{:type :text
+                                                                    :text (.getLiteral node)}]}))))
+
+(defmethod open-node BulletList [ctx ^ListBlock _node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :bullet-list :content [] #_#_:tight? (.isTight node)}))))
 
 (defmethod open-node OrderedList [ctx _node]

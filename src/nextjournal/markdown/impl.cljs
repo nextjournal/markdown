@@ -244,9 +244,13 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (defmethod apply-token "link_close" [doc _token] (close-node doc))
 (defmethod apply-token "code_inline" [doc {text :content}] (-> doc (open-node :monospace) (push-node (text-node text)) close-node))
 
-;; html (ignored)
-(defmethod apply-token "html_inline" [doc _] doc)
-(defmethod apply-token "html_block" [doc _] doc)
+;; html
+(defmethod apply-token "html_inline" [doc token]
+  (-> doc (u/update-current-loc z/append-child {:type :html-inline :content [(text-node (j/get token :content))]})))
+
+(defmethod apply-token "html_block" [doc token]
+  (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (j/get token :content))]})))
+
 ;; endregion
 
 ;; region data builder api

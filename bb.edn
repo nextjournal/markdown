@@ -112,6 +112,11 @@
                (println "Building jar")
                (clojure (str "-T:build jar :version '\"" (read-version) "\"'")))}
 
+  install {:doc "Install jar locally"
+           :task (do
+                   (println "Installing locally")
+                   (clojure (str "-T:build install :version '\"" (read-version) "\"'")))}
+
   ci:publish {:doc "Publish task which will be run on CI"
               :depends [-current-tag -current-branch]
               :task (do

@@ -45,8 +45,12 @@
 
 (defn ->hiccup
   "Turns a markdown string into hiccup."
-  ([markdown-text] (->hiccup markdown.transform/default-hiccup-renderers markdown-text))
-  ([ctx markdown-text] (->> markdown-text parse (markdown.transform/->hiccup ctx))))
+  ([markdown] (->hiccup markdown.transform/default-hiccup-renderers markdown))
+  ([ctx markdown]
+   (let [parsed (if (string? markdown)
+                  (parse markdown)
+                  markdown)]
+     (markdown.transform/->hiccup ctx parsed))))
 
 (comment
   (parse "# 🎱 Hello")

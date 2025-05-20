@@ -212,7 +212,10 @@ $$\\int_a^bf(t)dt$$
            [:li
             [:p
              "two"]]]]
-         (md/->hiccup markdown-text)))))
+         (md/->hiccup markdown-text))))
+  (testing "-:hiccup function accepts parsed and string"
+    (is (= [:div [:h1 {:id "hello"} "Hello"]] (md/->hiccup (md/parse "# Hello"))))
+    (is (= [:div [:h1 {:id "hello"} "Hello"]] (md/->hiccup "# Hello")))))
 
 (deftest strikethrough-test
   (testing "single tilde")
@@ -1075,7 +1078,6 @@ Bye") :content)))
 line
 
 link</a>")))))))
-
 
 ;; Hello <a href=\"dude\">*Dude*</a>
 

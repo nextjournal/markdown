@@ -7,6 +7,7 @@
 * Bump commonmark to 0.24.0
 * Bump markdown-it to 14.1.0
 * Render `:code` according to spec into `<pre>` and `<code>` block with language class (see [#39](https://github.com/nextjournal/markdown/issues/39))
+* No longer depend on `applied-science/js-interop`
 
 ## 0.6.157
 

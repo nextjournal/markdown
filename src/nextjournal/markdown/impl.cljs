@@ -1,7 +1,6 @@
 ;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
   (:require ["/js/markdown" :as md]
-            [applied-science.js-interop :as j]
             [clojure.zip :as z]
             [nextjournal.markdown.utils :as u]))
 
@@ -123,15 +122,15 @@
 
 (defn footnote-label [{:as _ctx ::keys [footnote-offset]} token]
   ;; TODO: consider initial offset in case we're parsing multiple inputs
-  (or (j/get-in token [:meta :label])
+  (or (.. token -meta -label)
       ;; inline labels won't have a label
-      (str "inline-note-" (+ footnote-offset (j/get-in token [:meta :id])))))
+      (str "inline-note-" (+ footnote-offset (.. token -meta -id)))))
 
 ;; footnotes
 (defmethod apply-token "footnote_ref" [{:as ctx ::keys [label->footnote-ref]} token]
   (let [label (footnote-label ctx token)
         footnote-ref (or (get label->footnote-ref label)
-                         {:type :footnote-ref :inline? (not (j/get-in token [:meta :label]))
+                         {:type :footnote-ref :inline? (not (.. token -meta -label))
                           :ref (count label->footnote-ref)  ;; was (+ (count footnotes) (j/get-in token [:meta :id])) ???
                           :label label})]
     (-> ctx
@@ -144,7 +143,7 @@
     (-> ctx
         (u/update-current-loc (fn [loc]
                                 (u/zopen-node loc {:type :footnote
-                                                   :inline? (not (j/get-in token [:meta :label]))
+                                                   :inline? (not (.. token -meta -label))
                                                    :label label}))))))
 
 ;; inline footnotes^[like this one]
@@ -252,24 +251,26 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 
 ;; html
 (defmethod apply-token "html_inline" [doc token]
-  (-> doc (u/update-current-loc z/append-child {:type :html-inline :content [(text-node (j/get token :content))]})))
+  (-> doc (u/update-current-loc z/append-child {:type :html-inline :content [(text-node (.-content token))]})))
 
 (defmethod apply-token "html_block" [doc token]
-  (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (j/get token :content))]})))
+  (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (.-content token))]})))
 
 ;; html
 (defmethod apply-token "html_inline" [doc token]
-  (-> doc (u/update-current-loc z/append-child {:type :html-inline :content [(text-node (j/get token :content))]})))
+  (-> doc (u/update-current-loc z/append-child {:type :html-inline :content [(text-node (.-content token))]})))
 
 (defmethod apply-token "html_block" [doc token]
-  (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (j/get token :content))]})))
+  (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (.-content token))]})))
 
 ;; endregion
 
 ;; region data builder api
 (defn pairs->kmap [pairs] (into {} (map (juxt (comp keyword first) second)) pairs))
 (defn apply-tokens [doc tokens]
-  (let [mapify-attrs-xf (map (fn [x] (j/update! x :attrs pairs->kmap)))]
+  (let [mapify-attrs-xf (map (fn [x]
+                               (set! x -attrs (pairs->kmap (.-attrs x)))
+                               x))]
     (reduce (mapify-attrs-xf apply-token) doc tokens)))
 
 (defn parse

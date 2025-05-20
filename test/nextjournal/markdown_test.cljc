@@ -43,6 +43,10 @@ some **strong** _assertion_ and a [link] and a $\\pi$ formula
 (+ 1 2 3)
 ```
 
+```
+no language
+```
+
 $$\\int_a^bf(t)dt$$
 
 * one
@@ -69,61 +73,64 @@ $$\\int_a^bf(t)dt$$
 
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"
-    (is (= {:type :doc
-            :footnotes []
-            :title "🎱 Hello"
-            :content [{:content [{:text "🎱 Hello"
-                                  :type :text}]
-                       :heading-level 1
-                       :attrs {:id "hello"}
-                       :emoji "🎱"
-                       :type :heading}
-                      {:content [{:text "some "
-                                  :type :text}
-                                 {:content [{:text "strong"
-                                             :type :text}]
-                                  :type :strong}
-                                 {:text " "
-                                  :type :text}
-                                 {:content [{:text "assertion"
-                                             :type :text}]
-                                  :type :em}
-                                 {:text " and a "
-                                  :type :text}
-                                 {:attrs {:href "/path/to/something"}
-                                  :content [{:text "link"
-                                             :type :text}]
-                                  :type :link}
-                                 {:text " and a "
-                                  :type :text}
-                                 {:text "\\pi"
-                                  :type :formula}
-                                 {:text " formula"
-                                  :type :text}]
-                       :type :paragraph}
-                      {:content [{:text "(+ 1 2 3)\n" :type :text}]
-                       :info "clojure"
-                       :language "clojure"
-                       :type :code}
-                      {:text "\\int_a^bf(t)dt"
-                       :type :block-formula}
-                      {:content [{:content [{:content [{:text "one"
-                                                        :type :text}]
-                                             :type :paragraph}]
-                                  :type :list-item}
-                                 {:content [{:content [{:text "two"
-                                                        :type :text}]
-                                             :type :paragraph}]
-                                  :type :list-item}]
-                       :type :bullet-list}]
-            :toc {:type :toc
-                  :children [{:type :toc
-                              :content [{:type :text, :text "🎱 Hello"}]
-                              :heading-level 1
-                              :attrs {:id "hello"}
-                              :emoji "🎱"
-                              :path [:content 0]}]}}
-           (md/parse markdown-text))))
+    (is (match?
+         {:type :doc
+          :footnotes []
+          :title "🎱 Hello"
+          :content [{:content [{:text "🎱 Hello"
+                                :type :text}]
+                     :heading-level 1
+                     :attrs {:id "hello"}
+                     :emoji "🎱"
+                     :type :heading}
+                    {:content [{:text "some "
+                                :type :text}
+                               {:content [{:text "strong"
+                                           :type :text}]
+                                :type :strong}
+                               {:text " "
+                                :type :text}
+                               {:content [{:text "assertion"
+                                           :type :text}]
+                                :type :em}
+                               {:text " and a "
+                                :type :text}
+                               {:attrs {:href "/path/to/something"}
+                                :content [{:text "link"
+                                           :type :text}]
+                                :type :link}
+                               {:text " and a "
+                                :type :text}
+                               {:text "\\pi"
+                                :type :formula}
+                               {:text " formula"
+                                :type :text}]
+                     :type :paragraph}
+                    {:content [{:text "(+ 1 2 3)\n" :type :text}]
+                     :info "clojure"
+                     :language "clojure"
+                     :type :code}
+                    {:content [{:text "no language\n" :type :text}]
+                     :type :code}
+                    {:text "\\int_a^bf(t)dt"
+                     :type :block-formula}
+                    {:content [{:content [{:content [{:text "one"
+                                                      :type :text}]
+                                           :type :paragraph}]
+                                :type :list-item}
+                               {:content [{:content [{:text "two"
+                                                      :type :text}]
+                                           :type :paragraph}]
+                                :type :list-item}]
+                     :type :bullet-list}]
+          :toc {:type :toc
+                :children [{:type :toc
+                            :content [{:type :text, :text "🎱 Hello"}]
+                            :heading-level 1
+                            :attrs {:id "hello"}
+                            :emoji "🎱"
+                            :path [:content 0]}]}}
+         (md/parse markdown-text))))
 
   (testing "parses internal links / plays well with todo lists"
     (is (match? {:type :doc
@@ -175,34 +182,36 @@ $$\\int_a^bf(t)dt$$
 
 (deftest ->hiccup-test
   (testing "ingests markdown returns hiccup"
-    (is (= [:div
-            [:h1 {:id "hello"} "🎱 Hello"]
+    (is (match?
+         [:div
+          [:h1 {:id "hello"} "🎱 Hello"]
+          [:p
+           "some "
+           [:strong
+            "strong"]
+           " "
+           [:em
+            "assertion"]
+           " and a "
+           [:a
+            {:href "/path/to/something"}
+            "link"]
+           " and a "
+           [:span.formula
+            "\\pi"]
+           " formula"]
+          [:pre [:code.language-clojure "(+ 1 2 3)\n"]]
+          [:pre [:code "no language\n"]]
+          [:figure.formula
+           "\\int_a^bf(t)dt"]
+          [:ul
+           [:li
             [:p
-             "some "
-             [:strong
-              "strong"]
-             " "
-             [:em
-              "assertion"]
-             " and a "
-             [:a
-              {:href "/path/to/something"}
-              "link"]
-             " and a "
-             [:span.formula
-              "\\pi"]
-             " formula"]
-            [:pre.viewer-code.not-prose "(+ 1 2 3)\n"]
-            [:figure.formula
-             "\\int_a^bf(t)dt"]
-            [:ul
-             [:li
-              [:p
-               "one"]]
-             [:li
-              [:p
-               "two"]]]]
-           (md/->hiccup markdown-text)))))
+             "one"]]
+           [:li
+            [:p
+             "two"]]]]
+         (md/->hiccup markdown-text)))))
 
 (deftest strikethrough-test
   (testing "single tilde")

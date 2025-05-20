@@ -83,7 +83,12 @@ a paragraph
                 img-markup)))
 
    ;; code
-   :code (partial into-markup [:pre.viewer-code.not-prose])
+   :code (fn [_ {:keys [language] :as m}]
+           [:pre
+            [(if language
+               (keyword (str "code.language-" language))
+               :code)
+             (-> m :content first :text)]])
 
    ;; breaks
    :softbreak (constantly " ")

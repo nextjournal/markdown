@@ -1,6 +1,6 @@
 (ns nextjournal.markdown-test
   (:require [clojure.test :as t :refer [deftest testing is]]
-            [hiccup2.core :as hiccup]
+            #?(:clj [hiccup2.core :as hiccup])
             [matcher-combinators.ansi-color]
             [matcher-combinators.matchers :as m]
             [matcher-combinators.test :refer [match?]]
@@ -174,35 +174,35 @@ $$\\int_a^bf(t)dt$$
 - [ ] pending")))))
 
 (deftest ->hiccup-test
-  "ingests markdown returns hiccup"
-  (is (= [:div
-          [:h1 {:id "hello"} "🎱 Hello"]
-          [:p
-           "some "
-           [:strong
-            "strong"]
-           " "
-           [:em
-            "assertion"]
-           " and a "
-           [:a
-            {:href "/path/to/something"}
-            "link"]
-           " and a "
-           [:span.formula
-            "\\pi"]
-           " formula"]
-          [:pre.viewer-code.not-prose "(+ 1 2 3)\n"]
-          [:figure.formula
-           "\\int_a^bf(t)dt"]
-          [:ul
-           [:li
+  (testing "ingests markdown returns hiccup"
+    (is (= [:div
+            [:h1 {:id "hello"} "🎱 Hello"]
             [:p
-             "one"]]
-           [:li
-            [:p
-             "two"]]]]
-         (md/->hiccup markdown-text))))
+             "some "
+             [:strong
+              "strong"]
+             " "
+             [:em
+              "assertion"]
+             " and a "
+             [:a
+              {:href "/path/to/something"}
+              "link"]
+             " and a "
+             [:span.formula
+              "\\pi"]
+             " formula"]
+            [:pre.viewer-code.not-prose "(+ 1 2 3)\n"]
+            [:figure.formula
+             "\\int_a^bf(t)dt"]
+            [:ul
+             [:li
+              [:p
+               "one"]]
+             [:li
+              [:p
+               "two"]]]]
+           (md/->hiccup markdown-text)))))
 
 (deftest strikethrough-test
   (testing "single tilde")
@@ -1016,7 +1016,8 @@ back to text") :content second)))
 
 (deftest html-test
   (is (match? [{:type :paragraph}
-               {:type :html-block, :text #"<article>\nfoobar\n</article>\s?"}
+               {:type :html-block, :content [{:type :text
+                                              :text #"<article>\nfoobar\n</article>\s?"}]}
                {:type :paragraph}]
               (-> (md/parse "Hello
 
@@ -1026,7 +1027,8 @@ foobar
 
 Bye") :content)))
   (is (match? [{:type :paragraph}
-               {:type :html-block, :text #"<img src=\"foo\"/>\s?"}
+               {:type :html-block, :content [{:type :text
+                                              :text #"<img src=\"foo\"/>\s?"}]}
                {:type :paragraph}]
               (-> (md/parse "Hello
 
@@ -1036,31 +1038,33 @@ Bye") :content)))
   (is (match? {:type :paragraph,
                :content
                [{:type :text, :text "Hello "}
-                {:type :html-inline, :text "<a href=\"dude\">"}
+                {:type :html-inline, :content [{:text "<a href=\"dude\">"}]}
                 {:type :em, :content [{:type :text, :text "Dude"}]}
-                {:type :html-inline, :text "</a>"}]}
+                {:type :html-inline, :content [{:text "</a>"}]}]}
               (-> (md/parse "Hello <a href=\"dude\">*Dude*</a>")
                   :content first)))
-  (is (= "<div><p>Hello <a href=\"dude\"><em>Dude</em></a></p></div>"
-         (str (hiccup/html (md/->hiccup
-                            (assoc md.transform/default-hiccup-renderers
-                                   :html-inline (fn [_ {:keys [text]}]
-                                                  (hiccup/raw text))
-                                   :html-block (fn [_ {:keys [text]}]
-                                                 (hiccup/raw text)))
-                            "Hello <a href=\"dude\">*Dude*</a>")))))
-  (is (= "<div><p>Hello <a href=\"dude\">multi</p><p>line</p><p>link</a></p></div>"
-         (str (hiccup/html (md/->hiccup
-                            (assoc md.transform/default-hiccup-renderers
-                                   :html-inline (fn [_ {:keys [text]}]
-                                                  (hiccup/raw text))
-                                   :html-block (fn [_ {:keys [text]}]
-                                                 (hiccup/raw text)))
-                            "Hello <a href=\"dude\">multi
+  #?(:clj
+     (is (= "<div><p>Hello <a href=\"dude\"><em>Dude</em></a></p></div>"
+            (str (hiccup/html (md/->hiccup
+                               (assoc md.transform/default-hiccup-renderers
+                                      :html-inline (fn [_ m]
+                                                     (hiccup/raw (-> m :content first :text)))
+                                      :html-block (fn [_ m]
+                                                    (hiccup/raw (-> m :content first :text))))
+                               "Hello <a href=\"dude\">*Dude*</a>"))))))
+  #?(:clj
+     (is (= "<div><p>Hello <a href=\"dude\">multi</p><p>line</p><p>link</a></p></div>"
+            (str (hiccup/html (md/->hiccup
+                               (assoc md.transform/default-hiccup-renderers
+                                      :html-inline (fn [_ m]
+                                                     (hiccup/raw (-> m :content first :text)))
+                                      :html-block (fn [_ m]
+                                                    (hiccup/raw (-> m :content first :text))))
+                               "Hello <a href=\"dude\">multi
 
 line
 
-link</a>"))))))
+link</a>")))))))
 
 
 ;; Hello <a href=\"dude\">*Dude*</a>

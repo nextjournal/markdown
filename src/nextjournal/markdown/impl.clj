@@ -106,11 +106,13 @@
 
 (defmethod open-node HtmlInline [ctx ^HtmlInline node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :html-inline
-                                                         :text (.getLiteral node)}))))
+                                                         :content [{:type :text
+                                                                    :text (.getLiteral node)}]}))))
 
 (defmethod open-node HtmlBlock [ctx ^HtmlBlock node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :html-block
-                                                         :text (.getLiteral node)}))))
+                                                         :content [{:type :text
+                                                                    :text (.getLiteral node)}]}))))
 
 (defmethod open-node BulletList [ctx ^ListBlock _node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :bullet-list :content [] #_#_:tight? (.isTight node)}))))

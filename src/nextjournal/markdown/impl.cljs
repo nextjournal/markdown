@@ -246,10 +246,10 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 
 ;; html
 (defmethod apply-token "html_inline" [doc token]
-  (-> doc (u/update-current-loc z/append-child {:type :html-inline :text (j/get token :content)})))
+  (-> doc (u/update-current-loc z/append-child {:type :html-inline :content [(text-node (j/get token :content))]})))
 
 (defmethod apply-token "html_block" [doc token]
-  (-> doc (u/update-current-loc z/append-child {:type :html-block :text (j/get token :content)})))
+  (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (j/get token :content))]})))
 
 ;; endregion
 

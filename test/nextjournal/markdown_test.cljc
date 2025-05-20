@@ -200,6 +200,7 @@ $$\\int_a^bf(t)dt$$
            [:span.formula
             "\\pi"]
            " formula"]
+          ;; see https://spec.commonmark.org/0.31.2/#example-142
           [:pre [:code.language-clojure "(+ 1 2 3)\n"]]
           [:pre [:code "no language\n"]]
           [:figure.formula

@@ -1,6 +1,5 @@
 {:paths ["src" "resources"]
- :deps {applied-science/js-interop {:mvn/version "0.3.3"}
-        org.commonmark/commonmark {:mvn/version "0.24.0"}
+ :deps {org.commonmark/commonmark {:mvn/version "0.24.0"}
         org.commonmark/commonmark-ext-autolink {:mvn/version "0.24.0"}
         org.commonmark/commonmark-ext-footnotes {:mvn/version "0.24.0"}
         org.commonmark/commonmark-ext-task-list-items {:mvn/version "0.24.0"}
@@ -10,7 +9,7 @@
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks" "dev"]
-   :extra-deps {io.github.nextjournal/clerk {:git/sha "f4c5488e36c8df11fe352889544e7deb9af73cb7"
+   :extra-deps {io.github.nextjournal/clerk {:mvn/version "0.17.1102"
                                              :exclusions [io.github.nextjournal/markdown]}}
    :jvm-opts ["-Dclojure.main.report=stderr"
               #_"-Dclerk.resource_manifest={\"/js/viewer.js\" \"js/viewer.js\"}"] ;;
@@ -30,7 +29,8 @@
 
   :dev
   {:extra-paths ["dev" "notebooks"]
-   :extra-deps {org.babashka/http-client {:mvn/version "0.3.11"}
+   :extra-deps {applied-science/js-interop {:mvn/version "0.3.3"}
+                org.babashka/http-client {:mvn/version "0.3.11"}
                 org.clojure/data.json {:mvn/version "2.4.0"}
                 org.clojure/test.check {:mvn/version "1.1.1"}
                 io.github.nextjournal/clerk {:git/sha "f4c5488e36c8df11fe352889544e7deb9af73cb7"

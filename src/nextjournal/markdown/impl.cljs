@@ -1,20 +1,13 @@
 ;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
   (:require ["/js/markdown" :as md]
-            ["markdown-it/lib/token" :as Token]
             [applied-science.js-interop :as j]
             [clojure.zip :as z]
             [nextjournal.markdown.utils :as u]))
 
-(extend-type Token
-  ILookup
-  (-lookup
-    ([this key] (j/get this key))
-    ([this key not-found]
-     (js/console.log :ilookup/not-found this key not-found)
-     (j/get this key not-found))))
-
-(defn hlevel [{:as _token hn :tag}] (when (string? hn) (some-> (re-matches #"h([\d])" hn) second js/parseInt)))
+(defn hlevel [^js token]
+  (let [hn (.-tag token)]
+    (when (string? hn) (some-> (re-matches #"h([\d])" hn) second js/parseInt))))
 
 ;; leaf nodes
 ;; TODO: use from utils
@@ -62,7 +55,7 @@
 
 ;; region token handlers
 (declare apply-tokens)
-(defmulti apply-token (fn [_doc token] (:type token)))
+(defmulti apply-token (fn [_doc ^js token] (.-type token)))
 (defmethod apply-token :default [doc token]
   (prn :apply-token/unknown-type {:token token})
   doc)
@@ -74,23 +67,30 @@
 
 ;; for building the TOC we just care about headings at document top level (not e.g. nested under lists) ⬆
 
-(defmethod apply-token "paragraph_open" [doc {:as _token :keys [hidden]}]
+(defmethod apply-token "paragraph_open" [doc ^js token]
   ;; no trace of tight vs loose on list nodes
   ;; markdown-it passes this info directly to paragraphs via this `hidden` key
-  (open-node doc (if hidden :plain :paragraph)))
+  (open-node doc (if (.-hidden token) :plain :paragraph)))
 
 (defmethod apply-token "paragraph_close" [doc _token] (close-node doc))
 
-(defmethod apply-token "bullet_list_open" [doc {{:as attrs :keys [has-todos]} :attrs}] (open-node doc (if has-todos :todo-list :bullet-list) attrs))
+(defmethod apply-token "bullet_list_open" [doc ^js token]
+  (let [attrs (.-attrs token)
+        has-todos (:has-todos attrs)]
+    (open-node doc (if has-todos :todo-list :bullet-list) attrs)))
+
 (defmethod apply-token "bullet_list_close" [doc _token] (close-node doc))
 
-(defmethod apply-token "ordered_list_open" [doc {:keys [attrs]}] (open-node doc :numbered-list attrs))
+(defmethod apply-token "ordered_list_open" [doc ^js token] (open-node doc :numbered-list (.-attrs token)))
 (defmethod apply-token "ordered_list_close" [doc _token] (close-node doc))
 
-(defmethod apply-token "list_item_open" [doc {{:as attrs :keys [todo]} :attrs}] (open-node doc (if todo :todo-item :list-item) attrs))
+(defmethod apply-token "list_item_open" [doc ^js token]
+  (let [attrs (.-attrs token)
+        todo (:todo attrs)]
+    (open-node doc (if todo :todo-item :list-item) attrs)))
 (defmethod apply-token "list_item_close" [doc _token] (close-node doc))
 
-(defmethod apply-token "math_block" [doc {text :content}] (push-node doc (block-formula text)))
+(defmethod apply-token "math_block" [doc ^js token] (push-node doc (block-formula (.-content token))))
 (defmethod apply-token "math_block_end" [doc _token] doc)
 
 (defmethod apply-token "hr" [doc _token] (push-node doc {:type :ruler}))
@@ -106,17 +106,20 @@
        (fn [loc]
          (-> loc (z/edit dissoc :content) z/up)))))
 
-(defmethod apply-token "code_block" [doc {:as _token c :content}]
-  (-> doc
-      (open-node :code)
-      (push-node (text-node c))
-      close-node))
+(defmethod apply-token "code_block" [doc ^js token]
+  (let [c (.-content token)]
+    (-> doc
+        (open-node :code)
+        (push-node (text-node c))
+        close-node)))
 
-(defmethod apply-token "fence" [doc {:as _token i :info c :content}]
-  (-> doc
-      (open-node :code {} (assoc (u/parse-fence-info i) :info i))
-      (push-node (text-node c))
-      close-node))
+(defmethod apply-token "fence" [doc ^js token]
+  (let [c (.-content token)
+        i (.-info token)]
+    (-> doc
+        (open-node :code {} (assoc (u/parse-fence-info i) :info i))
+        (push-node (text-node c))
+        close-node)))
 
 (defn footnote-label [{:as _ctx ::keys [footnote-offset]} token]
   ;; TODO: consider initial offset in case we're parsing multiple inputs
@@ -148,7 +151,7 @@
 (defmethod apply-token "footnote_close" [ctx _token]
   (-> ctx (u/update-current-loc z/up)))
 
-(defmethod apply-token "footnote_block_open" [ctx token]
+(defmethod apply-token "footnote_block_open" [ctx _token]
   ;; store footnotes at a top level `:footnote` key
   (assoc ctx ::root :footnotes))
 
@@ -183,11 +186,11 @@
 (defmethod apply-token "thead_close" [doc _token] (close-node doc))
 (defmethod apply-token "tr_open" [doc _token] (open-node doc :table-row))
 (defmethod apply-token "tr_close" [doc _token] (close-node doc))
-(defmethod apply-token "th_open" [doc token] (open-node doc :table-header (:attrs token)))
+(defmethod apply-token "th_open" [doc ^js token] (open-node doc :table-header (.-attrs token)))
 (defmethod apply-token "th_close" [doc _token] (close-node doc))
 (defmethod apply-token "tbody_open" [doc _token] (open-node doc :table-body))
 (defmethod apply-token "tbody_close" [doc _token] (close-node doc))
-(defmethod apply-token "td_open" [doc token] (open-node doc :table-data (:attrs token)))
+(defmethod apply-token "td_open" [doc ^js token] (open-node doc :table-data (.-attrs token)))
 (defmethod apply-token "td_close" [doc _token] (close-node doc))
 
 (comment
@@ -211,8 +214,8 @@
 _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
        (parse (update empty-doc :text-tokenizers conj (u/normalize-tokenizer u/hashtag-tokenizer)))))
 
-(defmethod apply-token "text" [ctx {:keys [content]}]
-  (u/handle-text-token ctx content))
+(defmethod apply-token "text" [ctx ^js token]
+  (u/handle-text-token ctx (.-content token)))
 
 (comment
   (def mustache (u/normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}" :handler (fn [m] {:type :eval :text (m 1)})}))
@@ -221,9 +224,9 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
                        "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]] and {{eval}} me"))
 
 ;; inlines
-(defmethod apply-token "inline" [doc {:as _token ts :children}] (apply-tokens doc ts))
-(defmethod apply-token "math_inline" [doc {text :content}] (push-node doc (formula text)))
-(defmethod apply-token "math_inline_double" [doc {text :content}] (push-node doc (formula text)))
+(defmethod apply-token "inline" [doc ^js token] (apply-tokens doc (.-children token)))
+(defmethod apply-token "math_inline" [doc ^js token] (push-node doc (formula (.-content token))))
+(defmethod apply-token "math_inline_double" [doc ^js token] (push-node doc (formula (.-content token))))
 
 ;; https://spec.commonmark.org/0.30/#softbreak
 (defmethod apply-token "softbreak" [doc _token] (push-node doc {:type :softbreak}))
@@ -231,7 +234,10 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (defmethod apply-token "hardbreak" [doc _token] (push-node doc {:type :hardbreak}))
 
 ;; images
-(defmethod apply-token "image" [doc {:keys [attrs children]}] (-> doc (open-node :image attrs) (apply-tokens children) close-node))
+(defmethod apply-token "image" [doc ^js token]
+  (let [attrs (.-attrs token)
+        children (.-children token)]
+    (-> doc (open-node :image attrs) (apply-tokens children) close-node)))
 
 ;; marks
 (defmethod apply-token "em_open" [doc _token] (open-node doc :em))
@@ -240,9 +246,16 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (defmethod apply-token "strong_close" [doc _token] (close-node doc))
 (defmethod apply-token "s_open" [doc _token] (open-node doc :strikethrough))
 (defmethod apply-token "s_close" [doc _token] (close-node doc))
-(defmethod apply-token "link_open" [doc token] (open-node doc :link (:attrs token)))
+(defmethod apply-token "link_open" [doc ^js token] (open-node doc :link (.-attrs token)))
 (defmethod apply-token "link_close" [doc _token] (close-node doc))
-(defmethod apply-token "code_inline" [doc {text :content}] (-> doc (open-node :monospace) (push-node (text-node text)) close-node))
+(defmethod apply-token "code_inline" [doc ^js token] (-> doc (open-node :monospace) (push-node (text-node (.-content token))) close-node))
+
+;; html
+(defmethod apply-token "html_inline" [doc token]
+  (-> doc (u/update-current-loc z/append-child {:type :html-inline :content [(text-node (j/get token :content))]})))
+
+(defmethod apply-token "html_block" [doc token]
+  (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (j/get token :content))]})))
 
 ;; html
 (defmethod apply-token "html_inline" [doc token]

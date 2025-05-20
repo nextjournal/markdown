@@ -4,6 +4,8 @@
 
 * Hiccup JVM compatibility for fragments (see [#34](https://github.com/nextjournal/markdown/issues/34))
 * Support HTML blocks and inline HTML (see [#7](https://github.com/nextjournal/markdown/issues/7))
+* Bump commonmark to 0.24.0
+* Bump markdown-it to 14.1.0
 
 ## 0.6.157
 

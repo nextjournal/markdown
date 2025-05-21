@@ -8,6 +8,7 @@
 * Bump markdown-it to 14.1.0
 * Render `:code` according to spec into `<pre>` and `<code>` block with language class (see [#39](https://github.com/nextjournal/markdown/issues/39))
 * No longer depend on `applied-science/js-interop`
+* Accept parsed result in `->hiccup` function
 
 ## 0.6.157
 

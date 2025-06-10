@@ -21,6 +21,7 @@
 (ns nextjournal.markdown.parser
   (:require [clojure.string :as str]
             [clojure.zip :as z]
+            [nextjournal.markdown :as md]
             [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.utils.emoji :as emoji]
             #?@(:cljs [[applied-science.js-interop :as j]])))
@@ -293,7 +294,7 @@ par
 #### Four
 
 end"
-     nextjournal.markdown/parse
+     md/parse
      :toc
      ))
 ;; endregion
@@ -359,7 +360,7 @@ end"
   (push-node doc (footnote-ref (+ (count footnotes) (get-in* token [:meta :id]))
                                (get-in* token [:meta :label]))))
 
-(defmethod apply-token "footnote_anchor" [doc token] doc)
+(defmethod apply-token "footnote_anchor" [doc _token] doc)
 
 (defmethod apply-token "footnote_open" [{:as doc ::keys [footnote-offset]} token]
   ;; consider an offset in case we're parsing multiple inputs into the same context
@@ -404,7 +405,7 @@ end"
    Takes and returns a parsed document. When the document has footnotes, wraps every top-level block which contains footnote references
    with a `:footnote-container` node, into each of such nodes, adds a `:sidenote-column` node containing a `:sidenote` node for each found ref.
    Renames type `:footnote-ref` to `:sidenote-ref."
-  [{:as doc ::keys [path] :keys [footnotes]}]
+  [{:as doc ::keys [_path] :keys [footnotes]}]
   (if-not (seq footnotes)
     doc
     (let [root (->zip doc)]

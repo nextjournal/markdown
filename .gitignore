@@ -15,3 +15,4 @@ target
 .shadow-cljs
 out
 notebooks/scratch
+scratch.clj

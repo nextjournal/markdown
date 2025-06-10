@@ -45,8 +45,8 @@
       (cond-> {:id (apply str (map (comp str/lower-case (fn [c] (case c (\space \_) \- c))) text'))}
         emoji (assoc :emoji emoji)))))
 
-;; TODO: move this to n.markdown ns
 (def empty-doc
+  "The empty doc"
   {:type :doc
    :content []
    :toc {:type :toc}

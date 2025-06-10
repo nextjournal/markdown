@@ -1,18 +1,14 @@
 # Table of contents
 -  [`nextjournal.markdown`](#nextjournal.markdown)  - Markdown as data.
     -  [`->hiccup`](#nextjournal.markdown/->hiccup) - Turns a markdown string into hiccup.
-    -  [`empty-doc`](#nextjournal.markdown/empty-doc)
+    -  [`empty-doc`](#nextjournal.markdown/empty-doc) - Empty document to be used with <code>parse*</code>.
     -  [`parse`](#nextjournal.markdown/parse) - Turns a markdown string into an AST of nested clojure data.
     -  [`parse*`](#nextjournal.markdown/parse*) - Turns a markdown string into an AST of nested clojure data.
 -  [`nextjournal.markdown.transform`](#nextjournal.markdown.transform)  - transform markdown data as returned by <code>nextjournal.markdown/parse</code> into other formats, currently: * hiccup.
     -  [`->hiccup`](#nextjournal.markdown.transform/->hiccup)
-    -  [`->text`](#nextjournal.markdown.transform/->text)
+    -  [`->text`](#nextjournal.markdown.transform/->text) - Convert node into text.
     -  [`default-hiccup-renderers`](#nextjournal.markdown.transform/default-hiccup-renderers)
-    -  [`guard`](#nextjournal.markdown.transform/guard)
-    -  [`heading-markup`](#nextjournal.markdown.transform/heading-markup)
-    -  [`hydrate-toc`](#nextjournal.markdown.transform/hydrate-toc) - Scans doc contents and replaces toc node placeholder with the toc node accumulated during parse.
     -  [`into-markup`](#nextjournal.markdown.transform/into-markup) - Takes a hiccup vector, a context and a node, puts node's <code>:content</code> into markup mapping through <code>-&gt;hiccup</code>.
-    -  [`table-alignment`](#nextjournal.markdown.transform/table-alignment)
     -  [`toc->hiccup`](#nextjournal.markdown.transform/toc->hiccup)
 -  [`nextjournal.markdown.utils`](#nextjournal.markdown.utils) 
     -  [`->zip`](#nextjournal.markdown.utils/->zip)
@@ -21,7 +17,7 @@
     -  [`block-formula`](#nextjournal.markdown.utils/block-formula)
     -  [`current-ancestor-nodes`](#nextjournal.markdown.utils/current-ancestor-nodes)
     -  [`current-loc`](#nextjournal.markdown.utils/current-loc)
-    -  [`empty-doc`](#nextjournal.markdown.utils/empty-doc)
+    -  [`empty-doc`](#nextjournal.markdown.utils/empty-doc) - The empty doc.
     -  [`footnote->sidenote`](#nextjournal.markdown.utils/footnote->sidenote)
     -  [`formula`](#nextjournal.markdown.utils/formula)
     -  [`handle-close-heading`](#nextjournal.markdown.utils/handle-close-heading)
@@ -71,13 +67,15 @@ Markdown as data
 Function.
 
 Turns a markdown string into hiccup.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L46-L53">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L48-L55">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/empty-doc">`empty-doc`</a>
 
 
 
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L8-L8">Source</a></sub></p>
+
+Empty document to be used with [`parse*`](#nextjournal.markdown/parse*)
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L8-L10">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/parse">`parse`</a>
 ``` clojure
@@ -92,7 +90,7 @@ Turns a markdown string into an AST of nested clojure data.
   Accept options:
     - `:text-tokenizers` to customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
   
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L20-L35">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L22-L37">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/parse*">`parse*`</a>
 ``` clojure
@@ -104,8 +102,8 @@ Function.
 
 Turns a markdown string into an AST of nested clojure data.
   Allows to parse multiple strings into the same document
-  e.g. `(-> u/empty-doc (parse* text-1) (parse* text-2))`.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L10-L18">Source</a></sub></p>
+  e.g. `(-> empty-doc (parse* text-1) (parse* text-2))`.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L12-L20">Source</a></sub></p>
 
 -----
 # <a name="nextjournal.markdown.transform">nextjournal.markdown.transform</a>
@@ -124,47 +122,24 @@ transform markdown data as returned by [`nextjournal.markdown/parse`](#nextjourn
 (->hiccup ctx {:as node, t :type})
 ```
 Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L149-L158">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L153-L162">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown.transform/->text">`->text`</a>
 ``` clojure
 
-(->text {:as _node, :keys [type text content]})
+(->text node)
+(->text ctx {:as _node, :keys [type text content]})
 ```
 Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L7-L10">Source</a></sub></p>
+
+Convert node into text
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L8-L14">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown.transform/default-hiccup-renderers">`default-hiccup-renderers`</a>
 
 
 
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L67-L147">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.transform/guard">`guard`</a>
-``` clojure
-
-(guard pred val)
-```
-Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L6-L6">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.transform/heading-markup">`heading-markup`</a>
-``` clojure
-
-(heading-markup {l :heading-level})
-```
-Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L22-L22">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.transform/hydrate-toc">`hydrate-toc`</a>
-``` clojure
-
-(hydrate-toc {:as doc, :keys [toc]})
-```
-Function.
-
-Scans doc contents and replaces toc node placeholder with the toc node accumulated during parse.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L12-L15">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L71-L151">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown.transform/into-markup">`into-markup`</a>
 ``` clojure
@@ -174,15 +149,7 @@ Scans doc contents and replaces toc node placeholder with the toc node accumulat
 Function.
 
 Takes a hiccup vector, a context and a node, puts node's `:content` into markup mapping through [`->hiccup`](#nextjournal.markdown.transform/->hiccup).
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L26-L33">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.transform/table-alignment">`table-alignment`</a>
-``` clojure
-
-(table-alignment {:keys [style]})
-```
-Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L17-L20">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L30-L37">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown.transform/toc->hiccup">`toc->hiccup`</a>
 ``` clojure
@@ -190,7 +157,7 @@ Function.
 ("toc->hiccup[{:as ctx ::keys [parent]} {:as node :keys [attrs content children]}]")
 ```
 Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L35-L47">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L39-L51">Source</a></sub></p>
 
 -----
 # <a name="nextjournal.markdown.utils">nextjournal.markdown.utils</a>
@@ -254,7 +221,9 @@ Function.
 
 
 
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L49-L62">Source</a></sub></p>
+
+The empty doc
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L48-L62">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown.utils/footnote->sidenote">`footnote->sidenote`</a>
 ``` clojure

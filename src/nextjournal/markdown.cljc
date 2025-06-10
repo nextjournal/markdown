@@ -2,15 +2,17 @@
   "Markdown as data"
   (:require
    [nextjournal.markdown.impl :as impl]
-   [nextjournal.markdown.utils :as u]
-   [nextjournal.markdown.transform :as markdown.transform]))
+   [nextjournal.markdown.transform :as markdown.transform]
+   [nextjournal.markdown.utils :as u]))
 
-(def empty-doc u/empty-doc)
+(def empty-doc
+  "Empty document to be used with `parse*`"
+  u/empty-doc)
 
 (defn parse*
   "Turns a markdown string into an AST of nested clojure data.
   Allows to parse multiple strings into the same document
-  e.g. `(-> u/empty-doc (parse* text-1) (parse* text-2))`."
+  e.g. `(-> empty-doc (parse* text-1) (parse* text-2))`."
   ([markdown-text] (parse* empty-doc markdown-text))
   ([ctx markdown-text]
    (-> ctx
@@ -61,26 +63,6 @@
 - [x] ~~thing~~
 ")
 
-  (-> (nextjournal.markdown.graaljs/parse "[alt](https://this/is/a.link)") :content first :content first)
-  (-> (parse "[alt](https://this/is/a.link)") :content first :content first)
-
-  (parse "# Hello Markdown
-- [ ] what
-- [ ] [nice](very/nice/thing)
-- [x] ~~thing~~
-")
-
-  (->> (with-out-str
-         (time (dotimes [_ 100] (parse (slurp "notebooks/reference.md")))))
-      (re-find #"\d+.\d+")
-       parse-double
-       ((fn [d] (/ d 100))))
-
-  (->hiccup "# Hello Markdown
-
-* What's _going_ on?
-")
-
   (->hiccup
    (assoc markdown.transform/default-hiccup-renderers
           :heading (fn [ctx node]
@@ -91,4 +73,5 @@
 ")
 
   ;; launch shadow cljs repl
+  #_:clj-kondo/ignore
   (shadow.cljs.devtools.api/repl :browser-test))

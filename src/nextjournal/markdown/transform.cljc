@@ -3,23 +3,27 @@
      * hiccup")
 
 ;; helpers
-(defn guard [pred val] (when (pred val) val))
-(defn ->text [{:as _node :keys [type text content]}]
-  (or (when (= :softbreak type) " ")
-      text
-      (apply str (map ->text content))))
+(defn- guard [pred val] (when (pred val) val))
 
-(defn hydrate-toc
+(defn ->text
+  "Convert node into text"
+  ([node] (->text nil node))
+  ([ctx {:as _node :keys [type text content]}]
+   (or (when (= :softbreak type) " ")
+       text
+       (apply str (map #(->text ctx %) content)))))
+
+(defn- hydrate-toc
   "Scans doc contents and replaces toc node placeholder with the toc node accumulated during parse."
   [{:as doc :keys [toc]}]
   (update doc :content (partial into [] (map (fn [{:as node t :type}] (if (= :toc t) toc node))))))
 
-(defn table-alignment [{:keys [style]}]
+(defn- table-alignment [{:keys [style]}]
   (when (string? style)
     (let [[_ alignment] (re-matches #"^text-align:(.+)$" style)]
       (when alignment {:text-align alignment}))))
 
-(defn heading-markup [{l :heading-level}] [(keyword (str "h" (or l 1)))])
+(defn- heading-markup [{l :heading-level}] [(keyword (str "h" (or l 1)))])
 
 ;; into-markup
 (declare ->hiccup)

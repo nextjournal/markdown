@@ -90,7 +90,7 @@ The transformation of markdown node types can be customised like this:
 
 ```clojure
 ^{:nextjournal.clerk/viewer 'nextjournal.clerk.viewer/html-viewer}
-(md->hiccup
+(md/->hiccup
  (assoc md.transform/default-hiccup-renderers
         ;; :doc specify a custom container for the whole doc
         :doc (partial md.transform/into-markup [:div.viewer-markdown])
@@ -106,15 +106,16 @@ The transformation of markdown node types can be customised like this:
 Typically you'd want to customize the rendering of `:html-inline` and `:html` since these need to be rendered to raw strings:
 
 ``` clojure
+(require '[hiccup2.core :as hiccup])
+
 (def renderers
   (assoc md.transform/default-hiccup-renderers
          :html-inline (comp hiccup/raw md.transform/->text)
          :html-block (comp hiccup/raw md.transform/->text)))
 
-(md/->hiccup renderers "<img src=\"...\"/>)
+(md/->hiccup renderers "<img src=\"...\"/>")
 
-(str (hiccup/html (md/->hiccup renderers "<img src=\"...\"/>)")))
-;;=> "<div><p><img src=\"...\"/>)</p></div>"
+(str (hiccup/html (md/->hiccup renderers "<img src=\"...\"/>")))
 ```
 
 We've built hiccup transformation in for convenience, but the same approach can be used to target [more formats](https://nextjournal.github.io/markdown/notebooks/pandoc).

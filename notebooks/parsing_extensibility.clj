@@ -2,11 +2,12 @@
 (ns parsing-extensibility
   {:nextjournal.clerk/toc :collapsed
    :nextjournal.clerk/no-cache true}
-  (:require [nextjournal.clerk :as clerk]
-            [nextjournal.markdown :as md]
-            [nextjournal.markdown.utils :as u]
+  (:require [clojure.repl :as repl]
+            [clojure.zip :as z]
             [edamame.core :as edamame]
-            [clojure.zip :as z]))
+            [nextjournal.clerk :as clerk]
+            [nextjournal.markdown :as md]
+            [nextjournal.markdown.utils :as u]))
 
 ^{:nextjournal.clerk/visibility {:code :hide :result :hide}}
 (def show-text
@@ -89,7 +90,7 @@ existing [[links]] or #tags")
 ;; ## Parsing with Document Handlers
 ;;
 ;; Using tokenizers with document handlers we can let parsed tokens act upon the whole document tree. Consider
-;; the following textual example (**TODO** _rewrite parsing with a zipper state_):
+; the following textual example (**TODO** _rewrite parsing with a zipper state_):
 ^{::clerk/viewer show-text}
 (def text-with-meta
   "# Example ◊(add-meta {:attrs {:id \"some-id\"} :class \"semantc\"})

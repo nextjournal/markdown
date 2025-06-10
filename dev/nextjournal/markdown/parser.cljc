@@ -23,8 +23,7 @@
             [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.utils.emoji :as emoji]
-            #?@(:cljs [[applied-science.js-interop :as j]
-                       [cljs.reader :as reader]])))
+            #?@(:cljs [[applied-science.js-interop :as j]])))
 
 ;; clj common accessors
 (def get-in* #?(:clj get-in :cljs j/get-in))

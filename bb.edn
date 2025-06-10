@@ -30,14 +30,8 @@
   {:doc "Installs and updates npm dependencies"
    :task (shell "yarn install")}
 
-  build-esm
-  {:doc "Builds the ESM JS module file for the markdown module"
-   :task (shell "./node_modules/.bin/esbuild src/js/markdown.js --bundle --minify --outfile=resources/js/markdown.mjs --format=esm")
-   :depends [yarn-install]}
-
   test
   {:doc "runs tests in the markdown module"
-   :depends [build-esm]
    :task (clojure "-X:test")}
 
   build:notebooks

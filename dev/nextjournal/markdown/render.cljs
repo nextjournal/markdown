@@ -1,19 +1,20 @@
 (ns nextjournal.markdown.render
   (:require
-   ["katex" :as katex]
-   ["@codemirror/language" :refer [defaultHighlightStyle syntaxHighlighting LanguageSupport]]
+   ["@codemirror/lang-markdown" :as MD :refer [markdown markdownLanguage]]
+   ["@codemirror/language" :refer [defaultHighlightStyle LanguageSupport
+                                   syntaxHighlighting]]
    ["@codemirror/state" :refer [EditorState]]
    ["@codemirror/view" :refer [EditorView keymap]]
-   ["@codemirror/lang-markdown" :as MD :refer [markdown markdownLanguage]]
+   ["katex" :as katex]
    ["react" :as react]
-   [nextjournal.markdown :as md]
-   [nextjournal.clerk.viewer :as v]
-   [nextjournal.clerk.render.hooks :as hooks]
-   [nextjournal.markdown.transform :as md.transform]
-   [nextjournal.clojure-mode :as clojure-mode]
-   [nextjournal.clerk.render.code :as code]
    [clojure.string :as str]
    [nextjournal.clerk.render :as render]
+   [nextjournal.clerk.render.code :as code]
+   [nextjournal.clerk.render.hooks :as hooks]
+   [nextjournal.clerk.viewer :as v]
+   [nextjournal.clojure-mode :as clojure-mode]
+   [nextjournal.markdown :as md]
+   [nextjournal.markdown.transform :as md.transform]
    [reagent.core :as r]))
 
 (def theme #js {"&.cm-editor.cm-focused" #js {:outline "none"}

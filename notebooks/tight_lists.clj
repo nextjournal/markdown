@@ -3,11 +3,10 @@
   {:nextjournal.clerk/no-cache true}
   (:require [clojure.data.json :as json]
             [clojure.java.shell :as shell]
+            [clojure.pprint :as pprint]
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]
-            [nextjournal.markdown :as md]
-            [hiccup2.core :as h]
-            [nextjournal.markdown.transform :as md.transform]))
+            [nextjournal.markdown :as md]))
 
 ;; Markdown (commonmark) distingushes between [loose and tight lists](https://spec.commonmark.org/0.30/#loose)
 ;;

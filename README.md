@@ -113,9 +113,10 @@ Typically you'd want to customize the rendering of `:html-inline` and `:html` si
          :html-inline (comp hiccup/raw md.transform/->text)
          :html-block (comp hiccup/raw md.transform/->text)))
 
-(md/->hiccup renderers "<img src=\"...\"/>")
-
 (str (hiccup/html (md/->hiccup renderers "<img src=\"...\"/>")))
+
+;; =>
+"<div><img src=\"...\"/></div>"
 ```
 
 We've built hiccup transformation in for convenience, but the same approach can be used to target [more formats](https://nextjournal.github.io/markdown/notebooks/pandoc).

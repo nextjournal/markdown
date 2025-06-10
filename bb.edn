@@ -111,6 +111,16 @@
                    (println "Installing locally")
                    (clojure (str "-T:build install :version '\"" (read-version) "\"'")))}
 
+  quickdoc {:doc "Invoke quickdoc"
+            :extra-deps {io.github.borkdude/quickdoc {:git/tag "v0.2.5", :git/sha "25784ca"}}
+            :task (exec 'quickdoc.api/quickdoc)
+            :exec-args {:git/branch "main"
+                        :github/repo "https://github.com/nextjournal/markdown"
+                        :source-paths ["src/nextjournal/markdown/transform.cljc"
+                                       "src/nextjournal/markdown/utils.cljc"
+                                       "src/nextjournal/markdown/utils/emoji.cljc"
+                                       "src/nextjournal/markdown.cljc"]}}
+
   ci:publish {:doc "Publish task which will be run on CI"
               :depends [-current-tag -current-branch]
               :task (do

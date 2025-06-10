@@ -2,8 +2,9 @@
   "Markdown as data"
   (:require
    [nextjournal.markdown.impl :as impl]
-   [nextjournal.markdown.utils :as u]
-   [nextjournal.markdown.transform :as markdown.transform]))
+   [nextjournal.markdown.impl.html :as html]
+   [nextjournal.markdown.transform :as markdown.transform]
+   [nextjournal.markdown.utils :as u]))
 
 (def empty-doc u/empty-doc)
 
@@ -43,23 +44,39 @@
       (parse* "new par")
       (parse* "new par")))
 
+(def default-hiccup-renderers markdown.transform/default-hiccup-renderers)
+
 (defn ->hiccup
   "Turns a markdown string into hiccup."
-  ([markdown] (->hiccup markdown.transform/default-hiccup-renderers markdown))
+  ([markdown] (->hiccup default-hiccup-renderers markdown))
   ([ctx markdown]
    (let [parsed (if (string? markdown)
                   (parse markdown)
                   markdown)]
      (markdown.transform/->hiccup ctx parsed))))
 
-(comment
-  (parse "# 🎱 Hello")
+(defn ->html [markdown]
+  (let [parsed (if (string? markdown)
+                 (parse markdown)
+                 markdown)]
+    (html/->html parsed)))
 
-  (parse "# Hello Markdown
+(->html "# Hello Markdown
 - [ ] what
 - [ ] [nice](very/nice/thing)
 - [x] ~~thing~~
 ")
+
+(comment
+  (parse "# 🎱 Hello")
+
+  (-> (parse "# Hello Markdown
+- [ ] what
+- [ ] [nice](very/nice/thing)
+- [x] ~~thing~~
+")
+      #_(->hiccup)
+      (->html))
 
   (-> (nextjournal.markdown.graaljs/parse "[alt](https://this/is/a.link)") :content first :content first)
   (-> (parse "[alt](https://this/is/a.link)") :content first :content first)

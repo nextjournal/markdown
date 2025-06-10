@@ -257,6 +257,7 @@ end"
       [node])))
 
 (defn handle-text-token [{:as ctx :keys [text-tokenizers]} text]
+  (prn (count text-tokenizers))
   (reduce (fn [ctx {:as node :keys [doc-handler]}] (update-current-loc ctx doc-handler (dissoc node :doc-handler)))
           ctx
           (reduce (fn [nodes tokenizer]

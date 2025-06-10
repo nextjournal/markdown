@@ -18,7 +18,7 @@
   [{:as doc :keys [toc]}]
   (update doc :content (partial into [] (map (fn [{:as node t :type}] (if (= :toc t) toc node))))))
 
-(defn- table-alignment [{:keys [style]}]
+(defn table-alignment [{:keys [style]}]
   (when (string? style)
     (let [[_ alignment] (re-matches #"^text-align:(.+)$" style)]
       (when alignment {:text-align alignment}))))

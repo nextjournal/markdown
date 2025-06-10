@@ -9,6 +9,7 @@
     -  [`->text`](#nextjournal.markdown.transform/->text) - Convert node into text.
     -  [`default-hiccup-renderers`](#nextjournal.markdown.transform/default-hiccup-renderers)
     -  [`into-markup`](#nextjournal.markdown.transform/into-markup) - Takes a hiccup vector, a context and a node, puts node's <code>:content</code> into markup mapping through <code>-&gt;hiccup</code>.
+    -  [`table-alignment`](#nextjournal.markdown.transform/table-alignment)
     -  [`toc->hiccup`](#nextjournal.markdown.transform/toc->hiccup)
 -  [`nextjournal.markdown.utils`](#nextjournal.markdown.utils) 
     -  [`->zip`](#nextjournal.markdown.utils/->zip)
@@ -150,6 +151,14 @@ Function.
 
 Takes a hiccup vector, a context and a node, puts node's `:content` into markup mapping through [`->hiccup`](#nextjournal.markdown.transform/->hiccup).
 <p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L30-L37">Source</a></sub></p>
+
+## <a name="nextjournal.markdown.transform/table-alignment">`table-alignment`</a>
+``` clojure
+
+(table-alignment {:keys [style]})
+```
+Function.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L21-L24">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown.transform/toc->hiccup">`toc->hiccup`</a>
 ``` clojure

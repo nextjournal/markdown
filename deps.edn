@@ -18,15 +18,10 @@
                :paths ["README.md"
                        "CHANGELOG.md"
                        "notebooks/try.clj"
-                       "notebooks/images.clj"
                        "notebooks/pandoc.clj"
                        "notebooks/parsing_extensibility.clj"
                        "notebooks/benchmarks.clj"
                        "notebooks/tight_lists.clj"]}}
-
-  :quiet
-  {:jvm-opts ["-Dpolyglot.engine.WarnInterpreterOnly=false"]}
-
   :dev
   {:extra-paths ["dev" "notebooks"]
    :extra-deps {applied-science/js-interop {:mvn/version "0.3.3"}
@@ -36,8 +31,7 @@
                 io.github.nextjournal/clerk {:git/sha "f4c5488e36c8df11fe352889544e7deb9af73cb7"
                                              :exclusions [io.github.nextjournal/markdown]}
                 nubank/matcher-combinators {:mvn/version "3.8.3"}
-                hiccup/hiccup {:mvn/version "2.0.0-RC5"}
-                org.graalvm.js/js {:mvn/version "21.3.2.1"}}}
+                hiccup/hiccup {:mvn/version "2.0.0-RC5"}}}
 
   :test
   {:extra-paths ["test"]

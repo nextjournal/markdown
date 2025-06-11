@@ -4,7 +4,7 @@
 
 A cross-platform clojure library for [Markdown](https://en.wikipedia.org/wiki/Markdown) parsing and transformation.
 
-🚧 _ALPHA_ status, subject to frequent change. For a richer reading experience [read this readme as a clerk notebook](https://nextjournal.github.io/markdown/README).
+🚧 For a richer reading experience [read this readme as a clerk notebook](https://nextjournal.github.io/markdown/README).
 
 ## Features
 

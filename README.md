@@ -143,6 +143,8 @@ Typically you'd want to customize the rendering of `:html-inline` and `:html` si
 "<div><img src=\"...\"/></div>"
 ```
 
+## Transforming to other targets
+
 We've built hiccup transformation in for convenience, but the same approach can be used to target [more formats](https://nextjournal.github.io/markdown/notebooks/pandoc).
 
 This library is one of the building blocks of [Clerk](https://github.com/nextjournal/clerk) where it is used for rendering _literate fragments_.

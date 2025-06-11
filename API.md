@@ -19,8 +19,6 @@
     -  [`normalize-tokenizer`](#nextjournal.markdown.utils/normalize-tokenizer) - Normalizes a map of regex and handler into a Tokenizer.
 -  [`nextjournal.markdown.utils.emoji`](#nextjournal.markdown.utils.emoji)  - https://github.com/mathiasbynens/emoji-test-regex-pattern MIT License Copyright Mathias Bynens <https://mathiasbynens.be/>.
     -  [`regex`](#nextjournal.markdown.utils.emoji/regex)
-    -  [`regex-java`](#nextjournal.markdown.utils.emoji/regex-java)
-    -  [`regex-js`](#nextjournal.markdown.utils.emoji/regex-js)
 
 -----
 # <a name="nextjournal.markdown">nextjournal.markdown</a>
@@ -197,16 +195,4 @@ https://github.com/mathiasbynens/emoji-test-regex-pattern
 
 
 
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils/emoji.cljc#L13-L14">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.utils.emoji/regex-java">`regex-java`</a>
-
-
-
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils/emoji.cljc#L7-L8">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.utils.emoji/regex-js">`regex-js`</a>
-
-
-
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils/emoji.cljc#L11-L11">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils/emoji.cljc#L15-L16">Source</a></sub></p>

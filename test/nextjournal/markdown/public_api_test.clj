@@ -1,5 +1,6 @@
 (ns nextjournal.markdown.public-api-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [clojure.string :as str]
+            [clojure.test :refer [deftest is]]
             [nextjournal.markdown]
             [nextjournal.markdown.transform]
             [nextjournal.markdown.utils]))
@@ -15,7 +16,18 @@
        (map var-name)
        set))
 
-(deftest public-api-test
+(deftest public-namespaces-test
+  (is (= '#{nextjournal.markdown.utils.emoji
+            nextjournal.markdown.transform
+            nextjournal.markdown
+            nextjournal.markdown.utils}
+         (-> (filter #(and (str/starts-with? (str %) "nextjournal.markdown")
+                           (not (str/includes? (str %) ".impl"))
+                           (not (str/ends-with? (str %) "-test")))
+                     (map ns-name (all-ns)))
+             set))))
+
+(deftest public-vars-test
   (is (= '#{->hiccup empty-doc parse parse*}
          (public-vars 'nextjournal.markdown)))
   (is (= '#{default-hiccup-renderers
@@ -30,4 +42,6 @@
             hashtag-tokenizer
             empty-doc
             insert-sidenote-containers}
-       (public-vars 'nextjournal.markdown.utils))))
+         (public-vars 'nextjournal.markdown.utils)))
+  (is (= '#{regex}
+         (public-vars 'nextjournal.markdown.utils.emoji))))

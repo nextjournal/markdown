@@ -14,6 +14,7 @@
 -  [`nextjournal.markdown.utils`](#nextjournal.markdown.utils) 
     -  [`empty-doc`](#nextjournal.markdown.utils/empty-doc) - The empty doc.
     -  [`hashtag-tokenizer`](#nextjournal.markdown.utils/hashtag-tokenizer)
+    -  [`insert-sidenote-containers`](#nextjournal.markdown.utils/insert-sidenote-containers)
     -  [`internal-link-tokenizer`](#nextjournal.markdown.utils/internal-link-tokenizer)
     -  [`normalize-tokenizer`](#nextjournal.markdown.utils/normalize-tokenizer) - Normalizes a map of regex and handler into a Tokenizer.
 -  [`nextjournal.markdown.utils.emoji`](#nextjournal.markdown.utils.emoji)  - https://github.com/mathiasbynens/emoji-test-regex-pattern MIT License Copyright Mathias Bynens <https://mathiasbynens.be/>.
@@ -160,6 +161,12 @@ The empty doc
 
 
 <p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L13-L13">Source</a></sub></p>
+
+## <a name="nextjournal.markdown.utils/insert-sidenote-containers">`insert-sidenote-containers`</a>
+
+
+
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L17-L17">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown.utils/internal-link-tokenizer">`internal-link-tokenizer`</a>
 

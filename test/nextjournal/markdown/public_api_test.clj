@@ -1,5 +1,5 @@
 (ns nextjournal.markdown.public-api-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.test :refer [deftest is]]
             [nextjournal.markdown]
             [nextjournal.markdown.transform]
             [nextjournal.markdown.utils]))
@@ -28,5 +28,6 @@
   (is (= '#{normalize-tokenizer
             internal-link-tokenizer
             hashtag-tokenizer
-            empty-doc}
+            empty-doc
+            insert-sidenote-containers}
        (public-vars 'nextjournal.markdown.utils))))

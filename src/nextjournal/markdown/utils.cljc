@@ -13,3 +13,5 @@
 (def hashtag-tokenizer u/hashtag-tokenizer)
 
 (def internal-link-tokenizer u/internal-link-tokenizer)
+
+(def insert-sidenote-containers u/insert-sidenote-containers)

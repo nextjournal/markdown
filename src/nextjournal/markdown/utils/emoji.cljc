@@ -1,7 +1,8 @@
 (ns nextjournal.markdown.utils.emoji
   "https://github.com/mathiasbynens/emoji-test-regex-pattern
   MIT License
-  Copyright Mathias Bynens <https://mathiasbynens.be/>")
+  Copyright Mathias Bynens <https://mathiasbynens.be/>"
+  {:skip-wiki true})
 
 ;; https://raw.githubusercontent.com/mathiasbynens/emoji-test-regex-pattern/f798c38987917b48e26d490590ba4f5481eb6e93/dist/latest/java.txt
 #?(:clj

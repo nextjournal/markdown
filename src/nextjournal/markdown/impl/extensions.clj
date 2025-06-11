@@ -75,7 +75,7 @@
         (let [next-non-space (.getNextNonSpaceIndex state)
               m (block-formula-delimiter-matcher state)]
           (if (re-find m)
-            (.atIndex (BlockStart/of (into-array [(block-formula-parser)]))
+            (.atIndex (BlockStart/of (into-array BlockParser [(block-formula-parser)]))
                       (+ next-non-space (.end m)))
             (BlockStart/none)))))))
 
@@ -94,7 +94,7 @@
         (let [next-non-space (.getNextNonSpaceIndex state)
               m (block-toc-delimiter-matcher state)]
           (if (re-find m)
-            (.atIndex (BlockStart/of (into-array [(block-toc-parser)]))
+            (.atIndex (BlockStart/of (into-array BlockParser [(block-toc-parser)]))
                       (+ next-non-space (.end m)))
             (BlockStart/none)))))))
 

@@ -223,9 +223,9 @@
 
 (def ^:private visitChildren-meth
   ;; cached reflection only happens once
-  (delay (let [meth (.getDeclaredMethod AbstractVisitor "visitChildren" (into-array [Node]))]
-           (.setAccessible meth true)
-           meth)))
+  (let [meth (.getDeclaredMethod AbstractVisitor "visitChildren" (into-array [Node]))]
+    (.setAccessible meth true)
+    meth))
 
 (defn node->data [{:as ctx-in :keys [footnotes]} ^Node node]
   (assert (:type ctx-in) ":type must be set on initial doc")
@@ -267,7 +267,7 @@
                    (if (get-method open-node (class node))
                      (with-tight-list node
                        (swap! !ctx open-node node)
-                       (.invoke ^java.lang.reflect.Method @visitChildren-meth this (into-array Object [node]))
+                       (.invoke ^java.lang.reflect.Method visitChildren-meth this (into-array Object [node]))
                        (swap! !ctx close-node node))
                      (prn ::not-implemented node))))))
 

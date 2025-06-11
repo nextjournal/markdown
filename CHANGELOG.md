@@ -3,12 +3,14 @@
 ## Unreleased
 
 * Hiccup JVM compatibility for fragments (see [#34](https://github.com/nextjournal/markdown/issues/34))
-* Support HTML blocks and inline HTML (see [#7](https://github.com/nextjournal/markdown/issues/7))
+* Support HTML blocks (`:html-block`) and inline HTML (`:html-inline`) (see [#7](https://github.com/nextjournal/markdown/issues/7))
 * Bump commonmark to 0.24.0
 * Bump markdown-it to 14.1.0
 * Render `:code` according to spec into `<pre>` and `<code>` block with language class (see [#39](https://github.com/nextjournal/markdown/issues/39))
 * No longer depend on `applied-science/js-interop`
 * Accept parsed result in `->hiccup` function
+* Expose `nextjournal.markdown.transform` through main `nextjournal.markdown` namespace
+* Stabilize API and no longer mark library alpha
 
 ## 0.6.157
 

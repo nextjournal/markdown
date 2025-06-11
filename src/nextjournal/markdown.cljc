@@ -61,11 +61,11 @@
   markdown.transform/into-markup)
 
 (def table-alignment
-  "TODO @andrea: docstring"
+  "Takes a table-ish node, returns a map suitable for hiccup style attributes with a :text-align property."
   markdown.transform/table-alignment)
 
 (def toc->hiccup
-  "TODO @andrea: docstring"
+  "Transform a toc node into hiccup data, suitable for using as renderer function in hiccup transform, see [->hiccup](#markdown.transform/toc->hiccup)"
   markdown.transform/toc->hiccup)
 
 (comment

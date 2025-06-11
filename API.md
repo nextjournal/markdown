@@ -7,8 +7,8 @@
     -  [`node->text`](#nextjournal.markdown/node->text) - Convert node into text.
     -  [`parse`](#nextjournal.markdown/parse) - Turns a markdown string into an AST of nested clojure data.
     -  [`parse*`](#nextjournal.markdown/parse*) - Turns a markdown string into an AST of nested clojure data.
-    -  [`table-alignment`](#nextjournal.markdown/table-alignment) - TODO @andrea: docstring.
-    -  [`toc->hiccup`](#nextjournal.markdown/toc->hiccup) - TODO @andrea: docstring.
+    -  [`table-alignment`](#nextjournal.markdown/table-alignment) - Takes a table-ish node, returns a map suitable for hiccup style attributes with a :text-align property.
+    -  [`toc->hiccup`](#nextjournal.markdown/toc->hiccup) - Transform a toc node into hiccup data, suitable for using as renderer function in hiccup transform, see [->hiccup](#markdown.transform/toc->hiccup).
 -  [`nextjournal.markdown.utils`](#nextjournal.markdown.utils) 
     -  [`block-formula`](#nextjournal.markdown.utils/block-formula)
     -  [`empty-doc`](#nextjournal.markdown.utils/empty-doc) - The empty doc.
@@ -108,7 +108,7 @@ Turns a markdown string into an AST of nested clojure data.
 
 
 
-TODO @andrea: docstring
+Takes a table-ish node, returns a map suitable for hiccup style attributes with a :text-align property.
 <p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L63-L65">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/toc->hiccup">`toc->hiccup`</a>
@@ -116,7 +116,7 @@ TODO @andrea: docstring
 
 
 
-TODO @andrea: docstring
+Transform a toc node into hiccup data, suitable for using as renderer function in hiccup transform, see [->hiccup](#markdown.transform/toc->hiccup)
 <p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L67-L69">Source</a></sub></p>
 
 -----

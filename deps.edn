@@ -37,6 +37,7 @@
   {:extra-paths ["test"]
    :jvm-opts ["-Dclojure.main.report=stderr"]
    :extra-deps {nubank/matcher-combinators {:mvn/version "3.9.1"}
+                babashka/fs {:mvn/version "0.5.26"}
                 hiccup/hiccup {:mvn/version "2.0.0-RC5"}}
    :exec-fn test-runner/run}
 

@@ -5,8 +5,8 @@
             [matcher-combinators.matchers :as m]
             [matcher-combinators.test :refer [match?]]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.transform :as md.transform]
-            [nextjournal.markdown.utils :as u]))
+            [nextjournal.markdown.impl.utils :as impl-u]
+            [nextjournal.markdown.transform :as md.transform]))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
 #?(:cljs (matcher-combinators.ansi-color/disable!))
@@ -64,11 +64,11 @@ $$\\int_a^bf(t)dt$$
               (md/parse "https://clerk.vision"))))
 
 (defn parse-internal-links [text]
-  (md/parse* (update u/empty-doc :text-tokenizers conj u/internal-link-tokenizer)
+  (md/parse* (update impl-u/empty-doc :text-tokenizers conj impl-u/internal-link-tokenizer)
              text))
 
 (defn parse-hashtags [text]
-  (md/parse* (update u/empty-doc :text-tokenizers conj u/hashtag-tokenizer)
+  (md/parse* (update impl-u/empty-doc :text-tokenizers conj impl-u/hashtag-tokenizer)
              text))
 
 (deftest parse-test
@@ -582,7 +582,7 @@ Par.
 [^note2]: Explain 2
 "
       md/parse
-      u/insert-sidenote-containers))
+      impl-u/insert-sidenote-containers))
 
 (deftest footnotes
   (testing "foonotes via references"

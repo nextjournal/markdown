@@ -1,7 +1,8 @@
 (ns test-runner
   (:require [clojure.test]
             [nextjournal.markdown-test]
-            [nextjournal.markdown.multi-threading-test]))
+            [nextjournal.markdown.multi-threading-test]
+            [nextjournal.markdown.public-api-test]))
 
 (defn run [_]
   (let [{:keys [fail error]} (clojure.test/run-all-tests #"nextjournal\.markdown.*-test")]

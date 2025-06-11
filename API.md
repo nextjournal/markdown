@@ -12,11 +12,15 @@
     -  [`table-alignment`](#nextjournal.markdown.transform/table-alignment)
     -  [`toc->hiccup`](#nextjournal.markdown.transform/toc->hiccup)
 -  [`nextjournal.markdown.utils`](#nextjournal.markdown.utils) 
+    -  [`block-formula`](#nextjournal.markdown.utils/block-formula)
     -  [`empty-doc`](#nextjournal.markdown.utils/empty-doc) - The empty doc.
+    -  [`formula`](#nextjournal.markdown.utils/formula)
     -  [`hashtag-tokenizer`](#nextjournal.markdown.utils/hashtag-tokenizer)
     -  [`insert-sidenote-containers`](#nextjournal.markdown.utils/insert-sidenote-containers)
     -  [`internal-link-tokenizer`](#nextjournal.markdown.utils/internal-link-tokenizer)
     -  [`normalize-tokenizer`](#nextjournal.markdown.utils/normalize-tokenizer) - Normalizes a map of regex and handler into a Tokenizer.
+    -  [`text-node`](#nextjournal.markdown.utils/text-node)
+    -  [`tokenize-text-node`](#nextjournal.markdown.utils/tokenize-text-node)
 -  [`nextjournal.markdown.utils.emoji`](#nextjournal.markdown.utils.emoji)  - https://github.com/mathiasbynens/emoji-test-regex-pattern MIT License Copyright Mathias Bynens <https://mathiasbynens.be/>.
     -  [`regex`](#nextjournal.markdown.utils.emoji/regex)
 
@@ -146,6 +150,12 @@ Function.
 
 
 
+## <a name="nextjournal.markdown.utils/block-formula">`block-formula`</a>
+
+
+
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L23-L23">Source</a></sub></p>
+
 ## <a name="nextjournal.markdown.utils/empty-doc">`empty-doc`</a>
 
 
@@ -153,6 +163,12 @@ Function.
 
 The empty doc
 <p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L5-L7">Source</a></sub></p>
+
+## <a name="nextjournal.markdown.utils/formula">`formula`</a>
+
+
+
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L21-L21">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown.utils/hashtag-tokenizer">`hashtag-tokenizer`</a>
 
@@ -179,6 +195,18 @@ The empty doc
 
 Normalizes a map of regex and handler into a Tokenizer
 <p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L9-L11">Source</a></sub></p>
+
+## <a name="nextjournal.markdown.utils/text-node">`text-node`</a>
+
+
+
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L19-L19">Source</a></sub></p>
+
+## <a name="nextjournal.markdown.utils/tokenize-text-node">`tokenize-text-node`</a>
+
+
+
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/utils.cljc#L25-L25">Source</a></sub></p>
 
 -----
 # <a name="nextjournal.markdown.utils.emoji">nextjournal.markdown.utils.emoji</a>

@@ -15,3 +15,11 @@
 (def internal-link-tokenizer u/internal-link-tokenizer)
 
 (def insert-sidenote-containers u/insert-sidenote-containers)
+
+(def text-node u/text-node)
+
+(def formula u/formula)
+
+(def block-formula u/block-formula)
+
+(def tokenize-text-node u/tokenize-text-node)

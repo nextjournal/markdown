@@ -39,9 +39,13 @@
          (public-vars 'nextjournal.markdown.transform)))
   (is (= '#{normalize-tokenizer
             internal-link-tokenizer
-            hashtag-tokenizer
+            tokenize-text-node
+            text-node
+            insert-sidenote-containers
+            block-formula
             empty-doc
-            insert-sidenote-containers}
+            hashtag-tokenizer
+            formula}
          (public-vars 'nextjournal.markdown.utils)))
   (is (= '#{regex}
          (public-vars 'nextjournal.markdown.utils.emoji))))

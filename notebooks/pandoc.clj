@@ -9,7 +9,6 @@
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.utils :as u]))
 
 ;; From the [docs](https://pandoc.org/MANUAL.html#description):
@@ -45,7 +44,7 @@
    :heading (fn [{:keys [content heading-level]}] {:t "Header" :c [heading-level ["id" [] []] (map md->pandoc content)]})
    :paragraph (fn [{:keys [content]}] {:t "Para" :c (map md->pandoc content)})
    :plain (fn [{:keys [content]}] {:t "Plain" :c (map md->pandoc content)})
-   :code (fn [{:as node :keys [language]}] {:t "CodeBlock" :c [["" [language "code"] []] (md.transform/->text node)]})
+   :code (fn [{:as node :keys [language]}] {:t "CodeBlock" :c [["" [language "code"] []] (md/node->text node)]})
    :block-formula (fn [{:keys [text]}] {:t "Para" :c [{:t "Math" :c [{:t "DisplayMath"} text]}]})
 
    :em (fn [{:keys [content]}] {:t "Emph" :c (map md->pandoc content)})
@@ -166,7 +165,7 @@ this _is_ a
            (let [[_meta code] (:c node)]
              {:type :monospace :content [(u/text-node code)]}))
    :CodeBlock (fn [node]
-                (let [[[_id classes _meta] code] (:c node)]
+                (let [[[_id _classes _meta] code] (:c node)]
                   {:type :code
                    :content [(u/text-node code)]}))
    :SoftBreak (constantly {:type :softbreak})

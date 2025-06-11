@@ -1,7 +1,7 @@
 (ns nextjournal.markdown.public-api-test
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is]]
-            [nextjournal.markdown]
+            [nextjournal.markdown] :reload-all
             [nextjournal.markdown.transform]
             [nextjournal.markdown.utils]))
 
@@ -17,15 +17,20 @@
        set))
 
 (deftest public-namespaces-test
-  (is (= '#{nextjournal.markdown.utils.emoji
-            nextjournal.markdown.transform
-            nextjournal.markdown
-            nextjournal.markdown.utils}
-         (-> (filter #(and (str/starts-with? (str %) "nextjournal.markdown")
-                           (not (str/includes? (str %) ".impl"))
-                           (not (str/ends-with? (str %) "-test")))
-                     (map ns-name (all-ns)))
-             set))))
+  (let [public-nss (-> (filter #(and (str/starts-with? (str %) "nextjournal.markdown")
+                                     (not (str/includes? (str %) ".impl"))
+                                     (not (str/ends-with? (str %) "-test")))
+                               (map ns-name (all-ns)))
+                       set)]
+    (is (= '#{nextjournal.markdown.utils.emoji
+              nextjournal.markdown.transform
+              nextjournal.markdown
+              nextjournal.markdown.utils}
+           public-nss))
+    (is (= '#{nextjournal.markdown
+              nextjournal.markdown.utils}
+           (set (remove #(-> (find-ns %) meta :skip-wiki)
+                       public-nss))))))
 
 (deftest public-vars-test
   (is (= '#{default-hiccup-renderers
@@ -53,7 +58,8 @@
             block-formula
             empty-doc
             hashtag-tokenizer
-            formula}
+            formula
+            emoji-regex}
          (public-vars 'nextjournal.markdown.utils)))
   (is (= '#{regex}
          (public-vars 'nextjournal.markdown.utils.emoji))))

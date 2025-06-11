@@ -1,6 +1,7 @@
 ;; # Markdown parsing shared utils
 (ns nextjournal.markdown.utils
-  (:require [nextjournal.markdown.impl.utils :as u]))
+  (:require [nextjournal.markdown.impl.utils :as u]
+            [nextjournal.markdown.utils.emoji :as emoji]))
 
 (def empty-doc
   "The empty doc"
@@ -23,3 +24,5 @@
 (def block-formula u/block-formula)
 
 (def tokenize-text-node u/tokenize-text-node)
+
+(def emoji-regex emoji/regex)

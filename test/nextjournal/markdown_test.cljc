@@ -5,7 +5,6 @@
             [matcher-combinators.matchers :as m]
             [matcher-combinators.test :refer [match?]]
             [nextjournal.markdown :as md]
-            [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.utils :as u]))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
@@ -303,7 +302,7 @@ rupt me when I'm writing."))))
 ### Section 2.1
 "
           data (md/parse md)
-          hiccup (md.transform/->hiccup data)]
+          hiccup (md/->hiccup data)]
 
       (is (match? {:type :doc
                    :title "Title"
@@ -490,7 +489,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."))))
               {:href "/tags/useful-123"}
               "#useful-123"]
              " tags"]]
-           (md.transform/->hiccup
+           (md/->hiccup
             (parse-hashtags "# Hello Tags
 par with #really_nice #useful-123 tags
 "))))))
@@ -568,7 +567,7 @@ Did we mention qtmphysics?
 and _interpret_
 softbreaks as
 spaces")
-             md.transform/->text))))
+             md/node->text))))
 
 (def parsed+sidenotes
   (-> "Text[^firstnote] and^[inline _note_ here].
@@ -821,7 +820,7 @@ c[^note3] d.
                 {:style {:margin-right "3px"}}
                 "3"]
                "Explain 2"]]]]
-           (md.transform/->hiccup parsed+sidenotes)))))
+           (md/->hiccup parsed+sidenotes)))))
 
 (deftest parse-multiple-inputs
   (testing "adding to the ToC"
@@ -1059,7 +1058,7 @@ Bye") :content)))
   #?(:clj
      (is (= "<div><p>Hello <a href=\"dude\"><em>Dude</em></a></p></div>"
             (str (hiccup/html (md/->hiccup
-                               (assoc md.transform/default-hiccup-renderers
+                               (assoc md/default-hiccup-renderers
                                       :html-inline (fn [_ m]
                                                      (hiccup/raw (-> m :content first :text)))
                                       :html-block (fn [_ m]
@@ -1068,7 +1067,7 @@ Bye") :content)))
   #?(:clj
      (is (= "<div><p>Hello <a href=\"dude\">multi</p><p>line</p><p>link</a></p></div>"
             (str (hiccup/html (md/->hiccup
-                               (assoc md.transform/default-hiccup-renderers
+                               (assoc md/default-hiccup-renderers
                                       :html-inline (fn [_ m]
                                                      (hiccup/raw (-> m :content first :text)))
                                       :html-block (fn [_ m]

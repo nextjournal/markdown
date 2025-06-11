@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-...
+* Make library more GraalVM `native-image` friendly
 
 ## 0.7.184
 

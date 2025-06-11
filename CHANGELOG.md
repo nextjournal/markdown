@@ -4,6 +4,10 @@
 
 ...
 
+## 0.7.184
+
+* Consolidate utils in `nextjournal.markdown.utils`
+
 ## 0.7.181
 
 * Hiccup JVM compatibility for fragments (see [#34](https://github.com/nextjournal/markdown/issues/34))

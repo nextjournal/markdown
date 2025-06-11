@@ -24,8 +24,7 @@ We adhere to [CommonMark Spec](https://spec.commonmark.org/0.30/) and comply wit
 
 ```clojure
 (ns hello-markdown
-  (:require [nextjournal.markdown :as md]
-            [nextjournal.markdown.transform :as md.transform]))
+  (:require [nextjournal.markdown :as md]))
 ```
 
 Parsing markdown into an AST:
@@ -43,65 +42,90 @@ Parsing markdown into an AST:
 ---
 "))
 
-;; =>
-{:type :doc,
- :content [{:type :blockquote,
-            :content [{:type :paragraph,
-                       :content [{:type :text,
-                                  :text "et tout autour, la longue cohorte de ses personnage, avec leur histoire, leur passé, leurs légendes:"}]}
-                      {:type :numbered-list,
-                       :content [{:type :list-item,
-                                  :content [{:type :plain,
-                                             :content [{:type :text,
-                                                        :text "Pélage vainqueur d'Alkhamah se faisant couronner à Covadonga"}]}]}
-                                 {:type :list-item,
-                                  :content [{:type :plain,
-                                             :content [{:type :text,
-                                                        :text "La cantatrice exilée de Russie suivant Schönberg à Amsterdam"}]}]}
-                                 {:type :list-item,
-                                  :content [{:type :plain,
-                                             :content [{:type :text,
-                                                        :text "Le petit chat sourd aux yeux vairons vivant au dernier étage"}]}]}]}]}
-           {:type :paragraph,
-            :content [{:type :strong, :content [{:type :text, :text "Georges Perec"}]}
-                      {:type :text, :text ", "}
-                      {:type :em, :content [{:type :text, :text "La Vie mode d'emploi"}]}
-                      {:type :text, :text "."}]}
-           {:type :ruler}]}
+#_#_=>
+{:type :doc
+ :content
+ [{:type :blockquote,
+   :content
+   [{:type :paragraph,
+     :content
+     [{:type :text,
+       :text
+       "et tout autour, la longue cohorte de ses personnages, avec leur histoire, leur passé, leurs légendes:"}]}
+    {:type :numbered-list,
+     :content
+     [{:type :list-item,
+       :content
+       [{:type :plain,
+         :content
+         [{:type :text,
+           :text
+           "Pélage vainqueur d'Alkhamah se faisant couronner à Covadonga"}]}]}
+      {:type :list-item,
+       :content
+       [{:type :plain,
+         :content
+         [{:type :text,
+           :text
+           "La cantatrice exilée de Russie suivant Schönberg à Amsterdam"}]}]}
+      {:type :list-item,
+       :content
+       [{:type :plain,
+         :content
+         [{:type :text,
+           :text
+           "Le petit chat sourd aux yeux vairons vivant au dernier étage"}]}]}
+      {:type :list-item,
+       :content
+       [{:type :plain, :content [{:type :text, :text "..."}]}]}]}]}
+  {:type :paragraph,
+   :content
+   [{:type :strong, :content [{:type :text, :text "Georges Perec"}]}
+    {:type :text, :text ", "}
+    {:type :em, :content [{:type :text, :text "La Vie mode d'emploi"}]}
+    {:type :text, :text "."}]}
+  {:type :ruler}]}
 ```
 
-and transform that AST into `hiccup` syntax:
+## Hiccup rendering
+
+To transform the above AST into `hiccup` syntax:
 
 ```clojure
 (md/->hiccup data)
-;; =>
+#_#_=>
 [:div
  [:blockquote
-  [:p "et tout autour, la longue cohorte de ses personnage, avec leur histoire, leur passé, leurs légendes:"]
+  [:p
+   "et tout autour, la longue cohorte de ses personnages, avec leur histoire, leur passé, leurs légendes:"]
   [:ol
-   [:li [:<> "Pélage vainqueur d'Alkhamah se faisant couronner à Covadonga"]]
-   [:li [:<> "La cantatrice exilée de Russie suivant Schönberg à Amsterdam"]]
-   [:li [:<> "Le petit chat sourd aux yeux vairons vivant au dernier étage"]]]]
+   [:li
+    ("Pélage vainqueur d'Alkhamah se faisant couronner à Covadonga")]
+   [:li
+    ("La cantatrice exilée de Russie suivant Schönberg à Amsterdam")]
+   [:li
+    ("Le petit chat sourd aux yeux vairons vivant au dernier étage")]
+   [:li ("...")]]]
  [:p [:strong "Georges Perec"] ", " [:em "La Vie mode d'emploi"] "."]
  [:hr]]
 ```
 
-The transformation of markdown node types can be customised like this:
+The transformation of markdown node types can be customized like this:
 
 ```clojure
 ^{:nextjournal.clerk/viewer 'nextjournal.clerk.viewer/html-viewer}
 (md/->hiccup
- (assoc md.transform/default-hiccup-renderers
+ (assoc md/default-hiccup-renderers
         ;; :doc specify a custom container for the whole doc
-        :doc (partial md.transform/into-markup [:div.viewer-markdown])
+        :doc (partial md/into-hiccup [:div.viewer-markdown])
         ;; :text is funkier when it's zinc toned
-        :text (fn [_ctx node] [:span {:style {:color "#71717a"}} (:text node)])
-        ;; :plain fragments might be nice, but paragraphs help when no reagent is at hand
-        :plain (partial md.transform/into-markup [:p {:style {:margin-top "-1.2rem"}}])
+        :text (fn [_ctx node] [:span {:style {:color "#71717a"}} (md/node->text node)])
         ;; :ruler gets to be funky, too
         :ruler (constantly [:hr {:style {:border "2px dashed #71717a"}}]))
  data)
 ```
+
+### HTML blocks and HTML inlines
 
 Typically you'd want to customize the rendering of `:html-inline` and `:html` since these need to be rendered to raw strings:
 
@@ -109,13 +133,13 @@ Typically you'd want to customize the rendering of `:html-inline` and `:html` si
 (require '[hiccup2.core :as hiccup])
 
 (def renderers
-  (assoc md.transform/default-hiccup-renderers
-         :html-inline (comp hiccup/raw md.transform/->text)
-         :html-block (comp hiccup/raw md.transform/->text)))
+  (assoc md/default-hiccup-renderers
+         :html-inline (comp hiccup/raw md/node->text)
+         :html-block (comp hiccup/raw md/node->text)))
 
 (str (hiccup/html (md/->hiccup renderers "<img src=\"...\"/>")))
 
-;; =>
+#_#_=>
 "<div><img src=\"...\"/></div>"
 ```
 

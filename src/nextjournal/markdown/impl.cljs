@@ -2,7 +2,7 @@
 (ns nextjournal.markdown.impl
   (:require ["/js/markdown" :as md]
             [clojure.zip :as z]
-            [nextjournal.markdown.utils :as u]))
+            [nextjournal.markdown.impl.utils :as u]))
 
 (defn hlevel [^js token]
   (let [hn (.-tag token)]

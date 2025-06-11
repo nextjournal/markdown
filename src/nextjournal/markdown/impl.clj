@@ -3,7 +3,7 @@
   (:require [clojure.zip :as z]
             [nextjournal.markdown.impl.extensions :as extensions]
             [nextjournal.markdown.impl.types :as t]
-            [nextjournal.markdown.utils :as u])
+            [nextjournal.markdown.impl.utils :as u])
   (:import (org.commonmark.ext.autolink AutolinkExtension)
            (org.commonmark.ext.footnotes FootnotesExtension FootnoteReference FootnoteDefinition InlineFootnote)
            (org.commonmark.ext.gfm.strikethrough Strikethrough StrikethroughExtension)

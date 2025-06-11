@@ -7,7 +7,7 @@
 
   :init (do
           (def major 0)
-          (def minor 6)
+          (def minor 7)
           (def rev-count-offset 69) ;; previous repo offset
           (def meta-inf-file "resources/META-INF/nextjournal/markdown/meta.edn")
 

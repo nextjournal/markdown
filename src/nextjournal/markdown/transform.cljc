@@ -1,6 +1,7 @@
 (ns nextjournal.markdown.transform
   "transform markdown data as returned by `nextjournal.markdown/parse` into other formats, currently:
-     * hiccup")
+     * hiccup"
+  {:skip-wiki true})
 
 ;; helpers
 (defn- guard [pred val] (when (pred val) val))
@@ -18,10 +19,13 @@
   [{:as doc :keys [toc]}]
   (update doc :content (partial into [] (map (fn [{:as node t :type}] (if (= :toc t) toc node))))))
 
-(defn table-alignment [{:keys [style]}]
-  (when (string? style)
-    (let [[_ alignment] (re-matches #"^text-align:(.+)$" style)]
-      (when alignment {:text-align alignment}))))
+(defn table-alignment [{:keys [attrs alignment]}]
+  (cond
+    (string? (:style attrs))
+    (let [[_ alignment] (re-matches #"^text-align:(.+)$" (:style attrs))]
+      (when alignment {:text-align alignment}))
+    (keyword? alignment)
+    {:text-align (name alignment)}))
 
 (defn- heading-markup [{l :heading-level}] [(keyword (str "h" (or l 1)))])
 
@@ -116,11 +120,11 @@ a paragraph
    :table-head (partial into-markup [:thead])
    :table-body (partial into-markup [:tbody])
    :table-row (partial into-markup [:tr])
-   :table-header (fn [ctx {:as node :keys [attrs]}]
-                   (into-markup (let [ta (table-alignment attrs)] (cond-> [:th] ta (conj {:style ta})))
+   :table-header (fn [ctx node]
+                   (into-markup (let [ta (table-alignment node)] (cond-> [:th] ta (conj {:style ta})))
                                 ctx node))
-   :table-data (fn [ctx {:as node :keys [attrs]}]
-                 (into-markup (let [ta (table-alignment attrs)] (cond-> [:td] ta (conj {:style ta})))
+   :table-data (fn [ctx node]
+                 (into-markup (let [ta (table-alignment node)] (cond-> [:td] ta (conj {:style ta})))
                               ctx node))
 
    ;; footnotes & sidenodes

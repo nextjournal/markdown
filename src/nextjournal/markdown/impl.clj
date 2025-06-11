@@ -183,9 +183,7 @@
                                 (u/zopen-node loc (cond-> {:type (if (.isHeader node) :table-header :table-data)
                                                            :content []}
                                                     alignment
-                                                    (assoc :alignment alignment
-                                                           ;; TODO: drop/deprecate this, compute in transform
-                                                           :attrs {:style (str "text-align:" (name alignment))})))))))
+                                                    (assoc :alignment alignment)))))))
 
 (defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
   (-> ctx

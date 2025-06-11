@@ -36,23 +36,37 @@
                ::impl/path
                ::impl/root))))
 
-(comment
-  (-> u/empty-doc
-      (parse* "# title
-* one
-* two
-  ")
-      (parse* "new par")
-      (parse* "new par")))
+;; Transform
+
+(def default-hiccup-renderers
+  "Default map of node type -> hiccup renderers, to be used with `->hiccup`"
+  markdown.transform/default-hiccup-renderers)
 
 (defn ->hiccup
-  "Turns a markdown string into hiccup."
-  ([markdown] (->hiccup markdown.transform/default-hiccup-renderers markdown))
-  ([ctx markdown]
+  "Turns a markdown string or document node into hiccup. Optionally takes
+  `hiccup-renderers` as first argument."
+  ([markdown] (->hiccup default-hiccup-renderers markdown))
+  ([hiccup-renderers markdown]
    (let [parsed (if (string? markdown)
                   (parse markdown)
                   markdown)]
-     (markdown.transform/->hiccup ctx parsed))))
+     (markdown.transform/->hiccup hiccup-renderers parsed))))
+
+(def node->text
+  "Convert node into text."
+  markdown.transform/->text)
+
+(def into-hiccup
+  "Helper function to be used with custom hiccup renderer."
+  markdown.transform/into-markup)
+
+(def table-alignment
+  "TODO @andrea: docstring"
+  markdown.transform/table-alignment)
+
+(def toc->hiccup
+  "TODO @andrea: docstring"
+  markdown.transform/toc->hiccup)
 
 (comment
   (parse "# 🎱 Hello")

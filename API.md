@@ -1,16 +1,14 @@
 # Table of contents
 -  [`nextjournal.markdown`](#nextjournal.markdown)  - Markdown as data.
-    -  [`->hiccup`](#nextjournal.markdown/->hiccup) - Turns a markdown string into hiccup.
+    -  [`->hiccup`](#nextjournal.markdown/->hiccup) - Turns a markdown string or document node into hiccup.
+    -  [`default-hiccup-renderers`](#nextjournal.markdown/default-hiccup-renderers) - Default map of node type -> hiccup renderers, to be used with <code>-&gt;hiccup</code>.
     -  [`empty-doc`](#nextjournal.markdown/empty-doc) - Empty document to be used with <code>parse*</code>.
+    -  [`into-hiccup`](#nextjournal.markdown/into-hiccup) - Helper function to be used with custom hiccup renderer.
+    -  [`node->text`](#nextjournal.markdown/node->text) - Convert node into text.
     -  [`parse`](#nextjournal.markdown/parse) - Turns a markdown string into an AST of nested clojure data.
     -  [`parse*`](#nextjournal.markdown/parse*) - Turns a markdown string into an AST of nested clojure data.
--  [`nextjournal.markdown.transform`](#nextjournal.markdown.transform)  - transform markdown data as returned by <code>nextjournal.markdown/parse</code> into other formats, currently: * hiccup.
-    -  [`->hiccup`](#nextjournal.markdown.transform/->hiccup)
-    -  [`->text`](#nextjournal.markdown.transform/->text) - Convert node into text.
-    -  [`default-hiccup-renderers`](#nextjournal.markdown.transform/default-hiccup-renderers)
-    -  [`into-markup`](#nextjournal.markdown.transform/into-markup) - Takes a hiccup vector, a context and a node, puts node's <code>:content</code> into markup mapping through <code>-&gt;hiccup</code>.
-    -  [`table-alignment`](#nextjournal.markdown.transform/table-alignment)
-    -  [`toc->hiccup`](#nextjournal.markdown.transform/toc->hiccup)
+    -  [`table-alignment`](#nextjournal.markdown/table-alignment) - TODO @andrea: docstring.
+    -  [`toc->hiccup`](#nextjournal.markdown/toc->hiccup) - TODO @andrea: docstring.
 -  [`nextjournal.markdown.utils`](#nextjournal.markdown.utils) 
     -  [`block-formula`](#nextjournal.markdown.utils/block-formula)
     -  [`empty-doc`](#nextjournal.markdown.utils/empty-doc) - The empty doc.
@@ -37,12 +35,21 @@ Markdown as data
 ``` clojure
 
 (->hiccup markdown)
-(->hiccup ctx markdown)
+(->hiccup hiccup-renderers markdown)
 ```
 Function.
 
-Turns a markdown string into hiccup.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L48-L55">Source</a></sub></p>
+Turns a markdown string or document node into hiccup. Optionally takes
+  `hiccup-renderers` as first argument.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L45-L53">Source</a></sub></p>
+
+## <a name="nextjournal.markdown/default-hiccup-renderers">`default-hiccup-renderers`</a>
+
+
+
+
+Default map of node type -> hiccup renderers, to be used with [`->hiccup`](#nextjournal.markdown/->hiccup)
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L41-L43">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/empty-doc">`empty-doc`</a>
 
@@ -51,6 +58,22 @@ Turns a markdown string into hiccup.
 
 Empty document to be used with [`parse*`](#nextjournal.markdown/parse*)
 <p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L8-L10">Source</a></sub></p>
+
+## <a name="nextjournal.markdown/into-hiccup">`into-hiccup`</a>
+
+
+
+
+Helper function to be used with custom hiccup renderer.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L59-L61">Source</a></sub></p>
+
+## <a name="nextjournal.markdown/node->text">`node->text`</a>
+
+
+
+
+Convert node into text.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L55-L57">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/parse">`parse`</a>
 ``` clojure
@@ -80,67 +103,21 @@ Turns a markdown string into an AST of nested clojure data.
   e.g. `(-> empty-doc (parse* text-1) (parse* text-2))`.
 <p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L12-L20">Source</a></sub></p>
 
------
-# <a name="nextjournal.markdown.transform">nextjournal.markdown.transform</a>
-
-
-transform markdown data as returned by [`nextjournal.markdown/parse`](#nextjournal.markdown/parse) into other formats, currently:
-     * hiccup
+## <a name="nextjournal.markdown/table-alignment">`table-alignment`</a>
 
 
 
 
-## <a name="nextjournal.markdown.transform/->hiccup">`->hiccup`</a>
-``` clojure
+TODO @andrea: docstring
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L63-L65">Source</a></sub></p>
 
-(->hiccup node)
-(->hiccup ctx {:as node, t :type})
-```
-Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L153-L162">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.transform/->text">`->text`</a>
-``` clojure
-
-(->text node)
-(->text ctx {:as _node, :keys [type text content]})
-```
-Function.
-
-Convert node into text
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L8-L14">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.transform/default-hiccup-renderers">`default-hiccup-renderers`</a>
+## <a name="nextjournal.markdown/toc->hiccup">`toc->hiccup`</a>
 
 
 
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L71-L151">Source</a></sub></p>
 
-## <a name="nextjournal.markdown.transform/into-markup">`into-markup`</a>
-``` clojure
-
-(into-markup mkup ctx {:as node, :keys [text content]})
-```
-Function.
-
-Takes a hiccup vector, a context and a node, puts node's `:content` into markup mapping through [`->hiccup`](#nextjournal.markdown.transform/->hiccup).
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L30-L37">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.transform/table-alignment">`table-alignment`</a>
-``` clojure
-
-(table-alignment {:keys [style]})
-```
-Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L21-L24">Source</a></sub></p>
-
-## <a name="nextjournal.markdown.transform/toc->hiccup">`toc->hiccup`</a>
-``` clojure
-
-("toc->hiccup[{:as ctx ::keys [parent]} {:as node :keys [attrs content children]}]")
-```
-Function.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown/transform.cljc#L39-L51">Source</a></sub></p>
+TODO @andrea: docstring
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L67-L69">Source</a></sub></p>
 
 -----
 # <a name="nextjournal.markdown.utils">nextjournal.markdown.utils</a>

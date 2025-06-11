@@ -1,6 +1,7 @@
 (ns nextjournal.markdown.transform
   "transform markdown data as returned by `nextjournal.markdown/parse` into other formats, currently:
-     * hiccup")
+     * hiccup"
+  {:skip-wiki true})
 
 ;; helpers
 (defn- guard [pred val] (when (pred val) val))

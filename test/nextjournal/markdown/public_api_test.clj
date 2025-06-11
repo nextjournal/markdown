@@ -28,7 +28,15 @@
              set))))
 
 (deftest public-vars-test
-  (is (= '#{->hiccup empty-doc parse parse*}
+  (is (= '#{default-hiccup-renderers
+            into-hiccup
+            toc->hiccup
+            node->text
+            table-alignment
+            ->hiccup
+            empty-doc
+            parse
+            parse*}
          (public-vars 'nextjournal.markdown)))
   (is (= '#{default-hiccup-renderers
             toc->hiccup

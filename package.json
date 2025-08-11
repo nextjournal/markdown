@@ -17,7 +17,7 @@
     "@nextjournal/lezer-clojure": "1.0.0",
     "d3-require": "^1.2.4",
     "emoji-regex": "^10.0.0",
-    "framer-motion": "^6.2.8",,
+    "framer-motion": "^6.2.8",
     "lezer-clojure": "1.0.0-rc.0",
     "markdown-it": "^14.1.0",
     "markdown-it-block-image": "^0.0.3",

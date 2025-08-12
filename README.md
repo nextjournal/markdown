@@ -9,7 +9,7 @@ A cross-platform clojure library for [Markdown](https://en.wikipedia.org/wiki/Ma
 ## Features
 
 * _Focus on data_: parsing yields an AST ([à la Pandoc](https://nextjournal.github.io/markdown/notebooks/pandoc)) of nested data representing a structured document.
-* _Cross Platform_: using [commonmark-java](https://github.com/commonmark/commonmark-java) on the JVM and [markdown-it](https://github.com/markdown-it/markdown-it) for clojurescript
+* _Cross Platform_: using [commonmark-java](https://github.com/commonmark/commonmark-java) on the JVM and [markdown-it](https://github.com/markdown-it/markdown-it) for ClojureScript.
 * _Configurable [Hiccup](https://github.com/weavejester/hiccup) conversion_.
 
 ## Try

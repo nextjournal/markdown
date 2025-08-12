@@ -1,6 +1,5 @@
 {:npm-deps
- {"katex" "^0.12.0"
-  "markdown-it" "^14.1.0"
+ {"markdown-it" "^14.1.0"
   "markdown-it-block-image" "^0.0.3"
   "markdown-it-footnote" "^3.0.3"
   "markdown-it-texmath" "^1.0.0"

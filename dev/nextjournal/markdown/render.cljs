@@ -5,7 +5,6 @@
                                    syntaxHighlighting]]
    ["@codemirror/state" :refer [EditorState]]
    ["@codemirror/view" :refer [EditorView keymap]]
-   ["katex" :as katex]
    ["react" :as react]
    [clojure.string :as str]
    [nextjournal.clerk.render :as render]
@@ -76,33 +75,41 @@
           (react/isValidElement result) result
           :else [render/inspect result]))]]))
 
-(def renderers
+(defn renderers [katex]
   (assoc md.transform/default-hiccup-renderers
          :code (fn [_ctx node] [clojure-editor {:doc (md.transform/->text node)}])
          :todo-item (fn [ctx {:as node :keys [attrs]}]
                       (md.transform/into-markup [:li [:input {:type "checkbox" :default-checked (:checked attrs)}]] ctx node))
          :formula (fn [_ctx node]
-                    [:span {:dangerouslySetInnerHTML {:__html (.renderToString katex (md.transform/->text node))}}])
+                    [:span {:dangerouslySetInnerHTML (r/unsafe-html (.renderToString katex (md.transform/->text node)))}])
          :block-formula (fn [_ctx node]
-                          [:div {:dangerouslySetInnerHTML {:__html (.renderToString katex (md.transform/->text node) #js {:displayMode true})}}])))
+                          [:div {:dangerouslySetInnerHTML (r/unsafe-html (.renderToString katex (md.transform/->text node) #js {:displayMode true}))}])))
 
 (defn inspect-expanded [x]
   (r/with-let [expanded-at (r/atom {:hover-path [] :prompt-multi-expand? false})]
     (render/inspect-presented {:!expanded-at expanded-at}
                               (v/present x))))
 
-(defn try-markdown [init-text]
-  (let [text->state (fn [text]
+
+
+(defn try-markdown* [{:keys [init-text katex]}]
+  (let [text->state (fn [katex text]
                       (let [parsed (md/parse text)]
                         {:parsed parsed
-                         :hiccup (nextjournal.markdown.transform/->hiccup renderers parsed)}))
-        !state (hooks/use-state (text->state init-text))]
+                         :hiccup (nextjournal.markdown.transform/->hiccup (renderers katex) parsed)}))
+        !state (hooks/use-state (text->state katex init-text))]
     [:div.grid.grid-cols-2.m-10
      [:div.m-2.p-2.text-xl.border-2.overflow-y-scroll.bg-slate-100 {:style {:height "20rem"}}
-      [editor {:doc init-text :on-change #(reset! !state (text->state %)) :lang :markdown}]]
+      [editor {:doc init-text :on-change #(reset! !state (text->state katex %)) :lang :markdown}]]
      [:div.m-2.p-2.font-medium.overflow-y-scroll {:style {:height "20rem"}}
       [inspect-expanded (:parsed @!state)]]
      [:div.m-2.p-2.overflow-x-scroll
       [inspect-expanded (:hiccup @!state)]]
      [:div.m-2.p-2.bg-slate-50.viewer-markdown
       [v/html (:hiccup @!state)]]]))
+
+(defn try-markdown [init-text]
+  (let [katex (hooks/use-d3-require "katex@0.16.4")]
+    (when katex
+      [try-markdown* {:init-text init-text
+                      :katex katex}])))

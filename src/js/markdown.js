@@ -1,7 +1,7 @@
 let MarkdownIt = require('markdown-it'),
     MD = new MarkdownIt({html: true, linkify: true, breaks: false})
 
-let texmath = require('markdown-it-texmath')
+let texmath = require('./markdown-it-texmath.js')
 MD.use(texmath, {delimiters: "dollars"})
 
 let blockImage = require("markdown-it-block-image")

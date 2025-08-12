@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+...
+
+## 0.7.189
+
 * Make `katex` dependency optional by inlining copy of [markdown-it-texmath](https://github.com/goessner/markdown-it-texmath) (see [#15](https://github.com/nextjournal/markdown/issues/15))
 
 ## 0.7.186

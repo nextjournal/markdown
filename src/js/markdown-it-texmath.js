@@ -26,7 +26,7 @@ function texmath(md, options) {
             texmath.katex = options.engine;
         }
         else if (typeof module === "object")
-            null // texmath.katex = require('katex');
+          null; // DIFFERENCE: removed this: texmath.katex = require('katex');
         else  // artifical error object.
             texmath.katex = { renderToString() { return 'No math renderer found.' } };
     }

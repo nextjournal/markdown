@@ -48,10 +48,16 @@ jobs:
       - name: 🛎 Checkout
         uses: actions/checkout@v2
 
-      - name: 🔧 Setup Babashka
-        uses: turtlequeue/setup-babashka@v1.3.0
+      - name: 🔧 Install java
+        uses: actions/setup-java@v1
         with:
-          babashka-version: 0.7.8
+          java-version: '21'
+
+      - name: 🔧 Install clojure
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: latest
+          bb: latest
 
       - name: 🗝 Shadow compiler cache
         uses: actions/cache@v4

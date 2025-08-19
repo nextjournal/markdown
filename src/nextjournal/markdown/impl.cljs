@@ -120,14 +120,14 @@
         (push-node (text-node c))
         close-node)))
 
-(defn footnote-label [{:as _ctx ::keys [footnote-offset]} token]
+(defn footnote-label [{:as _ctx ::keys [footnote-offset]} ^js token]
   ;; TODO: consider initial offset in case we're parsing multiple inputs
   (or (.. token -meta -label)
       ;; inline labels won't have a label
       (str "inline-note-" (+ footnote-offset (.. token -meta -id)))))
 
 ;; footnotes
-(defmethod apply-token "footnote_ref" [{:as ctx ::keys [label->footnote-ref]} token]
+(defmethod apply-token "footnote_ref" [{:as ctx ::keys [label->footnote-ref]} ^js token]
   (let [label (footnote-label ctx token)
         footnote-ref (or (get label->footnote-ref label)
                          {:type :footnote-ref :inline? (not (.. token -meta -label))
@@ -137,7 +137,7 @@
         (u/update-current-loc z/append-child footnote-ref)
         (update ::label->footnote-ref assoc label footnote-ref))))
 
-(defmethod apply-token "footnote_open" [ctx token]
+(defmethod apply-token "footnote_open" [ctx ^js token]
   ;; TODO unify in utils
   (let [label (footnote-label ctx token)]
     (-> ctx
@@ -268,7 +268,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 ;; region data builder api
 (defn pairs->kmap [pairs] (into {} (map (juxt (comp keyword first) second)) pairs))
 (defn apply-tokens [doc tokens]
-  (let [mapify-attrs-xf (map (fn [x]
+  (let [mapify-attrs-xf (map (fn [^js x]
                                (set! x -attrs (pairs->kmap (.-attrs x)))
                                x))]
     (reduce (mapify-attrs-xf apply-token) doc tokens)))

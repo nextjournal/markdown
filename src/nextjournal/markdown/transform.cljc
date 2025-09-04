@@ -32,7 +32,7 @@
 ;; into-markup
 (declare ->hiccup)
 (defn into-markup
-  "Takes a hiccup vector, a context and a node, puts node's `:content` into markup mapping through `->hiccup`."
+  "Private API. See markdown/into-hiccup."
   [mkup ctx {:as node :keys [text content]}]
   (cond ;; formula nodes are leaves: have text and no contents
     text (conj mkup text)

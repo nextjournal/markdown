@@ -57,7 +57,9 @@
   markdown.transform/->text)
 
 (def into-hiccup
-  "Helper function to be used with custom hiccup renderer."
+  "Helper function to be used with custom hiccup renderer.
+   Takes a hiccup vector, a context and a node, embeds node's `:content` into the hiccup vector markup mapping through `->hiccup`.
+   The node itself is not embedded, only its children."
   markdown.transform/into-markup)
 
 (def table-alignment

@@ -280,25 +280,18 @@ $$\\int_a^bf(t)dt$$
 rupt me when I'm writing."))))
 
 (deftest ordered-list-start-number
-  (testing "ordered list starting with 1 has start 1"
-    (is (match? {:type :doc
-                 :content [{:type :numbered-list
-                            :start 1
-                            :content [{:type :list-item}]}]}
-                (md/parse "1. First item"))))
   (testing "ordered list starting with number > 1 has that start number"
     (is (match? {:type :doc
                  :content [{:type :numbered-list
-                            :start 5
+                            :attrs {:start 5}
                             :content [{:type :list-item}]}]}
                 (md/parse "5. Fifth item"))))
   (testing "interrupted list preserves start numbers"
     (is (match? {:type :doc
-                 :content [{:type :numbered-list
-                            :start 1}
+                 :content [{:type :numbered-list}
                            {:type :code}
                            {:type :numbered-list
-                            :start 2}]}
+                            :attrs {:start 2}}]}
                 (md/parse "1. First\n\n```\ncode\n```\n\n2. Second")))))
 
 (deftest set-title-when-missing

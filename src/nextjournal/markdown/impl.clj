@@ -119,8 +119,8 @@
 
 (defmethod open-node OrderedList [ctx ^OrderedList node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :numbered-list
-                                                          :content []
-                                                          :start (.getStartNumber node)}))))
+                                                         :content []
+                                                         :attrs {:start (.getStartNumber node)}}))))
 
 (defmethod open-node ListItem [ctx _node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :list-item :content []}))))

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-...
+* Include `:start` in numbered lists 
 
 ## 0.7.189
 

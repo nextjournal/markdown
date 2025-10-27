@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+...
+
+## 0.7.196
+
 * Include `:start` in `:attrs` of numbered lists when not starting with 1.
 
 ## 0.7.189

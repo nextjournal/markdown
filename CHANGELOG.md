@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Include `:start` in numbered lists 
+* Include `:start` in `:attrs` of numbered lists when not starting with 1.
 
 ## 0.7.189
 

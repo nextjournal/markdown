@@ -279,6 +279,28 @@ $$\\int_a^bf(t)dt$$
          (md/->hiccup "Please don't inter\\
 rupt me when I'm writing."))))
 
+(deftest ordered-list-start-number
+  (testing "ordered list starting with 1 has start 1"
+    (is (match? {:type :doc
+                 :content [{:type :numbered-list
+                            :start 1
+                            :content [{:type :list-item}]}]}
+                (md/parse "1. First item"))))
+  (testing "ordered list starting with number > 1 has that start number"
+    (is (match? {:type :doc
+                 :content [{:type :numbered-list
+                            :start 5
+                            :content [{:type :list-item}]}]}
+                (md/parse "5. Fifth item"))))
+  (testing "interrupted list preserves start numbers"
+    (is (match? {:type :doc
+                 :content [{:type :numbered-list
+                            :start 1}
+                           {:type :code}
+                           {:type :numbered-list
+                            :start 2}]}
+                (md/parse "1. First\n\n```\ncode\n```\n\n2. Second")))))
+
 (deftest set-title-when-missing
   (testing "sets title in document structure to the first heading of whatever level"
     (is (= "and some title"

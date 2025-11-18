@@ -276,31 +276,34 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (defn parse
   ([markdown] (parse u/empty-doc markdown))
   ([ctx-in markdown]
-   ;; TODO: unify implementations
-   (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]}
-         (-> ctx-in
-             (assoc ::footnote-offset (count (::label->footnote-ref ctx-in)))
-             (update :text-tokenizers (partial map u/normalize-tokenizer))
-             (assoc :doc (u/->zip ctx-in)
-                    :footnotes (u/->zip {:type :footnotes
-                                         :content (or (:footnotes ctx-in) [])}))
-             (apply-tokens (md/tokenize markdown)))]
-     (-> ctx-out
-         (dissoc :doc)
-         (cond->
-           (and title (not (:title ctx-in)))
-           (assoc :title title))
-         (assoc :toc toc
-                :content (:content (z/root doc))
-                ::label->footnote-ref label->footnote-ref
-                :footnotes
-                ;; there will never be references without definitions, but the contrary may happen
-                (->> footnotes z/root :content
-                     (keep (fn [{:as footnote :keys [label]}]
-                             (when (contains? label->footnote-ref label)
-                               (assoc footnote :ref (:ref (label->footnote-ref label))))))
-                     (sort-by :ref)
-                     (vec)))))))
+   (if (empty? (select-keys ctx-in [:type :content ::root]))
+     (recur (merge u/empty-doc ctx-in) markdown)
+     (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]}
+           (-> ctx-in
+               (assoc ::footnote-offset (count (::label->footnote-ref ctx-in)))
+               (update :text-tokenizers (partial map u/normalize-tokenizer))
+               (assoc :doc (u/->zip ctx-in)
+                      :footnotes (u/->zip {:type :footnotes
+                                           :content (or (:footnotes ctx-in) [])}))
+               (apply-tokens (md/tokenize #js {:inline_formula_disabled (get-in ctx-in [:extensions :inline-formula :disabled])
+                                               :block_formula_disabled (get-in ctx-in [:extensions :block-formula :disabled])}
+                                          markdown)))]
+       (-> ctx-out
+           (dissoc :doc)
+           (cond->
+               (and title (not (:title ctx-in)))
+             (assoc :title title))
+           (assoc :toc toc
+                  :content (:content (z/root doc))
+                  ::label->footnote-ref label->footnote-ref
+                  :footnotes
+                  ;; there will never be references without definitions, but the contrary may happen
+                  (->> footnotes z/root :content
+                       (keep (fn [{:as footnote :keys [label]}]
+                               (when (contains? label->footnote-ref label)
+                                 (assoc footnote :ref (:ref (label->footnote-ref label))))))
+                       (sort-by :ref)
+                       (vec))))))))
 
 (comment
   (-> (parse "text^[a]") ::label->footnote-ref)

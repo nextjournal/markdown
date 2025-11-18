@@ -98,14 +98,16 @@
                       (+ next-non-space (.end m)))
             (BlockStart/none)))))))
 
-(defn create [_]
+(defn create [ctx]
   (proxy [Object Parser$ParserExtension] []
     (extend [^Parser$Builder pb]
       (.customBlockParserFactory pb block-toc-parser-factory)
-      (.customBlockParserFactory pb block-formula-parser-factory)
-      (.customInlineContentParserFactory pb (reify InlineContentParserFactory
-                                              (getTriggerCharacters [_] #{\$})
-                                              (create [_] (inline-formula-parser)))))))
+      (when-not (get-in ctx [:extensions :block-formula :disabled])
+        (.customBlockParserFactory pb block-formula-parser-factory))
+      (when-not (get-in ctx [:extensions :inline-formula :disabled])
+        (.customInlineContentParserFactory pb (reify InlineContentParserFactory
+                                                (getTriggerCharacters [_] #{\$})
+                                                (create [_] (inline-formula-parser))))))))
 
 
 (comment

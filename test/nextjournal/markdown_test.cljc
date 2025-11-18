@@ -1093,6 +1093,28 @@ line
 
 link</a>")))))))
 
+(deftest disable-custom-extensions-test
+  (is (match? {:toc {:type :toc},
+               :footnotes [],
+               :content
+               [{:type :paragraph,
+                 :content
+                 [{:type :strong, :content [{:type :text, :text "$1"}]}
+                  {:type :text, :text " $200"}]}],
+               :type :doc,
+               :extensions {:inline-formula {:disabled true}}}
+              (md/parse {:extensions {:inline-formula {:disabled true}}}
+                        "**$1** $200")))
+  (is (match? {:toc {:type :toc},
+               :footnotes [],
+               :content
+               [{:type :paragraph, :content [{:type :text, :text "$$ 1 + 2 + 3 $$"}]}],
+               :type :doc,
+               :extensions
+               {:inline-formula {:disabled true}, :block-formula {:disabled true}}}
+              (md/parse {:extensions {:inline-formula {:disabled true}
+                                      :block-formula {:disabled true}}} "$$ 1 + 2 + 3 $$"))))
+
 ;; Hello <a href=\"dude\">*Dude*</a>
 
 (comment

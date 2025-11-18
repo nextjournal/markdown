@@ -283,8 +283,12 @@
 
 (defn parse
   ([md] (parse u/empty-doc md))
-  ([ctx md] (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))
-                        (.parse (parser ctx) md))))
+  ([ctx md]
+   (if (empty? (select-keys ctx [:type :content ::root]))
+     ;; only settings were provided, we add the empty doc
+     (recur (merge ctx u/empty-doc) md)
+     (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))
+                 (.parse (parser ctx) md)))))
 
 #_(parse {:extensions {:formula {:delimiter nil
                                  :disabled true}
@@ -303,7 +307,9 @@
   (parse "some text^[and a note]")
 
   (parse "**Threshold 1: (~\\$125)** - \\$240K/quarter")
-  (parse "**$1** $200")
+  (parse {:extensions {:inline-formula {:disabled true}}} "**$1** $200")
+  (parse {:extensions {:inline-formula {:disabled true}
+                       :block-formula {:disabled true}}} "$$ 1 + 2 + 3 $$")
   (parse "Formula: $1 + 2 + 3$")
   (parse "Money: $1 + $2")
 

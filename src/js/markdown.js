@@ -4,7 +4,7 @@ let blockImage = require("markdown-it-block-image")
 let mdToc = require("markdown-it-toc-done-right")
 let footnotes = require("markdown-it-footnote")
 
-function todoListPlugin(md, opts) {
+function todoListPlugin(md, _opts) {
   const startsWithTodoSequence = (text) => {
     return text.startsWith("[ ] ") || text.startsWith("[x] ")
   }
@@ -45,8 +45,8 @@ function todoListPlugin(md, opts) {
 
 function MD(opts) {
   var md = new MarkdownIt({html: true, linkify: true, breaks: false})
-  if (!(opts.inline_formula_disabled || opts.block_formula_disabled)) {
-    md.use(texmath, {delimiters: "dollars"})
+  if (!(opts.disable_inline_formulas || opts.block_formula_disabled)) {
+    md.use(texmath, {delimiters: "dollars", ...opts})
   }
   md.use(blockImage)
   md.use(mdToc)

@@ -102,9 +102,8 @@
   (proxy [Object Parser$ParserExtension] []
     (extend [^Parser$Builder pb]
       (.customBlockParserFactory pb block-toc-parser-factory)
-      (when-not (get-in ctx [:extensions :block-formula :disabled])
-        (.customBlockParserFactory pb block-formula-parser-factory))
-      (when-not (get-in ctx [:extensions :inline-formula :disabled])
+      (.customBlockParserFactory pb block-formula-parser-factory)
+      (when-not (:disable-inline-formulas ctx)
         (.customInlineContentParserFactory pb (reify InlineContentParserFactory
                                                 (getTriggerCharacters [_] #{\$})
                                                 (create [_] (inline-formula-parser))))))))

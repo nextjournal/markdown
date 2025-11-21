@@ -40,8 +40,6 @@
   (parse "* this is inline $\\phi$ math
 * other  "))
 
-;; ** $foo$ **
-
 (defn parser
   ([] (parser nil))
   (^Parser [ctx]

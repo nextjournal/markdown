@@ -45,9 +45,7 @@ function todoListPlugin(md, _opts) {
 
 function MD(opts) {
   var md = new MarkdownIt({html: true, linkify: true, breaks: false})
-  if (!(opts.disable_inline_formulas || opts.block_formula_disabled)) {
-    md.use(texmath, {delimiters: "dollars", ...opts})
-  }
+  md.use(texmath, {delimiters: "dollars", ...opts})
   md.use(blockImage)
   md.use(mdToc)
   md.use(footnotes)

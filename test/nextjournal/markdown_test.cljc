@@ -1099,9 +1099,7 @@ link</a>")))))))
                :content
                [{:type :paragraph,
                  :content
-                 [;; TODO: don't know why CLJS gives an extra text node here
-                  #?(:cljs {:type :text, :text ""})
-                  {:type :strong, :content [{:type :text, :text "$1"}]}
+                 [{:type :strong, :content [{:type :text, :text "$1"}]}
                   {:type :text, :text " $200"}]}],
                :type :doc}
               (md/parse {:disable-inline-formulas true}

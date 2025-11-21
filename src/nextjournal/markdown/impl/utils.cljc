@@ -263,7 +263,9 @@ end"
                     (mapcat (fn [{:as node :keys [type]}]
                               (if (= :text type) (tokenize-text-node tokenizer ctx node) [node]))
                             nodes))
-                  [{:type :text :text text :doc-handler z/append-child}]
+                  (cond-> []
+                    (not (empty? text))
+                    (conj {:type :text :text text :doc-handler z/append-child}))
                   text-tokenizers)))
 
 ;; clj

@@ -1,6 +1,6 @@
 # nextjournal markdown
 
-[![Clojars Project](https://img.shields.io/clojars/v/io.github.nextjournal/markdown.svg)](https://clojars.org/io.github.nextjournal/markdown) [![Notebooks](https://img.shields.io/static/v1?label=clerk&message=notebooks&color=rgb(155,187,157))](https://nextjournal.github.io/markdown)
+[![Clojars Project](https://img.shields.io/clojars/v/io.github.nextjournal/markdown.svg)](https://clojars.org/io.github.nextjournal/markdown) [![Notebooks](https://img.shields.io/static/v1?label=clerk&message=notebooks&color=rgb(155,187,157))](https://nextjournal.github.io/markdown) [![bb built-in](https://raw.githubusercontent.com/babashka/babashka/master/logo/built-in-badge.svg)](https://book.babashka.org#badges)
 
 A cross-platform clojure library for [Markdown](https://en.wikipedia.org/wiki/Markdown) parsing and transformation.
 

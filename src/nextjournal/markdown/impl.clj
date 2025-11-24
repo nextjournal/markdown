@@ -288,12 +288,6 @@
      (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))
                  (.parse (parser ctx) md)))))
 
-#_(parse {:extensions {:formula {:delimiter nil
-                                 :disabled true}
-                       :strikethrough {:disabled true}
-                       }})
-#_(parse )
-
 (comment
   (import '[org.commonmark.renderer.html HtmlRenderer])
   (remove-all-methods open-node)
@@ -305,9 +299,6 @@
   (parse "some text^[and a note]")
 
   (parse "**Threshold 1: (~\\$125)** - \\$240K/quarter")
-  (parse {:extensions {:inline-formula {:disabled true}}} "**$1** $200")
-  (parse {:extensions {:inline-formula {:disabled true}
-                       :block-formula {:disabled true}}} "$$ 1 + 2 + 3 $$")
   (parse "Formula: $1 + 2 + 3$")
   (parse "Money: $1 + $2")
 

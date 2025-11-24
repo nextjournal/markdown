@@ -35,37 +35,25 @@
            (org.commonmark.parser Parser)))
 
 (set! *warn-on-reflection* true)
-;; TODO:
-;; - [x] inline formulas
-;; - [x] block formulas
-;; - [x] tight lists
-;; - [x] task lists
-;; - [x] footnotes
-;; - [ ] strikethroughs ext
-;; - [x] tables
-;; - [x] fenced code info
-;; - [ ] html nodes
-;; - [ ] auto link
-;; - [ ] promote single images as blocks
-;; - [ ] [[TOC]] (although not used in Clerk)
-
 
 (comment
   (parse "* this is inline $\\phi$ math
 * other  "))
 
-(def ^Parser parser
-  (.. Parser
-      builder
-      (extensions [(extensions/create)
-                   (AutolinkExtension/create)
-                   (TaskListItemsExtension/create)
-                   (TablesExtension/create)
-                   (StrikethroughExtension/create)
-                   (.. (FootnotesExtension/builder)
-                       (inlineFootnotes true)
-                       (build))])
-      build))
+(defn parser
+  ([] (parser nil))
+  (^Parser [ctx]
+   (.. Parser
+       builder
+       (extensions [(extensions/create ctx)
+                    (AutolinkExtension/create)
+                    (TaskListItemsExtension/create)
+                    (TablesExtension/create)
+                    (StrikethroughExtension/create)
+                    (.. (FootnotesExtension/builder)
+                        (inlineFootnotes true)
+                        (build))])
+       build)))
 
 ;; helpers / ctx
 (def ^:dynamic *in-tight-list?* false)
@@ -133,36 +121,36 @@
 
 (defmethod open-node Code [ctx ^Code node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :monospace
-                                                     :content [{:type :text
-                                                                :text (.getLiteral node)}]}))))
+                                                         :content [{:type :text
+                                                                    :text (.getLiteral node)}]}))))
 
 (defmethod open-node Strikethrough [ctx _node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :strikethrough :content []}))))
 
 (defmethod open-node Link [ctx ^Link node]
   (u/update-current-loc ctx (fn [loc]
-                          (u/zopen-node loc {:type :link
-                                             :attrs (cond-> {:href (.getDestination node)}
-                                                      (.getTitle node)
-                                                      (assoc :title (.getTitle node)))}))))
+                              (u/zopen-node loc {:type :link
+                                                 :attrs (cond-> {:href (.getDestination node)}
+                                                          (.getTitle node)
+                                                          (assoc :title (.getTitle node)))}))))
 
 (defmethod open-node IndentedCodeBlock [ctx ^IndentedCodeBlock node]
   (u/update-current-loc ctx (fn [loc]
-                          (u/zopen-node loc {:type :code
-                                             :content [{:type :text
-                                                        :text (.getLiteral node)}]}))))
+                              (u/zopen-node loc {:type :code
+                                                 :content [{:type :text
+                                                            :text (.getLiteral node)}]}))))
 
 (defmethod open-node FencedCodeBlock [ctx ^FencedCodeBlock node]
   (u/update-current-loc ctx (fn [loc]
-                          (u/zopen-node loc (merge {:type :code
-                                                    :info (.getInfo node)
-                                                    :content [{:type :text
-                                                               :text (.getLiteral node)}]}
-                                                   (u/parse-fence-info (.getInfo node)))))))
+                              (u/zopen-node loc (merge {:type :code
+                                                        :info (.getInfo node)
+                                                        :content [{:type :text
+                                                                   :text (.getLiteral node)}]}
+                                                       (u/parse-fence-info (.getInfo node)))))))
 
 (defmethod open-node Image [ctx ^Image node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :image
-                                                     :attrs {:src (.getDestination node) :title (.getTitle node)}}))))
+                                                         :attrs {:src (.getDestination node) :title (.getTitle node)}}))))
 
 (defmethod open-node TableBlock [ctx ^TableBlock _node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table}))))
@@ -277,7 +265,7 @@
       (-> ctx-out
           (dissoc :doc)
           (cond->
-            (and title (not (:title ctx-in)))
+           (and title (not (:title ctx-in)))
             (assoc :title title))
           (assoc :toc toc
                  :content (:content (z/root doc))
@@ -293,8 +281,12 @@
 
 (defn parse
   ([md] (parse u/empty-doc md))
-  ([ctx md] (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))
-                        (.parse parser md))))
+  ([ctx md]
+   (if (empty? (select-keys ctx [:type :content ::root]))
+     ;; only settings were provided, we add the empty doc
+     (recur (merge ctx u/empty-doc) md)
+     (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))
+                 (.parse (parser ctx) md)))))
 
 (comment
   (import '[org.commonmark.renderer.html HtmlRenderer])
@@ -302,9 +294,13 @@
   (remove-all-methods close-node)
 
   (.render (.build (HtmlRenderer/builder))
-           (.parse parser "some text^[and a note]"))
+           (.parse (parser) "some text^[and a note]"))
 
   (parse "some text^[and a note]")
+
+  (parse "**Threshold 1: (~\\$125)** - \\$240K/quarter")
+  (parse "Formula: $1 + 2 + 3$")
+  (parse "Money: $1 + $2")
 
   (-> {}
       (parse "# Title")

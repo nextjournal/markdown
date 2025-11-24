@@ -1,19 +1,10 @@
-let MarkdownIt = require('markdown-it'),
-    MD = new MarkdownIt({html: true, linkify: true, breaks: false})
-
+let MarkdownIt = require('markdown-it')
 let texmath = require('./markdown-it-texmath.js')
-MD.use(texmath, {delimiters: "dollars"})
-
 let blockImage = require("markdown-it-block-image")
-MD.use(blockImage)
-
 let mdToc = require("markdown-it-toc-done-right")
-MD.use(mdToc)
-
 let footnotes = require("markdown-it-footnote")
-MD.use(footnotes)
 
-function todoListPlugin(md, opts) {
+function todoListPlugin(md, _opts) {
   const startsWithTodoSequence = (text) => {
     return text.startsWith("[ ] ") || text.startsWith("[x] ")
   }
@@ -52,9 +43,16 @@ function todoListPlugin(md, opts) {
   md.core.ruler.after('inline', 'todo-list-rule', rule)
 }
 
-MD.use(todoListPlugin)
+function MD(opts) {
+  var md = new MarkdownIt({html: true, linkify: true, breaks: false})
+  md.use(texmath, {delimiters: "dollars", ...opts})
+  md.use(blockImage)
+  md.use(mdToc)
+  md.use(footnotes)
+  md.use(todoListPlugin)
+  return md;
+}
 
-function tokenize(text)  { return MD.parse(text, {}) }
-function tokenizeJSON(text) { return JSON.stringify(MD.parse(text, {})) }
+function tokenize(opts, text)  { return MD(opts).parse(text, {}) }
 
-module.exports = {tokenize, tokenizeJSON}
+module.exports = {tokenize}

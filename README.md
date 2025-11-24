@@ -125,6 +125,12 @@ The transformation of markdown node types can be customized like this:
  data)
 ```
 
+### Parse options
+
+The following options are available that affect parsing:
+
+- `:disable-inline-formula true`: disable the parsing of inline formulas
+
 ### HTML blocks and HTML inlines
 
 Typically you'd want to customize the rendering of `:html-inline` and `:html` since these need to be rendered to raw strings:

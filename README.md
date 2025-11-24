@@ -129,7 +129,7 @@ The transformation of markdown node types can be customized like this:
 
 The following options are available that affect parsing:
 
-- `:disable-inline-formula true`: disable the parsing of inline formulas
+- `:disable-inline-formulas true`: disable the parsing of inline formulas
 
 ### HTML blocks and HTML inlines
 

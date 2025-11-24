@@ -8,7 +8,7 @@
 
 ## 0.7.201
 
-- Add option `:disable-inline-formula true` to disable parsing inline formulas
+- Add option `:disable-inline-formulas true` to disable parsing inline formulas
 
 ## 0.7.196
 

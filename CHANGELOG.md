@@ -4,6 +4,10 @@
 
 ...
 
+## 0.7.201
+
+...
+
 ## 0.7.200
 
 - Add option `:disable-inline-formula true` to disable parsing inline formulas

@@ -1,6 +1,6 @@
 # Changelog
 
-[Nextjournal Markdown](https://github.com/nextjournal/markdown): A cross-platform clojure/script parser for Markdown
+[Nextjournal Markdown](https://github.com/nextjournal/markdown): A cross-platform Clojure/Script parser for Markdown
 
 ## Unreleased
 

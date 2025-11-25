@@ -21,8 +21,8 @@
   "Turns the given `markdown-string` into an AST of nested clojure data.
 
   Accepted `config` options:
-    - `:text-tokenizers` to customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
-    - `:disable-inline-formulas` to turn off parsing of $-delimited inline formulas.
+    - `:text-tokenizers`: customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
+    - `:disable-inline-formulas`: turn off parsing of $-delimited inline formulas.
   "
   ([markdown-string] (parse {} markdown-string))
   ([config markdown-string]

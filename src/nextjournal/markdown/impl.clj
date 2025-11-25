@@ -1,6 +1,7 @@
 ;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
-  (:require [clojure.zip :as z]
+  (:require [clojure.set :as set]
+            [clojure.zip :as z]
             [nextjournal.markdown.impl.extensions :as extensions]
             [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.impl.utils :as u])
@@ -282,7 +283,9 @@
 (defn parse
   ([md] (parse u/empty-doc md))
   ([ctx md]
-   (if (empty? (select-keys ctx [:type :content ::root]))
+   (if (not (set/superset?
+             (set (keys ctx))
+             (set (keys u/empty-doc))))
      ;; only settings were provided, we add the empty doc
      (recur (merge ctx u/empty-doc) md)
      (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))

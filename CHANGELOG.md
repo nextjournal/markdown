@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-...
+- Internal housekeeping
 
 ## 0.7.201
 

@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+...
+
+## 0.7.213
+
 - Fix merge order of options and `empty-doc`
 
 ## 0.7.211

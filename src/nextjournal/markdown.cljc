@@ -13,11 +13,9 @@
   "Turns a markdown string into an AST of nested clojure data.
   Allows to parse multiple strings into the same document
   e.g. `(-> empty-doc (parse* text-1) (parse* text-2))`."
-  ([markdown-text] (parse* empty-doc markdown-text))
+  ([markdown-text] (parse* {} markdown-text))
   ([ctx markdown-text]
-   (-> ctx
-       (update :text-tokenizers (partial map u/normalize-tokenizer))
-       (impl/parse markdown-text))))
+   (impl/parse ctx markdown-text)))
 
 (defn parse
   "Turns a markdown string into an AST of nested clojure data.
@@ -25,7 +23,7 @@
   Accept options:
     - `:text-tokenizers` to customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
   "
-  ([markdown-text] (parse empty-doc markdown-text))
+  ([markdown-text] (parse {} markdown-text))
   ([ctx markdown-text]
    (-> (parse* ctx markdown-text)
        (dissoc :text-tokenizers

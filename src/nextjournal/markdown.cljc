@@ -27,7 +27,8 @@
   ([markdown-string] (parse {} markdown-string))
   ([config markdown-string]
    (-> (parse* config markdown-string)
-       (dissoc :text-tokenizers
+       (dissoc :disable-inline-formulas
+               :text-tokenizers
                :text->id+emoji-fn
                ::impl/footnote-offset
                ::impl/id->index

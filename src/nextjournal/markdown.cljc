@@ -18,14 +18,15 @@
    (impl/parse ctx markdown-text)))
 
 (defn parse
-  "Turns a markdown string into an AST of nested clojure data.
+  "Turns the given `markdown-string` into an AST of nested clojure data.
 
-  Accept options:
+  Accepted `config` options:
     - `:text-tokenizers` to customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
+    - `:disable-inline-formulas` to turn off parsing of $-delimited inline formulas.
   "
-  ([markdown-text] (parse {} markdown-text))
-  ([ctx markdown-text]
-   (-> (parse* ctx markdown-text)
+  ([markdown-string] (parse {} markdown-string))
+  ([config markdown-string]
+   (-> (parse* config markdown-string)
        (dissoc :text-tokenizers
                :text->id+emoji-fn
                ::impl/footnote-offset

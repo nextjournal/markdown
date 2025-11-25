@@ -287,7 +287,7 @@
              (set (keys ctx))
              (set (keys u/empty-doc))))
      ;; only settings were provided, we add the empty doc
-     (recur (merge ctx u/empty-doc) md)
+     (recur (merge u/empty-doc ctx) md)
      (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))
                  (.parse (parser ctx) md)))))
 

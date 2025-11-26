@@ -170,7 +170,7 @@
       #_ u/insert-sidenote-containers)
 
   (-> empty-doc
-      (update :text-tokenizers (partial map u/normalize-tokenizer))
+      (update-in [:opts :text-tokenizers] (partial map u/normalize-tokenizer))
       (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
       insert-sidenote-columns
       (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
@@ -284,7 +284,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
      (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]}
            (-> ctx-in
                (assoc ::footnote-offset (count (::label->footnote-ref ctx-in)))
-               (update :text-tokenizers (partial map u/normalize-tokenizer))
+               (update-in [:opts :text-tokenizers] (partial map u/normalize-tokenizer))
                (assoc :doc (u/->zip ctx-in)
                       :footnotes (u/->zip {:type :footnotes
                                            :content (or (:footnotes ctx-in) [])}))

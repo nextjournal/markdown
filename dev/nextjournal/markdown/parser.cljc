@@ -19,12 +19,13 @@
 ;; - `:heading-level` specific of `:heading` nodes
 ;; - `:attrs` attributes as passed by markdown-it tokens (e.g `{:style "some style info"}`)
 (ns nextjournal.markdown.parser
-  (:require [clojure.string :as str]
+  (:require #?@(:cljs [[applied-science.js-interop :as j]])
+            [clojure.string :as str]
             [clojure.zip :as z]
             [nextjournal.markdown :as md]
+            [nextjournal.markdown.impl.utils :as utils]
             [nextjournal.markdown.transform :as md.transform]
-            [nextjournal.markdown.utils.emoji :as emoji]
-            #?@(:cljs [[applied-science.js-interop :as j]])))
+            [nextjournal.markdown.utils.emoji :as emoji]))
 
 ;; clj common accessors
 (def get-in* #?(:clj get-in :cljs j/get-in))
@@ -193,8 +194,10 @@
             (fn [node cs] (assoc node :content (vec cs)))
             doc))
 
-(defn assign-node-id+emoji [{:as doc ::keys [id->index path] :keys [text->id+emoji-fn]}]
-  (let [{:keys [id emoji]} (when (ifn? text->id+emoji-fn) (-> doc (get-in path) text->id+emoji-fn))
+(defn assign-node-id+emoji [{:as doc ::keys [id->index path] :keys [opts]}]
+  (let [{:keys [text->id+emoji-fn]} opts
+        {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
+                             (-> doc (get-in path) text->id+emoji-fn))
         id-count (when id (get id->index id))]
     (cond-> doc
       id
@@ -446,7 +449,7 @@ And what.
       insert-sidenote-containers)
 
   (-> empty-doc
-      (update :text-tokenizers (partial map normalize-tokenizer))
+      (update-in [:opts :text-tokenizers] (partial map normalize-tokenizer))
       (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
       insert-sidenote-columns
       (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
@@ -510,7 +513,7 @@ And what.
 
 _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
        nextjournal.markdown/tokenize
-       (parse (update empty-doc :text-tokenizers conj hashtag-tokenizer))))
+       (parse (update-in empty-doc [:opts :text-tokenizers] conj hashtag-tokenizer))))
 
 
 (defn normalize-tokenizer
@@ -546,7 +549,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
           (conj (text-hnode remaining-text))))
       [node])))
 
-(defmethod apply-token "text" [{:as doc :keys [text-tokenizers]} {:keys [content]}]
+(defmethod apply-token "text" [{:as doc :keys [opts]} {:keys [content]}]
   (reduce (fn [doc {:as node :keys [doc-handler]}] (doc-handler doc (dissoc node :doc-handler)))
           doc
           (reduce (fn [nodes tokenizer]
@@ -554,19 +557,19 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
                               (if (= :text type) (tokenize-text-node tokenizer doc node) [node]))
                             nodes))
                   [{:type :text :text content :doc-handler push-node}]
-                  text-tokenizers)))
+                  (:text-tokenizers opts))))
 
 (comment
   (def mustache (normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}" :handler (fn [m] {:type :eval :text (m 1)})}))
   (tokenize-text-node mustache {} {:text "{{what}} the {{hellow}}"})
-  (apply-token (assoc empty-doc :text-tokenizers [mustache])
+  (apply-token (assoc-in empty-doc [:opts :text-tokenizers] [mustache])
                {:type "text" :content "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]] and {{eval}} me"})
 
-  (parse (assoc empty-doc
-                :text-tokenizers
-                [(normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}"
-                                       :doc-handler (fn [{:as doc ::keys [path]} {[_ meta] :match}]
-                                                      (update-in doc (ppop path) assoc :meta meta))})])
+  (parse (assoc-in empty-doc
+                   [:opts :text-tokenizers]
+                   [(normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}"
+                                          :doc-handler (fn [{:as doc ::keys [path]} {[_ meta] :match}]
+                                                         (update-in doc (ppop path) assoc :meta meta))})])
          (nextjournal.markdown/tokenize "# Title {{id=heading}}
 * one
 * two")))
@@ -606,27 +609,17 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
   (let [mapify-attrs-xf (map (fn [x] (update* x :attrs pairs->kmap)))]
     (reduce (mapify-attrs-xf apply-token) doc tokens)))
 
-(def empty-doc {:type :doc
-                :content []
-                ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
-                ::id->index {}
-                ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
-                :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
-                :toc {:type :toc}
-                :footnotes []
-                ::path [:content -1] ;; private
-                :text-tokenizers []})
+(def empty-doc utils/empty-doc)
 
 (defn parse
   "Takes a doc and a collection of markdown-it tokens, applies tokens to doc. Uses an emtpy doc in arity 1."
   ([tokens] (parse empty-doc tokens))
   ([doc tokens] (-> doc
-                    (update :text-tokenizers (partial map normalize-tokenizer))
+                    (update-in [:opts :text-tokenizers] (partial map normalize-tokenizer))
                     (apply-tokens tokens)
-                    (dissoc ::path
-                            ::id->index
-                            :text-tokenizers
-                            :text->id+emoji-fn))))
+                    (dissoc :opts
+                            ::path
+                            ::id->index))))
 
 (comment
 

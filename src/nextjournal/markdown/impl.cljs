@@ -280,7 +280,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
    (if (not (set/superset?
              (set (keys ctx-in))
              (set (keys u/empty-doc))))
-     (recur (merge ctx (update u/empty-doc :opts merge (:opts ctx))) markdown)
+     (recur (merge ctx-in (update u/empty-doc :opts merge (:opts ctx-in))) markdown)
      (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]}
            (-> ctx-in
                (assoc ::footnote-offset (count (::label->footnote-ref ctx-in)))
@@ -365,3 +365,4 @@ some final par"
          (mapcat (partial tree-seq (comp seq :children) :children))
          (map #(select-keys % [:type :content :hidden :level :info :meta])))
         tokens))
+

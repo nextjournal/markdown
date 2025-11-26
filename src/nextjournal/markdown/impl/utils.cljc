@@ -232,11 +232,6 @@ end"
 
 (defn tokenize-text-node [{:as tkz :keys [tokenizer-fn pred doc-handler]} ctx {:as node :keys [text]}]
   ;; TokenizerFn -> HNode -> [HNode]
-  (when-not (and (fn? tokenizer-fn)
-                 (fn? doc-handler)
-                 (fn? pred)
-                 (string? text))
-    (throw (ex-info "boom" tkz)))
   (assert (and (fn? tokenizer-fn)
                (fn? doc-handler)
                (fn? pred)

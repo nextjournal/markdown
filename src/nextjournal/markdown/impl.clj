@@ -287,8 +287,8 @@
              (set (keys ctx))
              (set (keys u/empty-doc))))
      ;; only settings were provided, we add the empty doc
-     (recur (merge u/empty-doc ctx) md)
-     (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))
+     (recur (merge ctx (update u/empty-doc :opts merge (:opts ctx))) md)
+     (node->data (update-in ctx [:opts :text-tokenizers] (partial mapv u/normalize-tokenizer))
                  (.parse (parser ctx) md)))))
 
 (comment
@@ -311,7 +311,7 @@
       (parse "some para^[with other note]"))
 
   (parse "some `marks` inline and inline $formula$ with a [link _with_ em](https://what.tfk)")
-  (parse (assoc u/empty-doc :text-tokenizers [u/internal-link-tokenizer])
+  (parse (assoc-in u/empty-doc [:otps :text-tokenizers] [u/internal-link-tokenizer])
          "what a [[link]] is this")
   (parse "what the <em>real</em> deal is")
   (parse "some

@@ -62,85 +62,83 @@ $$\\int_a^bf(t)dt$$
                                      :content [{:type :text, :text "https://clerk.vision"}]}]}]}
               (md/parse "https://clerk.vision"))))
 
-(defn parse-internal-links [text]
-  (md/parse* (update u/empty-doc :text-tokenizers conj u/internal-link-tokenizer)
-             text))
+(def parse-internal-links 
+  (partial md/parse {:text-tokenizers [u/internal-link-tokenizer]}))
 
-(defn parse-hashtags [text]
-  (md/parse* (update u/empty-doc :text-tokenizers conj u/hashtag-tokenizer)
-             text))
+(def parse-hashtags
+  (partial md/parse {:text-tokenizers [u/hashtag-tokenizer]}))
 
 (deftest parse-test
   (testing "ingests markdown returns nested nodes"
-    (is (match?
-         {:type :doc
-          :footnotes []
-          :title "🎱 Hello"
-          :content [{:content [{:text "🎱 Hello"
-                                :type :text}]
-                     :heading-level 1
-                     :attrs {:id "hello"}
-                     :emoji "🎱"
-                     :type :heading}
-                    {:content [{:text "some "
-                                :type :text}
-                               {:content [{:text "strong"
-                                           :type :text}]
-                                :type :strong}
-                               {:text " "
-                                :type :text}
-                               {:content [{:text "assertion"
-                                           :type :text}]
-                                :type :em}
-                               {:text " and a "
-                                :type :text}
-                               {:attrs {:href "/path/to/something"}
-                                :content [{:text "link"
-                                           :type :text}]
-                                :type :link}
-                               {:text " and a "
-                                :type :text}
-                               {:text "\\pi"
-                                :type :formula}
-                               {:text " formula"
-                                :type :text}]
-                     :type :paragraph}
-                    {:content [{:text "(+ 1 2 3)\n" :type :text}]
-                     :info "clojure"
-                     :language "clojure"
-                     :type :code}
-                    {:content [{:text "no language\n" :type :text}]
-                     :type :code}
-                    {:text "\\int_a^bf(t)dt"
-                     :type :block-formula}
-                    {:content [{:content [{:content [{:text "one"
-                                                      :type :text}]
-                                           :type :paragraph}]
-                                :type :list-item}
-                               {:content [{:content [{:text "two"
-                                                      :type :text}]
-                                           :type :paragraph}]
-                                :type :list-item}]
-                     :type :bullet-list}]
-          :toc {:type :toc
-                :children [{:type :toc
-                            :content [{:type :text, :text "🎱 Hello"}]
-                            :heading-level 1
-                            :attrs {:id "hello"}
-                            :emoji "🎱"
-                            :path [:content 0]}]}}
-         (md/parse markdown-text))))
+    (is (= {:type :doc
+            :footnotes []
+            :title "🎱 Hello"
+            :content [{:content [{:text "🎱 Hello"
+                                  :type :text}]
+                       :heading-level 1
+                       :attrs {:id "hello"}
+                       :emoji "🎱"
+                       :type :heading}
+                      {:content [{:text "some "
+                                  :type :text}
+                                 {:content [{:text "strong"
+                                             :type :text}]
+                                  :type :strong}
+                                 {:text " "
+                                  :type :text}
+                                 {:content [{:text "assertion"
+                                             :type :text}]
+                                  :type :em}
+                                 {:text " and a "
+                                  :type :text}
+                                 {:attrs {:href "/path/to/something"}
+                                  :content [{:text "link"
+                                             :type :text}]
+                                  :type :link}
+                                 {:text " and a "
+                                  :type :text}
+                                 {:text "\\pi"
+                                  :type :formula}
+                                 {:text " formula"
+                                  :type :text}]
+                       :type :paragraph}
+                      {:content [{:text "(+ 1 2 3)\n" :type :text}]
+                       :info "clojure"
+                       :language "clojure"
+                       :type :code}
+                      {:content [{:text "no language\n" :type :text}]
+                       :info ""
+                       :type :code}
+                      {:text "\\int_a^bf(t)dt"
+                       :type :block-formula}
+                      {:content [{:content [{:content [{:text "one"
+                                                        :type :text}]
+                                             :type :paragraph}]
+                                  :type :list-item}
+                                 {:content [{:content [{:text "two"
+                                                        :type :text}]
+                                             :type :paragraph}]
+                                  :type :list-item}]
+                       :type :bullet-list}]
+            :toc {:type :toc
+                  :children [{:type :toc
+                              :content [{:type :text, :text "🎱 Hello"}]
+                              :heading-level 1
+                              :attrs {:id "hello"}
+                              :emoji "🎱"
+                              :path [:content 0]}]}}
+           (md/parse markdown-text))))
 
   (testing "parses internal links / plays well with todo lists"
-    (is (match? {:type :doc
-                 :content [{:type :paragraph
-                            :content [{:text "a "
-                                       :type :text}
-                                      {:text "wikistyle"
-                                       :type :internal-link}
-                                      {:text " link"
-                                       :type :text}]}]}
-                (parse-internal-links "a [[wikistyle]] link")))
+    (is (= {:type :doc
+            :toc {:type :toc}
+            :footnotes []
+            :content [{:type :paragraph,
+                       :content
+                       [{:type :text, :text "a "}
+                        {:type :internal-link, :text "wikistyle"}
+                        {:type :text, :text " link"}]}]}
+           (parse-internal-links "a [[wikistyle]] link")))
 
     (is (match? {:type :doc
                  :content [{:heading-level 1

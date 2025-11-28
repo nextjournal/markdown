@@ -283,9 +283,7 @@
 (defn parse
   ([md] (parse u/empty-doc md))
   ([ctx md]
-   (if (not (set/superset?
-             (set (keys ctx))
-             (set (keys u/empty-doc))))
+   (if (not (u/doc? ctx))
      ;; only settings were provided, we add the empty doc
      (recur (merge u/empty-doc ctx) md)
      (node->data (update ctx :text-tokenizers (partial map u/normalize-tokenizer))

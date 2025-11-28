@@ -277,9 +277,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (defn parse
   ([markdown] (parse u/empty-doc markdown))
   ([ctx-in markdown]
-   (if (not (set/superset?
-             (set (keys ctx-in))
-             (set (keys u/empty-doc))))
+   (if (not (u/doc? ctx-in))
      (recur (merge u/empty-doc ctx-in) markdown)
      (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]}
            (-> ctx-in

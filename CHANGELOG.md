@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-...
+- Support `:opts` in `parse*`
 
 ## 0.7.213
 

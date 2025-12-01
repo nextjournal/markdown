@@ -5,7 +5,7 @@
     -  [`empty-doc`](#nextjournal.markdown/empty-doc) - Empty document to be used with <code>parse*</code>.
     -  [`into-hiccup`](#nextjournal.markdown/into-hiccup) - Helper function to be used with custom hiccup renderer.
     -  [`node->text`](#nextjournal.markdown/node->text) - Convert node into text.
-    -  [`parse`](#nextjournal.markdown/parse) - Turns a markdown string into an AST of nested clojure data.
+    -  [`parse`](#nextjournal.markdown/parse) - Turns the given <code>markdown-string</code> into an AST of nested clojure data.
     -  [`parse*`](#nextjournal.markdown/parse*) - Turns a markdown string into an AST of nested clojure data.
     -  [`table-alignment`](#nextjournal.markdown/table-alignment) - Takes a table-ish node, returns a map suitable for hiccup style attributes with a :text-align property.
     -  [`toc->hiccup`](#nextjournal.markdown/toc->hiccup) - Transform a toc node into hiccup data, suitable for using as renderer function in hiccup transform, see [->hiccup](#markdown.transform/toc->hiccup).
@@ -40,7 +40,7 @@ Function.
 
 Turns a markdown string or document node into hiccup. Optionally takes
   `hiccup-renderers` as first argument.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L45-L53">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L43-L51">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/default-hiccup-renderers">`default-hiccup-renderers`</a>
 
@@ -48,7 +48,7 @@ Turns a markdown string or document node into hiccup. Optionally takes
 
 
 Default map of node type -> hiccup renderers, to be used with [`->hiccup`](#nextjournal.markdown/->hiccup)
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L41-L43">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L39-L41">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/empty-doc">`empty-doc`</a>
 
@@ -64,7 +64,9 @@ Empty document to be used with [`parse*`](#nextjournal.markdown/parse*)
 
 
 Helper function to be used with custom hiccup renderer.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L59-L61">Source</a></sub></p>
+   Takes a hiccup vector, a context and a node, embeds node's `:content` into the hiccup vector markup mapping through [`->hiccup`](#nextjournal.markdown/->hiccup).
+   The node itself is not embedded, only its children.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L57-L61">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/node->text">`node->text`</a>
 
@@ -72,22 +74,22 @@ Helper function to be used with custom hiccup renderer.
 
 
 Convert node into text.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L55-L57">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L53-L55">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/parse">`parse`</a>
 ``` clojure
 
-(parse markdown-text)
-(parse ctx markdown-text)
+(parse markdown-string)
+(parse opts markdown-string)
 ```
 Function.
 
-Turns a markdown string into an AST of nested clojure data.
+Turns the given `markdown-string` into an AST of nested clojure data.
 
-  Accept options:
-    - `:text-tokenizers` to customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
-  
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L22-L37">Source</a></sub></p>
+  Accepted `opts`:
+    - `:text-tokenizers`: customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
+    - `:disable-inline-formulas`: turn off parsing of $-delimited inline formulas.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L21-L35">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/parse*">`parse*`</a>
 ``` clojure
@@ -100,7 +102,8 @@ Function.
 Turns a markdown string into an AST of nested clojure data.
   Allows to parse multiple strings into the same document
   e.g. `(-> empty-doc (parse* text-1) (parse* text-2))`.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L12-L20">Source</a></sub></p>
+  Supports same options as [`parse`](#nextjournal.markdown/parse) via `:opts` map in `ctx`.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L12-L19">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/table-alignment">`table-alignment`</a>
 

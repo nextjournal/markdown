@@ -12,7 +12,8 @@
 (defn parse*
   "Turns a markdown string into an AST of nested clojure data.
   Allows to parse multiple strings into the same document
-  e.g. `(-> empty-doc (parse* text-1) (parse* text-2))`."
+  e.g. `(-> empty-doc (parse* text-1) (parse* text-2))`.
+  Supports same options as `parse` via `:opts` map in `ctx`."
   ([markdown-text] (parse* {} markdown-text))
   ([ctx markdown-text]
    (impl/parse ctx markdown-text)))

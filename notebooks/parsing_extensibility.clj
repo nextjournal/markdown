@@ -33,7 +33,7 @@
 (u/tokenize-text-node internal-link-tokenizer {} {:text "some [[set]] of [[wiki]] link"})
 
 ;; In order to opt-in of the extra tokenization above, we need to configure the document context as follows:
-(md/parse* (update u/empty-doc :text-tokenizers conj internal-link-tokenizer)
+(md/parse* {:opts {:text-tokenizers [internal-link-tokenizer]}}
            "some [[set]] of [[wiki]] link")
 
 ;; We provide an `internal-link-tokenizer` as well as a `hashtag-tokenizer` as part of the `nextjournal.markdown.parser` namespace. By default, these are not used during parsing and need to be opted-in for like explained above.
@@ -84,7 +84,7 @@ existing [[links]] or #tags")
 (u/tokenize-text-node losange-tokenizer {} {:text text})
 
 ;; putting it all together
-(md/parse* (update u/empty-doc :text-tokenizers conj losange-tokenizer)
+(md/parse* {:opts {:text-tokenizers [losange-tokenizer]}}
            text)
 
 ;; ## Parsing with Document Handlers
@@ -113,11 +113,9 @@ and adds a flag to its text.
       z/up)) ;; close-node
 
 (def data
-  (md/parse* (-> u/empty-doc
-                 (update :text-tokenizers conj
-                         (assoc losange-tokenizer
-                                :doc-handler (fn [doc {:keys [match]}]
-                                               (apply (eval (first match)) doc (rest match))))))
+  (md/parse* {:opts {:text-tokenizers [(assoc losange-tokenizer
+                                              :doc-handler (fn [doc {:keys [match]}]
+                                                             (apply (eval (first match)) doc (rest match))))]}}
              text-with-meta))
 
 (clerk/md data)

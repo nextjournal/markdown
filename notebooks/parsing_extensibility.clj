@@ -36,7 +36,7 @@
 (md/parse* {:opts {:text-tokenizers [internal-link-tokenizer]}}
            "some [[set]] of [[wiki]] link")
 
-;; We provide an `internal-link-tokenizer` as well as a `hashtag-tokenizer` as part of the `nextjournal.markdown.parser` namespace. By default, these are not used during parsing and need to be opted-in for like explained above.
+;; We provide an `internal-link-tokenizer` as well as a `hashtag-tokenizer` as part of the `nextjournal.markdown.utils` namespace. By default, these are not used during parsing and need to be opted-in for like explained above.
 
 ;; ## Read-based tokenization
 ;;

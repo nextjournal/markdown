@@ -359,14 +359,4 @@ And what.
 
 [^knuth84]: [Literate Programming](https://doi.org/10.1093/comjnl/27.2.97)
 [^literateprogramming]: An extensive archive of related material is maintained [here](http://www.literateprogramming.com).")
-
-  (-> (parse "this might[^reuse] here[^another] and here[^reuse] here
-
-[^another]: stuff
-[^reuse]: define here
-
-this should be left as is
-
-another paragraph reusing[^reuse]
-")
-      md.parser/insert-sidenote-containers))
+)

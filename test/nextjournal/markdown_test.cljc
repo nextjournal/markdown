@@ -1101,7 +1101,26 @@ link</a>")))))))
              {:type :text, :text " $200"}]}],
           :type :doc}
          (md/parse {:disable-inline-formulas true}
-                   "**$1** $200"))))
+                   "**$1** $200")))
+  (is (= {:toc {:type :toc},
+          :footnotes [],
+          :content
+          [{:type :paragraph,
+            :content
+            [{:type :strong, :content [{:type :text, :text "$1"}]}
+             {:type :text, :text " $200"}]}],
+          :type :doc}
+         (select-keys (md/parse* {:opts {:disable-inline-formulas true}}
+                                 "**$1** $200")
+                      [:toc :content :footnotes :type]))))
+
+(deftest disable-default-opts-test
+  (is (nil? (-> (md/parse {:text->id+emoji-fn nil}
+                          "# 🎱 Hello 😀")
+                :content first :emoji)))
+  (is (nil? (-> (md/parse* {:opts {:text->id+emoji-fn nil}}
+                           "# 🎱 Hello 😀")
+                :content first :emoji))))
 
 ;; Hello <a href=\"dude\">*Dude*</a>
 

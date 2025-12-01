@@ -68,8 +68,6 @@
   markdown.transform/toc->hiccup)
 
 (comment
-  (parse "# 🎱 Hello")
-
   (parse "# Hello Markdown
 - [ ] what
 - [ ] [nice](very/nice/thing)

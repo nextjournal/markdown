@@ -9,8 +9,8 @@
  :aliases
  {:nextjournal/clerk
   {:extra-paths ["notebooks" "dev"]
-   :extra-deps {io.github.nextjournal/clerk {:git/sha "39b73a0acf0b29ff8fef70ff462f170c21026a3f"
-                                             ;; :mvn/version "0.17.1102"
+   :extra-deps {io.github.nextjournal/clerk {;; :git/sha "39b73a0acf0b29ff8fef70ff462f170c21026a3f"
+                                             :mvn/version "0.18.1158"
                                              :exclusions [io.github.nextjournal/markdown]}}
    :jvm-opts ["-Dclojure.main.report=stderr"
               #_"-Dclerk.resource_manifest={\"/js/viewer.js\" \"js/viewer.js\"}"] ;;
@@ -29,7 +29,8 @@
                 org.babashka/http-client {:mvn/version "0.3.11"}
                 org.clojure/data.json {:mvn/version "2.4.0"}
                 org.clojure/test.check {:mvn/version "1.1.1"}
-                io.github.nextjournal/clerk {:git/sha "39b73a0acf0b29ff8fef70ff462f170c21026a3f"
+                io.github.nextjournal/clerk {:mvn/version "0.18.1158"
+                                             ;; :git/sha "39b73a0acf0b29ff8fef70ff462f170c21026a3f"
                                              :exclusions [io.github.nextjournal/markdown]}
                 nubank/matcher-combinators {:mvn/version "3.8.3"}
                 hiccup/hiccup {:mvn/version "2.0.0-RC5"}}}
@@ -38,7 +39,7 @@
   {:extra-paths ["test"]
    :jvm-opts ["-Dclojure.main.report=stderr"]
    :extra-deps {nubank/matcher-combinators {:mvn/version "3.9.1"}
-                babashka/fs {:mvn/version "0.5.26"}
+                babashka/fs {:mvn/version "0.5.30"}
                 hiccup/hiccup {:mvn/version "2.0.0-RC5"}}
    :exec-fn test-runner/run}
 

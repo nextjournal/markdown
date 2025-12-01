@@ -109,12 +109,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: 🗝 Clerk Cache
-        uses: actions/cache@v4
-        with:
-          path: .clerk
-          key: ${{ runner.os }}-clerk-cache
-
       - name: 🗝 Shadow compiler cache
         uses: actions/cache@v4
         with:

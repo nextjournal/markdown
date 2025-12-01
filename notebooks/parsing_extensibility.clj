@@ -11,7 +11,7 @@
 
 ^{:nextjournal.clerk/visibility {:code :hide :result :hide}}
 (def show-text
-  {:transform-fn (fn [x] (clerk/html [:pre (deref (:nextjournal/value x))]))})
+  {:transform-fn (fn [x] (clerk/html [:pre (:nextjournal/value x)]))})
 
 ;; With recent additions to our `nextjournal.markdown.parser` we're allowing for a customizable parsing layer on top of the tokenization provided by `markdown-it` ([n.markdown/tokenize](https://github.com/nextjournal/markdown/blob/ae2a2f0b6d7bdc6231f5d088ee559178b55c97f4/src/nextjournal/markdown.clj#L50-L52)).
 ;; We're acting on the text (leaf) tokens, splitting each of those into a collection of [nodes](https://github.com/nextjournal/markdown/blob/ff68536eb15814fe81db7a6d6f11f049895a4282/src/nextjournal/markdown/parser.cljc#L5).  We'll explain how that works by means of three examples.

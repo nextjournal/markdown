@@ -171,6 +171,12 @@ jobs:
       - name: 🏷 Get tags
         run: git fetch --tags origin
 
+      - name: 🔧 Install clojure
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: latest
+          bb: latest
+
       - name: 🗝 maven cache
         uses: actions/cache@v4
         with:

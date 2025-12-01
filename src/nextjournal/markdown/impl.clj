@@ -311,7 +311,7 @@
       (parse "some para^[with other note]"))
 
   (parse "some `marks` inline and inline $formula$ with a [link _with_ em](https://what.tfk)")
-  (parse (assoc-in u/empty-doc [:otps :text-tokenizers] [u/internal-link-tokenizer])
+  (parse (assoc-in u/empty-doc [:opts :text-tokenizers] [u/internal-link-tokenizer])
          "what a [[link]] is this")
   (parse "what the <em>real</em> deal is")
   (parse "some

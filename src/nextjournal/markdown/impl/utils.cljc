@@ -1,6 +1,7 @@
 ;; # Markdown parsing shared utils
 (ns nextjournal.markdown.impl.utils
-  (:require [clojure.string :as str]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
             [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.utils.emoji :as emoji]))
@@ -60,6 +61,12 @@
    :nextjournal.markdown.impl/id->index {}
    ;; allow to swap between :doc or :footnotes
    :nextjournal.markdown.impl/root :doc})
+
+(def essential-doc-keys (-> (set (keys empty-doc))
+                            (disj :text-tokenizers :text->id+emoji-fn)))
+
+(defn doc? [x]
+  (set/superset? (set (keys x)) essential-doc-keys))
 
 (defn current-loc [{:as ctx :nextjournal.markdown.impl/keys [root]}] (get ctx root))
 (defn update-current-loc [{:as ctx :nextjournal.markdown.impl/keys [root]} f & args]

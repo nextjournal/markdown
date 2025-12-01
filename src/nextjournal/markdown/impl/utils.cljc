@@ -52,7 +52,7 @@
    :toc {:type :toc}
    :footnotes []
    :opts {:text-tokenizers []
-          ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
+          ;; Node -> {id : String, emoji String}, supply `nil` to opt-out of ids
           :text->id+emoji-fn (comp text->id+emoji md.transform/->text)}
 
    ;; private

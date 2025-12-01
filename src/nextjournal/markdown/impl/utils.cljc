@@ -1,6 +1,7 @@
 ;; # Markdown parsing shared utils
 (ns nextjournal.markdown.impl.utils
-  (:require [clojure.string :as str]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
             [clojure.zip :as z]
             [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.utils.emoji :as emoji]))
@@ -51,15 +52,21 @@
    :content []
    :toc {:type :toc}
    :footnotes []
-   :text-tokenizers []
-   ;; Node -> {id : String, emoji String}, dissoc from context to opt-out of ids
-   :text->id+emoji-fn (comp text->id+emoji md.transform/->text)
+   :opts {:text-tokenizers []
+          ;; Node -> {id : String, emoji String}, supply `nil` to opt-out of ids
+          :text->id+emoji-fn (comp text->id+emoji md.transform/->text)}
 
    ;; private
    ;; Id -> Nat, to disambiguate ids for nodes with the same textual content
    :nextjournal.markdown.impl/id->index {}
    ;; allow to swap between :doc or :footnotes
    :nextjournal.markdown.impl/root :doc})
+
+(def essential-doc-keys (-> (set (keys empty-doc))
+                            (disj :text-tokenizers :text->id+emoji-fn)))
+
+(defn doc? [x]
+  (set/superset? (set (keys x)) essential-doc-keys))
 
 (defn current-loc [{:as ctx :nextjournal.markdown.impl/keys [root]}] (get ctx root))
 (defn update-current-loc [{:as ctx :nextjournal.markdown.impl/keys [root]} f & args]
@@ -162,7 +169,8 @@
     (reduce (xf rf) (assoc doc :toc {:type :toc}) content)))
 
 (defn handle-close-heading [ctx]
-  (let [{:keys [text->id+emoji-fn] :nextjournal.markdown.impl/keys [id->index]} ctx
+  (let [{:keys [opts] :nextjournal.markdown.impl/keys [id->index]} ctx
+        {:keys [text->id+emoji-fn]} opts
         heading-loc (current-loc ctx)
         heading (z/node heading-loc)
         {:keys [id emoji]} (when (ifn? text->id+emoji-fn)
@@ -244,7 +252,7 @@ end"
                       (-> acc
                           (update :remaining-text subs 0 start)
                           (cond->
-                            (< end (count remaining-text))
+                              (< end (count remaining-text))
                             (update :nodes conj (text-hnode (subs remaining-text end))))
                           (update :nodes conj {:doc-handler doc-handler
                                                :match match :text text
@@ -256,7 +264,7 @@ end"
           (conj (text-hnode remaining-text))))
       [node])))
 
-(defn handle-text-token [{:as ctx :keys [text-tokenizers]} text]
+(defn handle-text-token [{:as ctx :keys [opts]} text]
   (reduce (fn [ctx {:as node :keys [doc-handler]}] (update-current-loc ctx doc-handler (dissoc node :doc-handler)))
           ctx
           (reduce (fn [nodes tokenizer]
@@ -266,7 +274,7 @@ end"
                   (cond-> []
                     (not (empty? text))
                     (conj {:type :text :text text :doc-handler z/append-child}))
-                  text-tokenizers)))
+                  (:text-tokenizers opts))))
 
 ;; clj
 #_(handle-text-token (->zip {:type :doc :content []}) "some-text")

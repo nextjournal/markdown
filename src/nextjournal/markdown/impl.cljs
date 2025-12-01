@@ -170,7 +170,7 @@
       #_ u/insert-sidenote-containers)
 
   (-> empty-doc
-      (update :text-tokenizers (partial map u/normalize-tokenizer))
+      (update-in [:opts :text-tokenizers] (partial mapv u/normalize-tokenizer))
       (apply-tokens (nextjournal.markdown/tokenize "what^[the heck]"))
       insert-sidenote-columns
       (apply-tokens (nextjournal.markdown/tokenize "# Hello"))
@@ -212,7 +212,7 @@
 > what about #this
 
 _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
-       (parse (update empty-doc :text-tokenizers conj (u/normalize-tokenizer u/hashtag-tokenizer)))))
+       (parse (update-in empty-doc [:opts :text-tokenizers] conj (u/normalize-tokenizer u/hashtag-tokenizer)))))
 
 (defmethod apply-token "text" [ctx ^js token]
   (u/handle-text-token ctx (.-content token)))
@@ -220,7 +220,7 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (comment
   (def mustache (u/normalize-tokenizer {:regex #"\{\{([^\{]+)\}\}" :handler (fn [m] {:type :eval :text (m 1)})}))
   (u/tokenize-text-node mustache {} {:text "{{what}} the {{hellow}}"})
-  (u/handle-text-token (assoc u/empty-doc :text-tokenizers [mustache])
+  (u/handle-text-token (assoc-in u/empty-doc [:opts :text-tokenizers] [mustache])
                        "foo [[bar]] dang #hashy taggy [[what]] #dangy foo [[great]] and {{eval}} me"))
 
 ;; inlines
@@ -277,18 +277,16 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (defn parse
   ([markdown] (parse u/empty-doc markdown))
   ([ctx-in markdown]
-   (if (not (set/superset?
-             (set (keys ctx-in))
-             (set (keys u/empty-doc))))
-     (recur (merge u/empty-doc ctx-in) markdown)
+   (if (not (u/doc? ctx-in))
+     (recur (merge ctx-in (update u/empty-doc :opts merge (:opts ctx-in))) markdown)
      (let [{:as ctx-out :keys [doc title toc footnotes] ::keys [label->footnote-ref]}
            (-> ctx-in
                (assoc ::footnote-offset (count (::label->footnote-ref ctx-in)))
-               (update :text-tokenizers (partial map u/normalize-tokenizer))
+               (update-in [:opts :text-tokenizers] (partial mapv u/normalize-tokenizer))
                (assoc :doc (u/->zip ctx-in)
                       :footnotes (u/->zip {:type :footnotes
                                            :content (or (:footnotes ctx-in) [])}))
-               (apply-tokens (md/tokenize #js {:disable_inline_formulas (:disable-inline-formulas ctx-in)}
+               (apply-tokens (md/tokenize #js {:disable_inline_formulas (:disable-inline-formulas (:opts ctx-in))}
                                           markdown)))]
        (-> ctx-out
            (dissoc :doc)

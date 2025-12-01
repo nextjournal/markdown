@@ -103,7 +103,7 @@
     (extend [^Parser$Builder pb]
       (.customBlockParserFactory pb block-toc-parser-factory)
       (.customBlockParserFactory pb block-formula-parser-factory)
-      (when-not (:disable-inline-formulas ctx)
+      (when-not (:disable-inline-formulas (:opts ctx))
         (.customInlineContentParserFactory pb (reify InlineContentParserFactory
                                                 (getTriggerCharacters [_] #{\$})
                                                 (create [_] (inline-formula-parser))))))))

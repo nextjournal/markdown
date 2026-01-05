@@ -1,7 +1,6 @@
 ;; # 🧩 Parsing
 (ns nextjournal.markdown.impl
-  (:require [clojure.set :as set]
-            [clojure.zip :as z]
+  (:require [clojure.zip :as z]
             [nextjournal.markdown.impl.extensions :as extensions]
             [nextjournal.markdown.impl.types :as t]
             [nextjournal.markdown.impl.utils :as u])
@@ -33,7 +32,7 @@
                                 HtmlInline
                                 Image
                                 HtmlBlock)
-           (org.commonmark.parser Parser)))
+           (org.commonmark.parser Parser IncludeSourceSpans)))
 
 (set! *warn-on-reflection* true)
 
@@ -46,6 +45,7 @@
   (^Parser [ctx]
    (.. Parser
        builder
+       (includeSourceSpans IncludeSourceSpans/BLOCKS_AND_INLINES)
        (extensions [(extensions/create ctx)
                     (AutolinkExtension/create)
                     (TaskListItemsExtension/create)
@@ -72,7 +72,12 @@
      ~@body))
 
 ;; multi stuff
-(defmulti open-node (fn [_ctx node] (type node)))
+(defmulti open-node (fn [_ctx node]
+                      (def x node)
+                      (type node)))
+
+#_(bean x)
+
 (defmulti close-node (fn [_ctx node] (type node)))
 
 (defmethod close-node :default [ctx _node] (u/update-current-loc ctx z/up))

@@ -31,7 +31,8 @@
                                 HardLineBreak
                                 HtmlInline
                                 Image
-                                HtmlBlock)
+                                HtmlBlock
+                                SourceSpan)
            (org.commonmark.parser Parser IncludeSourceSpans)))
 
 (set! *warn-on-reflection* true)
@@ -71,10 +72,20 @@
   `(binding [*in-tight-list?* (in-tight-list? ~node)]
      ~@body))
 
+(defn node->loc [^Node node]
+  (when-let [spans (.getSourceSpans node)]
+    (when-not (.isEmpty spans)
+      (let [^SourceSpan first-span (first spans)
+            ^SourceSpan last-span (last spans)]
+        {:line (.getLineIndex first-span)
+         :column (.getColumnIndex first-span)
+         :end-line (.getLineIndex last-span)
+         :end-column (+ (.getColumnIndex last-span) (.getLength last-span))}))))
+
+#_(node->source-pos n)
+
 ;; multi stuff
-(defmulti open-node (fn [_ctx node]
-                      (def x node)
-                      (type node)))
+(defmulti open-node (fn [_ctx node] (type node)))
 
 #_(bean x)
 
@@ -82,69 +93,103 @@
 
 (defmethod close-node :default [ctx _node] (u/update-current-loc ctx z/up))
 
-(defmethod open-node Document [ctx _node] ctx)
+(defmethod open-node Document [ctx _node]
+  ctx)
+
+#_(bean n)
+
 (defmethod close-node Document [ctx _node] ctx)
 
-(defmethod open-node Paragraph [ctx _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type (paragraph-type)}))))
+(defmethod open-node Paragraph [ctx node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type (paragraph-type)}
+                                                               (node->loc node))))))
 
-(defmethod open-node BlockQuote [ctx _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :blockquote}))))
+#_(parse "Dude")
+
+(defmethod open-node BlockQuote [ctx node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :blockquote}
+                                                               (node->loc node))))))
+
+#_(parse "> Dude")
 
 (defmethod open-node Heading [ctx ^Heading node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :heading
-                                                         :heading-level (.getLevel node)}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :heading
+                                                                :heading-level (.getLevel node)}
+                                                               (node->loc node))))))
+
+#_(parse "# Dude")
 
 (defmethod close-node Heading [ctx ^Heading _node]
   (u/handle-close-heading ctx))
 
 (defmethod open-node HtmlInline [ctx ^HtmlInline node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :html-inline
-                                                         :content [{:type :text
-                                                                    :text (.getLiteral node)}]}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :html-inline
+                                                                :content [{:type :text
+                                                                           :text (.getLiteral node)}]}
+                                                               (node->loc node))))))
+
+#_(parse "Inline <a><a>")
 
 (defmethod open-node HtmlBlock [ctx ^HtmlBlock node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :html-block
-                                                         :content [{:type :text
-                                                                    :text (.getLiteral node)}]}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :html-block
+                                                                :content [{:type :text
+                                                                           :text (.getLiteral node)}]}
+                                                               (node->loc node))))))
 
-(defmethod open-node BulletList [ctx ^ListBlock _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :bullet-list :content [] #_#_:tight? (.isTight node)}))))
+#_(parse "<a></a>")
+
+(defmethod open-node BulletList [ctx ^ListBlock node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :bullet-list :content [] #_#_:tight? (.isTight node)}
+                                                               (node->loc node))))))
+
+#_(-> (parse "- Dude") :content first)
 
 (defmethod open-node OrderedList [ctx ^OrderedList node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :numbered-list
-                                                         :content []
-                                                         :attrs {:start (.getStartNumber node)}}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :numbered-list
+                                                               :content []
+                                                                :attrs {:start (.getStartNumber node)}}
+                                                               (node->loc node))))))
 
-(defmethod open-node ListItem [ctx _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :list-item :content []}))))
+#_(-> (parse "1. Dude") :content first)
 
-(defmethod open-node Emphasis [ctx _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :em :content []}))))
+(defmethod open-node ListItem [ctx node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :list-item :content []}
+                                                               (node->loc node))))))
 
-(defmethod open-node StrongEmphasis [ctx _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :strong :content []}))))
+#_(-> (parse "- Dude") :content first :content first)
+
+(defmethod open-node Emphasis [ctx node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :em :content []}
+                                                               (node->loc node))))))
+
+(defmethod open-node StrongEmphasis [ctx node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :strong :content []}
+                                                               (node->loc node))))))
 
 (defmethod open-node Code [ctx ^Code node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :monospace
-                                                         :content [{:type :text
-                                                                    :text (.getLiteral node)}]}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :monospace
+                                                                :content [{:type :text
+                                                                           :text (.getLiteral node)}]}
+                                                               (node->loc node))))))
 
-(defmethod open-node Strikethrough [ctx _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :strikethrough :content []}))))
+(defmethod open-node Strikethrough [ctx node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :strikethrough :content []}
+                                                               (node->loc node))))))
 
 (defmethod open-node Link [ctx ^Link node]
   (u/update-current-loc ctx (fn [loc]
-                              (u/zopen-node loc {:type :link
-                                                 :attrs (cond-> {:href (.getDestination node)}
-                                                          (.getTitle node)
-                                                          (assoc :title (.getTitle node)))}))))
+                              (u/zopen-node loc (merge {:type :link
+                                                        :attrs (cond-> {:href (.getDestination node)}
+                                                                 (.getTitle node)
+                                                                 (assoc :title (.getTitle node)))}
+                                                       (node->loc node))))))
 
 (defmethod open-node IndentedCodeBlock [ctx ^IndentedCodeBlock node]
   (u/update-current-loc ctx (fn [loc]
-                              (u/zopen-node loc {:type :code
-                                                 :content [{:type :text
-                                                            :text (.getLiteral node)}]}))))
+                              (u/zopen-node loc (merge {:type :code
+                                                        :content [{:type :text
+                                                                   :text (.getLiteral node)}]}
+                                                       (node->loc node))))))
 
 (defmethod open-node FencedCodeBlock [ctx ^FencedCodeBlock node]
   (u/update-current-loc ctx (fn [loc]
@@ -152,20 +197,26 @@
                                                         :info (.getInfo node)
                                                         :content [{:type :text
                                                                    :text (.getLiteral node)}]}
+                                                       (node->loc node)
                                                        (u/parse-fence-info (.getInfo node)))))))
 
 (defmethod open-node Image [ctx ^Image node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :image
-                                                         :attrs {:src (.getDestination node) :title (.getTitle node)}}))))
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :image
+                                                                :attrs {:src (.getDestination node) :title (.getTitle node)}}
+                                                               (node->loc node))))))
 
-(defmethod open-node TableBlock [ctx ^TableBlock _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table}))))
-(defmethod open-node TableHead [ctx ^TableHead _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table-head}))))
-(defmethod open-node TableBody [ctx ^TableBody _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table-body}))))
-(defmethod open-node TableRow [ctx ^TableRow _node]
-  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc {:type :table-row}))))
+(defmethod open-node TableBlock [ctx ^TableBlock node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :table}
+                                                               (node->loc node))))))
+(defmethod open-node TableHead [ctx ^TableHead node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :table-head}
+                                                               (node->loc node))))))
+(defmethod open-node TableBody [ctx ^TableBody node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :table-body}
+                                                               (node->loc node))))))
+(defmethod open-node TableRow [ctx ^TableRow node]
+  (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :table-row}
+                                                               (node->loc node))))))
 
 (defn alignment->keyword [enum]
   (condp = enum
@@ -176,29 +227,34 @@
 (defmethod open-node TableCell [ctx ^TableCell node]
   (u/update-current-loc ctx (fn [loc]
                               (let [alignment (some-> (.getAlignment node) alignment->keyword)]
-                                (u/zopen-node loc (cond-> {:type (if (.isHeader node) :table-header :table-data)
-                                                           :content []}
-                                                    alignment
-                                                    (assoc :alignment alignment)))))))
+                                (u/zopen-node loc (merge (cond-> {:type (if (.isHeader node) :table-header :table-data)
+                                                                 :content []}
+                                                          alignment
+                                                          (assoc :alignment alignment))
+                                                         (node->loc node)))))))
 
 (defmethod open-node FootnoteDefinition [ctx ^FootnoteDefinition node]
   (-> ctx
       (assoc ::root :footnotes)
       (u/update-current-loc (fn [loc]
                               (-> loc
-                                  (z/append-child {:type :footnote
-                                                   :label (.getLabel node)
-                                                   :content []}) z/down z/rightmost)))))
+                                  (z/append-child (merge {:type :footnote
+                                                          :label (.getLabel node)
+                                                          :content []}
+                                                         (node->loc node)))
+                                  z/down z/rightmost)))))
 
 (defmethod close-node FootnoteDefinition [ctx ^FootnoteDefinition _node]
   (-> ctx (u/update-current-loc z/up) (assoc ::root :doc)))
 
-(defmethod open-node InlineFootnote [{:as ctx ::keys [label->footnote-ref]} ^InlineFootnote _node]
-  (let [label (str "inline-note-" (count label->footnote-ref))
-        footnote-ref {:type :footnote-ref
-                      :inline? true
-                      :ref (count label->footnote-ref)
-                      :label label}]
+(defmethod open-node InlineFootnote [{:as ctx ::keys [label->footnote-ref]} ^InlineFootnote node]
+  (let [loc (node->loc node)
+        label (str "inline-note-" (count label->footnote-ref))
+        footnote-ref (merge {:type :footnote-ref
+                             :inline? true
+                             :ref (count label->footnote-ref)
+                             :label label}
+                            loc)]
     (-> ctx
         (u/update-current-loc z/append-child footnote-ref)
         (update ::label->footnote-ref assoc label footnote-ref)
@@ -222,6 +278,8 @@
   (let [meth (.getDeclaredMethod AbstractVisitor "visitChildren" (into-array [Node]))]
     (.setAccessible meth true)
     meth))
+
+;; TODO: add locs to the below nodes
 
 (defn node->data [{:as ctx-in :keys [footnotes]} ^Node node]
   (assert (:type ctx-in) ":type must be set on initial doc")
@@ -303,6 +361,11 @@
            (.parse (parser) "some text^[and a note]"))
 
   (parse "some text^[and a note]")
+
+  (parse "
+```
+dude
+```")
 
   (parse "**Threshold 1: (~\\$125)** - \\$240K/quarter")
   (parse "Formula: $1 + 2 + 3$")

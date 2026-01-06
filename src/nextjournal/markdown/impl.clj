@@ -77,17 +77,15 @@
     (when-not (.isEmpty spans)
       (let [^SourceSpan first-span (first spans)
             ^SourceSpan last-span (last spans)]
-        {:line (.getLineIndex first-span)
+        {:input-index (.getInputIndex first-span)
+         :length (apply + (map #(.getLength ^Node %) spans))
+         :line (.getLineIndex first-span)
          :column (.getColumnIndex first-span)
          :end-line (.getLineIndex last-span)
          :end-column (+ (.getColumnIndex last-span) (.getLength last-span))}))))
 
-#_(node->source-pos n)
-
 ;; multi stuff
 (defmulti open-node (fn [_ctx node] (type node)))
-
-#_(bean x)
 
 (defmulti close-node (fn [_ctx node] (type node)))
 
@@ -103,8 +101,6 @@
 (defmethod open-node Paragraph [ctx node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type (paragraph-type)}
                                                                (node->loc node))))))
-
-#_(parse "Dude")
 
 (defmethod open-node BlockQuote [ctx node]
   (u/update-current-loc ctx (fn [loc] (u/zopen-node loc (merge {:type :blockquote}

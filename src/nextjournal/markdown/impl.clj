@@ -298,21 +298,28 @@
                    LinkReferenceDefinition :ignore
                    ;;Text (swap! !ctx u/update-current z/append-child {:type :text :text (.getLiteral ^Text node)})
                    Text (swap! !ctx u/handle-text-token (.getLiteral ^Text node))
-                   ThematicBreak (swap! !ctx u/update-current-loc z/append-child {:type :ruler})
-                   SoftLineBreak (swap! !ctx u/update-current-loc z/append-child {:type :softbreak})
-                   HardLineBreak (swap! !ctx u/update-current-loc z/append-child {:type :hardbreak})
+                   ThematicBreak (swap! !ctx u/update-current-loc z/append-child (merge {:type :ruler}
+                                                                                        (node->loc node)))
+                   SoftLineBreak (swap! !ctx u/update-current-loc z/append-child (merge {:type :softbreak}
+                                                                                        (node->loc node)))
+                   HardLineBreak (swap! !ctx u/update-current-loc z/append-child (merge {:type :hardbreak}
+                                                                                        (node->loc node)))
                    TaskListItemMarker (swap! !ctx u/update-current-loc handle-todo-list node)
                    nextjournal.markdown.impl.types.CustomNode
                    (case (t/nodeType node)
-                     :block-formula (swap! !ctx u/update-current-loc z/append-child {:type :block-formula :text (t/getLiteral node)})
-                     :inline-formula (swap! !ctx u/update-current-loc z/append-child {:type :formula :text (t/getLiteral node)})
-                     :toc (swap! !ctx u/update-current-loc z/append-child {:type :toc}))
+                     :block-formula (swap! !ctx u/update-current-loc z/append-child (merge {:type :block-formula :text (t/getLiteral node)}
+                                                                                           (node->loc node)))
+                     :inline-formula (swap! !ctx u/update-current-loc z/append-child (merge {:type :formula :text (t/getLiteral node)}
+                                                                                            (node->loc node)))
+                     :toc (swap! !ctx u/update-current-loc z/append-child (merge {:type :toc}
+                                                                                 (node->loc node))))
                    FootnoteReference (swap! !ctx (fn [{:as ctx ::keys [label->footnote-ref]}]
                                                    (let [label (.getLabel ^FootnoteReference node)
                                                          footnote-ref (or (get label->footnote-ref label)
-                                                                          {:type :footnote-ref
-                                                                           :ref (count label->footnote-ref)
-                                                                           :label label})]
+                                                                          (merge {:type :footnote-ref
+                                                                                  :ref (count label->footnote-ref)
+                                                                                  :label label}
+                                                                                 (node->loc node)))]
                                                      (-> ctx
                                                          (u/update-current-loc z/append-child footnote-ref)
                                                          (update ::label->footnote-ref assoc label footnote-ref)))))

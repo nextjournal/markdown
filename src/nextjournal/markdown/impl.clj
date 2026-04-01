@@ -46,14 +46,15 @@
   (^Parser [ctx]
    (.. Parser
        builder
-       (extensions [(extensions/create ctx)
-                    (AutolinkExtension/create)
-                    (TaskListItemsExtension/create)
-                    (TablesExtension/create)
-                    (StrikethroughExtension/create)
-                    (.. (FootnotesExtension/builder)
-                        (inlineFootnotes true)
-                        (build))])
+       (extensions (cond-> [(extensions/create ctx)
+                            (AutolinkExtension/create)
+                            (TaskListItemsExtension/create)
+                            (TablesExtension/create)
+                            (StrikethroughExtension/create)]
+                     (not (:disable-footnotes (:opts ctx)))
+                     (conj (.. (FootnotesExtension/builder)
+                               (inlineFootnotes true)
+                               (build)))))
        build)))
 
 ;; helpers / ctx

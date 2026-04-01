@@ -1114,6 +1114,25 @@ link</a>")))))))
                                  "**$1** $200")
                       [:toc :content :footnotes :type]))))
 
+(deftest disable-footnotes-test
+  (is (= {:toc {:type :toc},
+          :footnotes [],
+          :content
+          [{:type :paragraph,
+            :content [{:type :text, :text "text ^[a-z] more"}]}],
+          :type :doc}
+         (md/parse {:disable-footnotes true}
+                   "text ^[a-z] more")))
+  (is (= {:toc {:type :toc},
+          :footnotes [],
+          :content
+          [{:type :paragraph,
+            :content [{:type :text, :text "text ^[a-z] more"}]}],
+          :type :doc}
+         (select-keys (md/parse* {:opts {:disable-footnotes true}}
+                                 "text ^[a-z] more")
+                      [:toc :content :footnotes :type]))))
+
 (deftest disable-default-opts-test
   (is (nil? (-> (md/parse {:text->id+emoji-fn nil}
                           "# 🎱 Hello 😀")

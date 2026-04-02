@@ -286,7 +286,8 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
                (assoc :doc (u/->zip ctx-in)
                       :footnotes (u/->zip {:type :footnotes
                                            :content (or (:footnotes ctx-in) [])}))
-               (apply-tokens (md/tokenize #js {:disable_inline_formulas (:disable-inline-formulas (:opts ctx-in))}
+               (apply-tokens (md/tokenize #js {:disable_inline_formulas (:disable-inline-formulas (:opts ctx-in))
+                                                            :disable_footnotes (:disable-footnotes (:opts ctx-in))}
                                           markdown)))]
        (-> ctx-out
            (dissoc :doc)

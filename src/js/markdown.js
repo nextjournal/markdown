@@ -48,7 +48,9 @@ function MD(opts) {
   md.use(texmath, {delimiters: "dollars", ...opts})
   md.use(blockImage)
   md.use(mdToc)
-  md.use(footnotes)
+  if (!opts.disable_footnotes) {
+    md.use(footnotes)
+  }
   md.use(todoListPlugin)
   return md;
 }

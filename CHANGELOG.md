@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-...
+- Add option `:disable-footnotes true` to disable parsing footnotes [#67](https://github.com/nextjournal/markdown/issues/67)
 
 ## 0.7.222
 

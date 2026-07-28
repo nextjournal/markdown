@@ -257,13 +257,6 @@ _this #should be a tag_, but this [_actually #foo shouldnt_](/bar/) is not."
 (defmethod apply-token "html_block" [doc token]
   (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (.-content token))]})))
 
-;; html
-(defmethod apply-token "html_inline" [doc token]
-  (-> doc (u/update-current-loc z/append-child {:type :html-inline :content [(text-node (.-content token))]})))
-
-(defmethod apply-token "html_block" [doc token]
-  (-> doc (u/update-current-loc z/append-child {:type :html-block :content [(text-node (.-content token))]})))
-
 ;; endregion
 
 ;; region data builder api

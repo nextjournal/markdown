@@ -1089,7 +1089,25 @@ Bye") :content)))
 
 line
 
-link</a>")))))))
+link</a>"))))))
+  (testing "default renderers point at the README instead of failing with an unknown type"
+    (is (match? [:div
+                 [:span.message.red
+                  [:strong "No default renderer for ':html-block'."]
+                  #".*markdown#html-blocks-and-html-inlines"]
+                 [:p [:em "foo"]]
+                 [:span.message.red
+                  [:strong "No default renderer for ':html-block'."]
+                  #".*markdown#html-blocks-and-html-inlines"]]
+                (md/->hiccup "<del>\n\n*foo*\n\n</del>"))))
+  (testing "an html block ends at the first blank line, https://spec.commonmark.org/0.30/#example-167"
+    (is (match? [{:type :html-block :content [{:text #"<del>\s?"}]}
+                 {:type :paragraph :content [{:type :em}]}
+                 {:type :html-block :content [{:text #"</del>\s?"}]}]
+                (:content (md/parse "<del>\n\n*foo*\n\n</del>"))))
+    (is (match? [{:type :html-block :content [{:text #"<del>\n\*foo\*\s?"}]}
+                 {:type :html-block :content [{:text #"</del>\s?"}]}]
+                (:content (md/parse "<del>\n*foo*\n\n</del>"))))))
 
 (deftest disable-custom-extensions-test
   (is (= {:toc {:type :toc},

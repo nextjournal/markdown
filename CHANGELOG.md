@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-...
+- Point at the README from the default `:html-block` and `:html-inline` renderers instead of reporting an unknown node type [#69](https://github.com/nextjournal/markdown/issues/69)
 
 ## 0.7.225
 

@@ -72,6 +72,12 @@ a paragraph
                                      (seq content) (conj [:span.title {:data-level heading-level} (:id node)])
                                      (seq children) (conj (into [:ul] (map (partial ->hiccup ctx)) children)))))))))
 
+;; emitting raw HTML unescaped is left to the consumer
+(defn- missing-html-renderer [_ctx {:keys [type]}]
+  [:span.message.red
+   [:strong (str "No default renderer for '" type "'.")]
+   " See https://github.com/nextjournal/markdown#html-blocks-and-html-inlines"])
+
 (def default-hiccup-renderers
   {:doc (partial into-markup [:div])
    :heading (fn [ctx {:as node :keys [attrs]}] (-> (heading-markup node) (conj attrs) (into-markup ctx node)))
@@ -82,6 +88,10 @@ a paragraph
    :hashtag (fn [_ {:keys [text]}] [:a.tag {:href (str "/tags/" text)} (str "#" text)]) ;; TODO: make it configurable
    :blockquote (partial into-markup [:blockquote])
    :ruler (constantly [:hr])
+
+   ;; html
+   :html-block missing-html-renderer
+   :html-inline missing-html-renderer
 
    ;; by default we always wrap images in paragraph to restore compliance with commonmark
    :image (fn [{:as _ctx ::keys [parent]} {:as node :keys [attrs]}]

@@ -133,7 +133,7 @@ The following options are available that affect parsing:
 
 ### HTML blocks and HTML inlines
 
-Typically you'd want to customize the rendering of `:html-inline` and `:html` since these need to be rendered to raw strings:
+There is no default renderer for `:html-inline` and `:html-block`, since emitting raw strings is left to the consumer. Supply your own:
 
 ``` clojure
 (require '[hiccup2.core :as hiccup])
@@ -147,6 +147,20 @@ Typically you'd want to customize the rendering of `:html-inline` and `:html` si
 
 #_#_=>
 "<div><img src=\"...\"/></div>"
+```
+
+Per CommonMark, an HTML block ends at the first blank line, and everything up to that point stays raw. Put a blank line after the opening tag to have the contents parsed as markdown:
+
+``` clojure
+(str (hiccup/html (md/->hiccup renderers "<aside>\n\n*emphasis*\n\n</aside>")))
+
+#_#_=>
+"<div><aside><p><em>emphasis</em></p></aside></div>"
+
+(str (hiccup/html (md/->hiccup renderers "<aside>\n*emphasis*\n\n</aside>")))
+
+#_#_=>
+"<div><aside>\n*emphasis*</aside></div>"
 ```
 
 ## Transforming to other targets

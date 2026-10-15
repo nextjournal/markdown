@@ -1000,7 +1000,14 @@ some text
                       {:type :em :content [{:type :text :text "markup"}]}
                       {:type :text :text " here"}]}
            (-> (md/parse "[some _markup_ here](/some/path)")
-               :content first :content first)))))
+               :content first :content first))))
+  (testing "->hiccup renders the link title"
+    (is (= [:div [:p [:a {:href "/some/path" :title "title"} "ahoi"]]]
+           (md/->hiccup "[ahoi](/some/path \"title\")")))
+    (is (= [:div [:p [:a {:href "/url" :title "title"} "foo"]]]
+           (md/->hiccup "[foo]\n\n[foo]: /url \"title\"")))
+    (is (= [:div [:p [:a {:href "/some/path"} "ahoi"]]]
+           (md/->hiccup "[ahoi](/some/path)")))))
 
 (deftest code-test
   (testing "inline code"

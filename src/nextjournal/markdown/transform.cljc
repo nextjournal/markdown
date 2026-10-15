@@ -158,7 +158,7 @@ a paragraph
    :strong (partial into-markup [:strong])
    :monospace (partial into-markup [:code])
    :strikethrough (partial into-markup [:s])
-   :link (fn [ctx {:as node :keys [attrs]}] (into-markup [:a {:href (:href attrs)}] ctx node))
+   :link (fn [ctx {:as node :keys [attrs]}] (into-markup [:a (select-keys attrs [:href :title])] ctx node))
    :internal-link (fn [_ {:keys [attrs text]}] [:a.internal {:href (:href attrs text)} text])
 
    ;; default convenience fn to wrap extra markup around the default one from within the overriding function

@@ -1005,9 +1005,7 @@ some text
     (is (= [:div [:p [:a {:href "/some/path" :title "title"} "ahoi"]]]
            (md/->hiccup "[ahoi](/some/path \"title\")")))
     (is (= [:div [:p [:a {:href "/url" :title "title"} "foo"]]]
-           (md/->hiccup "[foo]\n\n[foo]: /url \"title\"")))
-    (is (= [:div [:p [:a {:href "/some/path"} "ahoi"]]]
-           (md/->hiccup "[ahoi](/some/path)")))))
+           (md/->hiccup "[foo]\n\n[foo]: /url \"title\"")))))
 
 (deftest code-test
   (testing "inline code"

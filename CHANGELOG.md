@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+...
+
+## 0.7.228
+
 - Point at the README from the default `:html-block` and `:html-inline` renderers instead of reporting an unknown node type [#69](https://github.com/nextjournal/markdown/issues/69)
 - Render the link title in the default `:link` renderer [#71](https://github.com/nextjournal/markdown/issues/71)
 

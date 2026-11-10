@@ -440,8 +440,8 @@ par two"
 (defn- emphasis-markdown [delimiter alternative]
   (fn [{:as ctx ::keys [parent next]} node]
     (let [boundary-follows? (or (nil? next)
-                                (#{:softbreak :hardbreak} (:type next))
-                                (and (= :text (:type next)) (re-find #"^[^\p{L}\p{N}]" (:text next))))
+                                (re-find #"^(?:$|[^\p{L}\p{N}])"
+                                         (->markdown (assoc ctx ::previous node ::next nil) next)))
           d (if (or (and (odd? (adjacent-emphasis-before ctx node)) boundary-follows?)
                     (and (= "*" delimiter) (#{:em :strong} (:type parent)) (= [node] (:content parent))))
               alternative

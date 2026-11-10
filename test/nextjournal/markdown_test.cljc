@@ -1231,7 +1231,8 @@ link</a>"))))))
                "1. one\n   ```\n   code\n   ```\n   more\n2. two"
                "Multi\nline\n---"
                "**a *b***, ***c* d**, a**_b_**c, *__a__*, **__a__**"
-               "[x](/a\\\\*b \"t \\\\ \\\"q\\\"\")"]]
+               "[x](/a\\\\*b \"t \\\\ \\\"q\\\"\")"
+               "**strong**__a__[x](/u)"]]
       (is (= (md/parse s) (markdown-round-trip s)) s)))
   (testing "code without an info string after a list stays outside the list"
     (let [code {:type :code :content [{:type :text :text "code\n"}]}

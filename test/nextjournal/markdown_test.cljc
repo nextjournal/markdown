@@ -1227,8 +1227,32 @@ link</a>"))))))
                "- a\n- b\n\n* c"
                "***both*** and `` ` `` and [x](<a b>)"
                "1. one\n   ```\n   code\n   ```\n   more\n2. two"
-               "Multi\nline\n---"]]
-      (is (= (md/parse s) (markdown-round-trip s)) s))))
+               "Multi\nline\n---"
+               "**a *b***, ***c* d**, a**_b_**c, *__a__*, **__a__**"
+               "[x](/a\\\\*b \"t \\\\ \\\"q\\\"\")"]]
+      (is (= (md/parse s) (markdown-round-trip s)) s)))
+  (testing "code without an info string after a list stays outside the list"
+    (let [code {:type :code :content [{:type :text :text "code\n"}]}
+          bullets {:type :bullet-list
+                   :content [{:type :list-item
+                              :content [{:type :plain :content [{:type :text :text "a"}]}]}]}]
+      (is (match? {:content [{:type :bullet-list}
+                             {:type :code :content [{:text "code\n"}]}]}
+                  (md/parse (md.transform/->markdown {:type :doc :content [bullets code]}))))
+      (is (match? {:content [{:type :bullet-list
+                              :content [{:content [{:type :plain}
+                                                   {:type :code :content [{:text "code\n"}]}]}]}]}
+                  (md/parse (md.transform/->markdown
+                             {:type :doc
+                              :content [(assoc-in bullets [:content 0 :content 1] code)]}))))))
+  (testing "an info string with a backtick uses a tilde fence"
+    (is (match? {:content [{:type :code :info "a`b" :content [{:text "~~~\n"}]}]}
+                (md/parse (md.transform/->markdown
+                           {:type :doc
+                            :content [{:type :code :info "a`b" :content [{:type :text :text "~~~\n"}]}]})))))
+  (testing "sidenote nodes render as footnotes"
+    (let [doc (md/parse "a[^n] b\n\n[^n]: note")]
+      (is (= doc (md/parse (md.transform/->markdown (u/insert-sidenote-containers doc))))))))
 
 ;; Hello <a href=\"dude\">*Dude*</a>
 

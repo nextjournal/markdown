@@ -1,7 +1,8 @@
 (ns nextjournal.markdown.transform
   "transform markdown data as returned by `nextjournal.markdown/parse` into other formats, currently:
      * hiccup"
-  {:skip-wiki true})
+  {:skip-wiki true}
+  (:require [clojure.string :as str]))
 
 ;; helpers
 (defn- guard [pred val] (when (pred val) val))
@@ -269,3 +270,194 @@ par two"
           nextjournal.markdown/parse
           (->hiccup default-hiccup-renderers)
           h/html str)))
+
+(declare ->markdown)
+
+(defn- render-children [ctx {:as node :keys [content]}]
+  (map (fn [previous child] (->markdown (assoc ctx ::parent node ::previous previous) child))
+       (cons nil content)
+       content))
+
+(defn- inline-markdown [ctx node]
+  (apply str (render-children ctx node)))
+
+(defn- block-markdown
+  ([ctx node] (block-markdown "\n\n" ctx node))
+  ([separator ctx node] (str/join separator (render-children ctx node))))
+
+(defn- list-item-markdown [ctx {:as node :keys [content]}]
+  (block-markdown (if (some (comp #{:plain} :type) content) "\n" "\n\n") ctx node))
+
+(defn- prefix-lines [first-prefix prefix s]
+  (->> (str/split-lines s)
+       (map-indexed (fn [i line]
+                      (let [p (if (zero? i) first-prefix prefix)]
+                        (if (= "" line) (str/trimr p) (str p line)))))
+       (str/join "\n")))
+
+(defn- escape-text [s]
+  (str/replace s #"[\\`*_\[\]<>$~|&]" #(str "\\" %)))
+
+(defn- escape-line-starts [s]
+  (str/replace s #"(?m)^(?:[-+=#]|(\d+)([.)]))" (fn [[m digits delim]] (if digits (str digits "\\" delim) (str "\\" m)))))
+
+(defn- paragraph-markdown [ctx node]
+  (escape-line-starts (inline-markdown ctx node)))
+
+(defn- backtick-fence [min-length text]
+  (let [longest (reduce max 0 (map count (re-seq #"`+" text)))]
+    (apply str (repeat (max min-length (inc longest)) "`"))))
+
+(defn- tight-list? [{:keys [content]}]
+  (not-any? #(some (comp #{:paragraph} :type) (:content %)) content))
+
+(defn- list-markdown [marker]
+  (fn [ctx {:as node :keys [content]}]
+    (->> content
+         (map-indexed (fn [i item]
+                        (let [m (marker node i (= (:type node) (:type (::previous ctx))))]
+                          (prefix-lines m (apply str (repeat (count m) " "))
+                                        (->markdown (assoc ctx ::parent node) item)))))
+         (str/join (if (tight-list? node) "\n" "\n\n")))))
+
+(defn- link-destination [url title]
+  (str (if (or (= "" url) (re-find #"\s" url))
+         (str "<" (str/replace url #"[<>]" #(str "\\" %)) ">")
+         (str/replace url #"[()]" #(str "\\" %)))
+       (when title (str " \"" (str/replace title "\"" "\\\"") "\""))))
+
+(defn- table-delimiter [cell]
+  (case (:text-align (table-alignment cell))
+    "left" ":--"
+    "right" "--:"
+    "center" ":-:"
+    "---"))
+
+(defn- table-markdown [ctx {:keys [content]}]
+  (let [ctx (assoc ctx ::table-cell true)
+        rows (mapcat :content content)
+        row-markdown (fn [cells] (str "| " (str/join " | " cells) " |"))]
+    (->> (concat [(row-markdown (map #(inline-markdown ctx %) (:content (first rows))))
+                  (row-markdown (map table-delimiter (:content (first rows))))]
+                 (map (fn [row] (row-markdown (map #(inline-markdown ctx %) (:content row))))
+                      (rest rows)))
+         (str/join "\n"))))
+
+(defn- wrap-markdown [delimiter]
+  (fn [ctx node] (str delimiter (inline-markdown ctx node) delimiter)))
+
+(defn- emphasis-markdown [delimiter alternative]
+  (fn [ctx node]
+    (let [s (inline-markdown ctx node)
+          d (if (or (str/starts-with? s "*") (str/ends-with? s "*")) alternative delimiter)]
+      (str d s d))))
+
+(defn- bullet-marker [_ _ after-list?]
+  (if after-list? "* " "- "))
+
+(def default-markdown-renderers
+  {:doc (fn [ctx {:as node :keys [footnotes]}]
+          (let [ctx (assoc ctx ::footnotes footnotes)]
+            (str (str/join "\n\n" (cons (block-markdown ctx node)
+                                        (map #(->markdown ctx %) (remove :inline? footnotes))))
+                 "\n")))
+   :heading (fn [ctx {:as node :keys [heading-level]}]
+              (let [level (or heading-level 1)
+                    text (paragraph-markdown ctx node)]
+                (if (and (str/includes? text "\n") (<= level 2))
+                  (str text "\n" (if (= 1 level) "===" "---"))
+                  (str (apply str (repeat level "#")) " " text))))
+   :paragraph paragraph-markdown
+   :plain paragraph-markdown
+   :text (fn [_ {:keys [text]}] (escape-text text))
+   :hashtag (fn [_ {:keys [text]}] (str "#" text))
+   :blockquote (fn [ctx node] (prefix-lines "> " "> " (block-markdown ctx node)))
+   :ruler (constantly "---")
+   :toc (constantly "[[TOC]]")
+
+   :html-block (fn [_ node] (->text node))
+   :html-inline (fn [_ node] (->text node))
+
+   :image (fn [ctx {:as node :keys [attrs]}]
+            (str "![" (inline-markdown ctx node) "](" (link-destination (:src attrs) (:title attrs)) ")"))
+
+   :code (fn [_ {:keys [info content]}]
+           (let [text (-> content first :text)
+                 text (cond-> text (not (str/ends-with? text "\n")) (str "\n"))
+                 f (backtick-fence 3 text)]
+             (if info
+               (str f info "\n" text f)
+               (prefix-lines "    " "    " text))))
+
+   :softbreak (constantly "\n")
+   :hardbreak (constantly "\\\n")
+
+   :formula (fn [_ {:keys [text]}] (str "$" text "$"))
+   :block-formula (fn [_ {:keys [text]}] (str "$$\n" (str/trim text) "\n$$"))
+
+   :bullet-list (list-markdown bullet-marker)
+   :todo-list (list-markdown bullet-marker)
+   :numbered-list (list-markdown (fn [{:keys [attrs]} i after-list?]
+                                   (str (+ (:start attrs 1) i) (if after-list? ") " ". "))))
+   :list-item list-item-markdown
+   :todo-item (fn [ctx {:as node :keys [attrs]}]
+                (str (if (:checked attrs) "[x] " "[ ] ") (list-item-markdown ctx node)))
+
+   :table table-markdown
+
+   :footnote-ref (fn [ctx {:keys [ref label inline?]}]
+                   (if inline?
+                     (str "^[" (->> (::footnotes ctx)
+                                    (filter #(= ref (:ref %)))
+                                    first :content
+                                    (map #(inline-markdown ctx %))
+                                    (str/join " "))
+                          "]")
+                     (str "[^" (or label (inc ref)) "]")))
+   :footnote (fn [ctx {:as node :keys [ref label]}]
+               (prefix-lines (str "[^" (or label (inc ref)) "]: ") "    " (block-markdown ctx node)))
+
+   :em (emphasis-markdown "*" "_")
+   :strong (emphasis-markdown "**" "__")
+   :strikethrough (wrap-markdown "~~")
+   :monospace (fn [ctx node]
+                (let [text (cond-> (->text node) (::table-cell ctx) (str/replace "|" "\\|"))
+                      f (backtick-fence 1 text)
+                      pad (when (or (str/starts-with? text "`") (str/ends-with? text "`")
+                                    (and (str/starts-with? text " ") (str/ends-with? text " ")
+                                         (not (str/blank? text))))
+                            " ")]
+                  (str f pad text pad f)))
+   :link (fn [ctx {:as node :keys [attrs]}]
+           (str "[" (inline-markdown ctx node) "](" (link-destination (:href attrs) (:title attrs)) ")"))
+   :internal-link (fn [_ {:keys [text]}] (str "[[" text "]]"))
+
+   :default (fn [ctx {:as node t :type}] (when-some [d (get default-markdown-renderers t)] (d ctx node)))})
+
+(defn ->markdown
+  "Returns markdown text for node.
+  ctx is a map of node type to renderer fn, or `default-markdown-renderers` if absent.
+  A renderer takes ctx and a node and returns a string."
+  ([node] (->markdown default-markdown-renderers node))
+  ([ctx {:as node :keys [type text]}]
+   (if-some [f (guard fn? (get ctx type))]
+     (f ctx node)
+     (or text (inline-markdown ctx node)))))
+
+(comment
+
+  (require '[nextjournal.markdown :as md]
+           '[nextjournal.markdown.transform :as t])
+  (println (t/->markdown (md/parse "Hello _world_\n===\n\n* one\n* two\n\n> quote with [a link](https://example.com)")))
+
+  (println (t/->markdown (md/parse "
+Hello _world_
+===
+
+- a
+  - b
+  - c
+
+")))
+
+  )

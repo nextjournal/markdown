@@ -5,6 +5,7 @@
             [matcher-combinators.matchers :as m]
             [matcher-combinators.test :refer [match?]]
             [nextjournal.markdown :as md]
+            [nextjournal.markdown.transform :as md.transform]
             [nextjournal.markdown.utils :as u]))
 
 ;; com.bhauman/cljs-test-display doesn't play well with ANSI codes
@@ -1205,6 +1206,29 @@ link</a>"))))))
   (is (nil? (-> (md/parse* {:opts {:text->id+emoji-fn nil}}
                            "# 🎱 Hello 😀")
                 :content first :emoji))))
+
+(defn- markdown-round-trip [s]
+  (md/parse (md.transform/->markdown (md/parse s))))
+
+(deftest ->markdown-test
+  (testing "->markdown renders a document as markdown text"
+    (is (= "# Title\n\nSome *em* and **strong** text.\n\n- one\n- two\n"
+           (md.transform/->markdown (md/parse "Title\n=====\n\nSome _em_ and __strong__ text.\n\n* one\n* two")))))
+  (testing "parsing ->markdown output returns the same document"
+    (doseq [s ["# Hi *a*\n\ntext with \\* star, `co`de, [l](/u \"t\") ![i](/s) $x$ ~~s~~\\\nhard\nsoft"
+               "- a\n- b\n  1. x\n\n3. c\n\n   d"
+               "- [x] done\n- [ ] todo"
+               "> q\n> r\n>\n> - s"
+               "```clj\n(+ 1 2)\n```\n\n    indented\n\n````\n```\n````"
+               "$$\nf\n$$"
+               "| a | `b\\|c` |\n|:-|-:|\n| 1 | 2 |"
+               "<div>h</div>\n\nx<b>i</b> y[^n] z^[inline *note*]\n\n---\n\n[^n]: note"
+               "\\- not a list\n\\# not a heading\n1\\. not a list"
+               "- a\n- b\n\n* c"
+               "***both*** and `` ` `` and [x](<a b>)"
+               "1. one\n   ```\n   code\n   ```\n   more\n2. two"
+               "Multi\nline\n---"]]
+      (is (= (md/parse s) (markdown-round-trip s)) s))))
 
 ;; Hello <a href=\"dude\">*Dude*</a>
 

@@ -48,7 +48,9 @@
             table-alignment
             ->hiccup
             into-markup
-            ->text}
+            ->text
+            default-markdown-renderers
+            ->markdown}
          (public-vars 'nextjournal.markdown.transform)))
   (is (= '#{normalize-tokenizer
             internal-link-tokenizer

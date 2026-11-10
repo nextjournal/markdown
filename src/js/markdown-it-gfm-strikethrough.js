@@ -1,6 +1,6 @@
 // GFM strikethrough: one or two tildes delimit, three or more are text.
-const SINGLE = 0x7E
-const DOUBLE = 0x7E + 0x10000 // not a char code: a separate marker keeps balance_pairs from pairing ~ with ~~
+const SINGLE_TILDE = 0x7E
+const DOUBLE_TILDE = 0x7E + 0x10000 // not a char code: a separate marker keeps balance_pairs from pairing ~ with ~~
 
 function tokenizer(requireTwoTildes) {
   return function (state, silent) {
@@ -11,7 +11,7 @@ function tokenizer(requireTwoTildes) {
     token.content = '~'.repeat(len)
     if (len === 2 || (len === 1 && !requireTwoTildes)) {
       state.delimiters.push({
-        marker: len === 1 ? SINGLE : DOUBLE,
+        marker: len === 1 ? SINGLE_TILDE : DOUBLE_TILDE,
         length: 0,
         token: state.tokens.length - 1,
         end: -1,
@@ -26,7 +26,7 @@ function tokenizer(requireTwoTildes) {
 
 function postProcessDelimiters(state, delimiters) {
   for (const delim of delimiters) {
-    if ((delim.marker !== SINGLE && delim.marker !== DOUBLE) || delim.end === -1) { continue }
+    if ((delim.marker !== SINGLE_TILDE && delim.marker !== DOUBLE_TILDE) || delim.end === -1) { continue }
     const open = state.tokens[delim.token]
     const close = state.tokens[delimiters[delim.end].token]
     Object.assign(open, {type: 's_open', tag: 's', nesting: 1, markup: open.content, content: ''})

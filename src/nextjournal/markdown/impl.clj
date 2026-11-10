@@ -50,7 +50,9 @@
                             (AutolinkExtension/create)
                             (TaskListItemsExtension/create)
                             (TablesExtension/create)
-                            (StrikethroughExtension/create)]
+                            (.. (StrikethroughExtension/builder)
+                                (requireTwoTildes (boolean (:strikethrough-require-two-tildes (:opts ctx))))
+                                (build))]
                      (not (:disable-footnotes (:opts ctx)))
                      (conj (.. (FootnotesExtension/builder)
                                (inlineFootnotes true)

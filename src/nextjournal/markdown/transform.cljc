@@ -274,9 +274,11 @@ par two"
 (declare ->markdown)
 
 (defn- render-children [ctx {:as node :keys [content]}]
-  (map (fn [previous child] (->markdown (assoc ctx ::parent node ::previous previous) child))
+  (map (fn [previous child next]
+         (->markdown (assoc ctx ::parent node ::previous previous ::next next) child))
        (cons nil content)
-       content))
+       content
+       (concat (rest content) [nil])))
 
 (defn- inline-markdown [ctx node]
   (apply str (render-children ctx node)))
@@ -285,8 +287,14 @@ par two"
   ([ctx node] (block-markdown "\n\n" ctx node))
   ([separator ctx node] (str/join separator (render-children ctx node))))
 
-(defn- list-item-markdown [ctx {:as node :keys [content]}]
-  (block-markdown (if (some (comp #{:plain} :type) content) "\n" "\n\n") ctx node))
+(defn- list-item-markdown [{:as ctx ::keys [tight]} {:as node :keys [content]}]
+  (let [blocks (render-children ctx node)
+        separators (map #(cond
+                           (= :html-block (:type %)) (if tight "\n\n" "\n\n\n")
+                           tight "\n"
+                           :else "\n\n")
+                        content)]
+    (apply str (first blocks) (interleave separators (rest blocks)))))
 
 (defn- prefix-lines [first-prefix prefix s]
   (->> (str/split-lines s)
@@ -298,36 +306,105 @@ par two"
 (defn- escape-text [s]
   (str/replace s #"[\\`*_\[\]<>$~|&]" #(str "\\" %)))
 
-(defn- escape-line-starts [s]
-  (str/replace s #"(?m)^(?:[-+=#]|(\d+)([.)]))" (fn [[m digits delim]] (if digits (str digits "\\" delim) (str "\\" m)))))
+(defn- escape-line-start [s]
+  (str/replace s #"^(?:[-+=#]|(\d+)([.)]))" (fn [[m digits delim]] (if digits (str digits "\\" delim) (str "\\" m)))))
+
+(defn- line-start? [{::keys [parent previous]}]
+  (and (nil? previous) (contains? #{:paragraph :plain :heading} (:type parent))))
 
 (defn- paragraph-markdown [ctx node]
-  (escape-line-starts (inline-markdown ctx node)))
+  (str/replace (inline-markdown ctx node) #"\n(?=[#>\-+*=_|<\[~$`0-9])" "\n    "))
+
+(defn- text-markdown [{:as ctx ::keys [next]} {:keys [text]}]
+  (cond-> (escape-text text)
+    (line-start? ctx) escape-line-start
+    (= :link (:type next)) (str/replace #"[!^]$" #(str "\\" %))))
+
+(defn- formula-markdown [_ {:keys [text]}]
+  (if (re-find #"^\s|\s$" text)
+    (str "$$" text "$$")
+    (str "$" text "$")))
+
+(defn- block-formula-markdown [_ {:keys [text]}]
+  #?(:clj (str "$$\n" text (when-not (re-find #"[ \t]$" text) "\n") "$$")
+     :cljs (str "$$" text "$$")))
+
+(defn- footnote-markdown [ctx {:as node :keys [ref label content]}]
+  (let [blocks (render-children ctx node)
+        separators (map #(if (= :paragraph (:type %)) "\n\n" "\n") (rest content))]
+    (prefix-lines (str "[^" (or label (inc ref)) "]: ") "    "
+                  (apply str (first blocks) (interleave separators (rest blocks))))))
 
 (defn- fence [ch min-length text]
   (let [longest (reduce max 0 (map count (re-seq (re-pattern (str "[" ch "]+")) text)))]
     (apply str (repeat (max min-length (inc longest)) ch))))
 
-(defn- code-markdown [{::keys [previous]} {:keys [info content]}]
-  (let [text (-> content first :text)
-        text (cond-> text (not (str/ends-with? text "\n")) (str "\n"))]
-    (if (and (nil? info)
-             (not (#{:plain :bullet-list :numbered-list :todo-list} (:type previous))))
+(defn- code-text [{:keys [content]}]
+  (or (-> content first :text) ""))
+
+(defn- open-ended? [{:as node :keys [type]}]
+  (let [text (if (= :html-block type) (->text node) (code-text node))]
+    (and (#{:code :html-block} type)
+         (not= "" text)
+         (not (str/ends-with? text "\n")))))
+
+(defn- indentable? [{::keys [previous]} {:as node :keys [info]}]
+  (let [text (code-text node)
+        lines (str/split (cond-> text (str/ends-with? text "\n") (subs 0 (dec (count text)))) #"\n" -1)]
+    (and (nil? info)
+         (not (open-ended? node))
+         (not (str/blank? (first lines)))
+         (not (str/blank? (last lines)))
+         (not (#{:plain :bullet-list :numbered-list :todo-list :code} (:type previous))))))
+
+(defn- code-markdown [ctx {:as node :keys [info]}]
+  (let [text (code-text node)]
+    (if (indentable? ctx node)
       (prefix-lines "    " "    " text)
       (let [f (if (and info (str/includes? info "`")) (fence "~" 3 text) (fence "`" 3 text))]
-        (str f info "\n" text f)))))
+        (str f (when (and info (str/starts-with? info "~")) " ") info "\n" text
+             (when-not (open-ended? node) f))))))
 
 (defn- tight-list? [{:keys [content]}]
   (not-any? #(some (comp #{:paragraph} :type) (:content %)) content))
 
+(def ^:private list-family
+  {:bullet-list :bullet :todo-list :bullet :numbered-list :numbered})
+
+(defn- adjacent-lists-before [{::keys [parent]} node]
+  (->> (:content parent)
+       (take-while #(not (identical? % node)))
+       reverse
+       (take-while #(= (list-family (:type node)) (list-family (:type %))))
+       count))
+
 (defn- list-markdown [marker]
   (fn [ctx {:as node :keys [content]}]
-    (->> content
-         (map-indexed (fn [i item]
-                        (let [m (marker node i (= (:type node) (:type (::previous ctx))))]
-                          (prefix-lines m (apply str (repeat (count m) " "))
-                                        (->markdown (assoc ctx ::parent node) item)))))
-         (str/join (if (tight-list? node) "\n" "\n\n")))))
+    (let [tight (tight-list? node)
+          starts-item? (and (#{:list-item :todo-item} (:type (::parent ctx))) (nil? (::previous ctx)))
+          alternate? (if starts-item?
+                       (not (::alternate ctx))
+                       (odd? (adjacent-lists-before ctx node)))]
+      (->> content
+           (map-indexed (fn [i item]
+                          (let [m (marker node i alternate?)
+                                pad (apply str (repeat (count m) " "))
+                                s (->markdown (assoc ctx ::parent node ::tight tight ::alternate alternate?) item)]
+                            (if (and (str/starts-with? s " ")
+                                     (not= :code (:type (first (:content item)))))
+                              (str (str/trimr m) "\n" (prefix-lines pad pad s))
+                              (prefix-lines m pad s)))))
+           (str/join (if tight "\n" "\n\n"))))))
+
+(defn- bare-url? [{::keys [next]} {:keys [attrs content]}]
+  (let [{:keys [href title]} attrs]
+    (and (nil? title)
+         (string? href)
+         (re-matches #"[A-Za-z][A-Za-z0-9+.-]*://[^\s<>\[\]()`\\$~]*[A-Za-z0-9/]" href)
+         (= [{:type :text :text href}] content)
+         (or (nil? next)
+             (#{:softbreak :hardbreak} (:type next))
+             (and (= :text (:type next)) (re-find #"^\s" (:text next)))))))
 
 (defn- link-destination [url title]
   (str (if (or (= "" url) (re-find #"\s" url))
@@ -352,25 +429,35 @@ par two"
                       (rest rows)))
          (str/join "\n"))))
 
-(defn- wrap-markdown [delimiter]
-  (fn [ctx node] (str delimiter (inline-markdown ctx node) delimiter)))
+(defn- adjacent-emphasis-before [{::keys [parent]} node]
+  (->> (:content parent)
+       (take-while #(not (identical? % node)))
+       reverse
+       (take-while (comp #{:em :strong} :type))
+       count))
 
 (defn- emphasis-markdown [delimiter alternative]
-  (fn [{:as ctx ::keys [parent previous]} node]
-    (let [edge? (and (#{:em :strong} (:type parent))
-                     (or (nil? previous) (identical? node (last (:content parent)))))
-          d (if edge? alternative delimiter)]
+  (fn [{:as ctx ::keys [parent next]} node]
+    (let [boundary-follows? (or (nil? next)
+                                (#{:softbreak :hardbreak} (:type next))
+                                (and (= :text (:type next)) (re-find #"^[^\p{L}\p{N}]" (:text next))))
+          d (if (or (and (odd? (adjacent-emphasis-before ctx node)) boundary-follows?)
+                    (and (= "*" delimiter) (#{:em :strong} (:type parent)) (= [node] (:content parent))))
+              alternative
+              delimiter)]
       (str d (inline-markdown ctx node) d))))
 
 (defn- bullet-marker [_ _ after-list?]
   (if after-list? "* " "- "))
 
 (def default-markdown-renderers
-  {:doc (fn [ctx {:as node :keys [footnotes]}]
-          (let [ctx (assoc ctx ::footnotes footnotes)]
-            (str (str/join "\n\n" (cons (block-markdown ctx node)
-                                        (map #(->markdown ctx %) (remove :inline? footnotes))))
-                 "\n")))
+  {:doc (fn [ctx {:as node :keys [footnotes content]}]
+          (let [ctx (assoc ctx ::footnotes footnotes)
+                footnotes (remove :inline? footnotes)]
+            (str (str/join "\n\n" (remove str/blank?
+                                          (cons (block-markdown ctx node)
+                                                (map #(->markdown ctx %) footnotes))))
+                 (when-not (and (empty? footnotes) (open-ended? (last content))) "\n"))))
    :heading (fn [ctx {:as node :keys [heading-level]}]
               (let [level (or heading-level 1)
                     text (paragraph-markdown ctx node)]
@@ -379,10 +466,10 @@ par two"
                   (str (apply str (repeat level "#")) " " text))))
    :paragraph paragraph-markdown
    :plain paragraph-markdown
-   :text (fn [_ {:keys [text]}] (escape-text text))
+   :text text-markdown
    :hashtag (fn [_ {:keys [text]}] (str "#" text))
    :blockquote (fn [ctx node] (prefix-lines "> " "> " (block-markdown ctx node)))
-   :ruler (constantly "---")
+   :ruler (fn [{::keys [parent]} _] (if (#{:list-item :todo-item} (:type parent)) "___" "---"))
    :toc (constantly "[[TOC]]")
 
    :html-block (fn [_ node] (->text node))
@@ -396,8 +483,8 @@ par two"
    :softbreak (constantly "\n")
    :hardbreak (constantly "\\\n")
 
-   :formula (fn [_ {:keys [text]}] (str "$" text "$"))
-   :block-formula (fn [_ {:keys [text]}] (str "$$\n" (str/trim text) "\n$$"))
+   :formula formula-markdown
+   :block-formula block-formula-markdown
 
    :bullet-list (list-markdown bullet-marker)
    :todo-list (list-markdown bullet-marker)
@@ -418,8 +505,7 @@ par two"
                                     (str/join " "))
                           "]")
                      (str "[^" (or label (inc ref)) "]")))
-   :footnote (fn [ctx {:as node :keys [ref label]}]
-               (prefix-lines (str "[^" (or label (inc ref)) "]: ") "    " (block-markdown ctx node)))
+   :footnote footnote-markdown
 
    :sidenote-container (fn [ctx node]
                          (block-markdown ctx (update node :content #(remove (comp #{:sidenote-column} :type) %))))
@@ -427,7 +513,11 @@ par two"
 
    :em (emphasis-markdown "*" "_")
    :strong (emphasis-markdown "**" "__")
-   :strikethrough (wrap-markdown "~~")
+   :strikethrough (fn [ctx node]
+                    (let [d (if (some (comp #{:strikethrough} :type) (rest (tree-seq :content :content node)))
+                              "~"
+                              "~~")]
+                      (str d (inline-markdown ctx node) d)))
    :monospace (fn [ctx node]
                 (let [text (cond-> (->text node) (::table-cell ctx) (str/replace "|" "\\|"))
                       f (fence "`" 1 text)
@@ -437,7 +527,9 @@ par two"
                             " ")]
                   (str f pad text pad f)))
    :link (fn [ctx {:as node :keys [attrs]}]
-           (str "[" (inline-markdown ctx node) "](" (link-destination (:href attrs) (:title attrs)) ")"))
+           (if (bare-url? ctx node)
+             (:href attrs)
+             (str "[" (inline-markdown ctx node) "](" (link-destination (:href attrs) (:title attrs)) ")")))
    :internal-link (fn [_ {:keys [text]}] (str "[[" text "]]"))
 
    :default (fn [ctx {:as node t :type}] (when-some [d (get default-markdown-renderers t)] (d ctx node)))})

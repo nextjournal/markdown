@@ -355,7 +355,8 @@ par two"
          (not (open-ended? node))
          (not (str/blank? (first lines)))
          (not (str/blank? (last lines)))
-         (not (#{:plain :bullet-list :numbered-list :todo-list :code} (:type previous))))))
+         (not (#{:plain :bullet-list :numbered-list :todo-list} (:type previous)))
+         (not (and (= :code (:type previous)) (nil? (:info previous)))))))
 
 (defn- code-markdown [ctx {:as node :keys [info]}]
   (let [text (code-text node)]

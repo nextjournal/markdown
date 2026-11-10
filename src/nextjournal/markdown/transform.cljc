@@ -437,15 +437,23 @@ par two"
        (take-while (comp #{:em :strong} :type))
        count))
 
+(def ^:private emphasis? (comp #{:em :strong} :type))
+
+(defn- word-boundary? [ctx neighbor pattern]
+  (or (nil? neighbor)
+      (some? (re-find pattern (->markdown (assoc ctx ::previous nil ::next nil) neighbor)))))
+
 (defn- emphasis-markdown [delimiter alternative]
-  (fn [{:as ctx ::keys [parent next]} node]
-    (let [boundary-follows? (or (nil? next)
-                                (re-find #"^(?:$|[^\p{L}\p{N}])"
-                                         (->markdown (assoc ctx ::previous node ::next nil) next)))
-          d (if (or (and (odd? (adjacent-emphasis-before ctx node)) boundary-follows?)
-                    (and (= "*" delimiter) (#{:em :strong} (:type parent)) (= [node] (:content parent))))
-              alternative
-              delimiter)]
+  (fn [{:as ctx ::keys [parent previous next]} node]
+    (let [underscore-allowed? (and (word-boundary? ctx previous #"(?:^|[^\p{L}\p{N}])$")
+                                   (word-boundary? ctx next #"^(?:$|[^\p{L}\p{N}])"))
+          parent-edge? (and (emphasis? parent) (or (nil? previous) (nil? next)))
+          edge-child? (or (emphasis? (first (:content node))) (emphasis? (last (:content node))))
+          d (cond
+              (and (odd? (adjacent-emphasis-before ctx node)) underscore-allowed?) alternative
+              parent-edge? delimiter
+              (and edge-child? underscore-allowed?) alternative
+              :else delimiter)]
       (str d (inline-markdown ctx node) d))))
 
 (defn- bullet-marker [_ _ after-list?]

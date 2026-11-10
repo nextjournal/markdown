@@ -4,7 +4,8 @@
 
 ## Unreleased
 
-...
+- Add option `:strikethrough-require-two-tildes true` to parse `~~x~~` as strikethrough, but not `~x~` [#75](https://github.com/nextjournal/markdown/issues/75)
+- Parse `~x~` as strikethrough and `~~~x~~~` as text in ClojureScript. Set `:strikethrough-require-two-tildes true` to keep `~x~` as text [#75](https://github.com/nextjournal/markdown/issues/75)
 
 ## 0.7.228
 

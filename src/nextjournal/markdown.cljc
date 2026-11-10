@@ -24,7 +24,8 @@
   Accepted `opts`:
     - `:text-tokenizers`: customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
     - `:disable-inline-formulas`: turn off parsing of $-delimited inline formulas.
-    - `:disable-footnotes`: turn off parsing of footnotes."
+    - `:disable-footnotes`: turn off parsing of footnotes.
+    - `:strikethrough-require-two-tildes`: parse `~~x~~` as strikethrough, but not `~x~`."
   ([markdown-string] (parse {} markdown-string))
   ([opts markdown-string]
    (-> (parse* {:opts opts} markdown-string)

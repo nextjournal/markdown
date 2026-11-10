@@ -130,6 +130,7 @@ The transformation of markdown node types can be customized like this:
 The following options are available that affect parsing:
 
 - `:disable-inline-formulas true`: disable the parsing of inline formulas
+- `:strikethrough-require-two-tildes true`: parse `~~x~~` as strikethrough, but not `~x~`
 
 ### HTML blocks and HTML inlines
 

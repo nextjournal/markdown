@@ -40,7 +40,7 @@ Function.
 
 Turns a markdown string or document node into hiccup. Optionally takes
   `hiccup-renderers` as first argument.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L43-L51">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L45-L53">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/default-hiccup-renderers">`default-hiccup-renderers`</a>
 
@@ -48,7 +48,7 @@ Turns a markdown string or document node into hiccup. Optionally takes
 
 
 Default map of node type -> hiccup renderers, to be used with [`->hiccup`](#nextjournal.markdown/->hiccup)
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L39-L41">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L41-L43">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/empty-doc">`empty-doc`</a>
 
@@ -66,7 +66,7 @@ Empty document to be used with [`parse*`](#nextjournal.markdown/parse*)
 Helper function to be used with custom hiccup renderer.
    Takes a hiccup vector, a context and a node, embeds node's `:content` into the hiccup vector markup mapping through [`->hiccup`](#nextjournal.markdown/->hiccup).
    The node itself is not embedded, only its children.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L57-L61">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L59-L63">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/node->text">`node->text`</a>
 
@@ -74,7 +74,7 @@ Helper function to be used with custom hiccup renderer.
 
 
 Convert node into text.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L53-L55">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L55-L57">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/parse">`parse`</a>
 ``` clojure
@@ -89,7 +89,9 @@ Turns the given `markdown-string` into an AST of nested clojure data.
   Accepted `opts`:
     - `:text-tokenizers`: customize parsing of text in leaf nodes (see https://nextjournal.github.io/markdown/notebooks/parsing_extensibility).
     - `:disable-inline-formulas`: turn off parsing of $-delimited inline formulas.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L21-L35">Source</a></sub></p>
+    - `:disable-footnotes`: turn off parsing of footnotes.
+    - `:strikethrough-require-two-tildes`: parse `~~x~~` as strikethrough, but not `~x~`.
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L21-L37">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/parse*">`parse*`</a>
 ``` clojure
@@ -111,7 +113,7 @@ Turns a markdown string into an AST of nested clojure data.
 
 
 Takes a table-ish node, returns a map suitable for hiccup style attributes with a :text-align property.
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L63-L65">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L65-L67">Source</a></sub></p>
 
 ## <a name="nextjournal.markdown/toc->hiccup">`toc->hiccup`</a>
 
@@ -119,7 +121,7 @@ Takes a table-ish node, returns a map suitable for hiccup style attributes with 
 
 
 Transform a toc node into hiccup data, suitable for using as renderer function in hiccup transform, see [->hiccup](#markdown.transform/toc->hiccup)
-<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L67-L69">Source</a></sub></p>
+<p><sub><a href="https://github.com/nextjournal/markdown/blob/main/src/nextjournal/markdown.cljc#L69-L71">Source</a></sub></p>
 
 -----
 # <a name="nextjournal.markdown.utils">nextjournal.markdown.utils</a>

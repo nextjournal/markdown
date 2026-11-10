@@ -57,16 +57,16 @@
             (and (= \$ c) prev (not (space? prev)) (not= \\ prev)) (formula-end scanner (source-since scanner open))
             :else (do (.next scanner) (recur c))))))))
 
-(defn inline-formula-parser []
-  (proxy [InlineContentParser] []
-    (tryParse [^InlineParserState parser-state]
-      (let [scanner (.scanner parser-state)
-            start (.position scanner)]
-        (or (when-not (ascii-digit? (.peekPreviousCodePoint scanner))
-              (or (double-dollar-formula scanner)
-                  (do (.setPosition scanner start)
-                      (single-dollar-formula scanner))))
-            (ParsedInline/none))))))
+(defn formula-parser-factory [parse]
+  (reify InlineContentParserFactory
+    (getTriggerCharacters [_] #{\$})
+    (create [_]
+      (reify InlineContentParser
+        (tryParse [_ parser-state]
+          (let [scanner (.scanner ^InlineParserState parser-state)]
+            (or (when-not (ascii-digit? (.peekPreviousCodePoint scanner))
+                  (parse scanner))
+                (ParsedInline/none))))))))
 
 (defn close-block-formula? [state !lines]
   ;; we allow 1-liner blocks like A)
@@ -140,9 +140,8 @@
       (.customBlockParserFactory pb block-toc-parser-factory)
       (.customBlockParserFactory pb block-formula-parser-factory)
       (when-not (:disable-inline-formulas (:opts ctx))
-        (.customInlineContentParserFactory pb (reify InlineContentParserFactory
-                                                (getTriggerCharacters [_] #{\$})
-                                                (create [_] (inline-formula-parser))))))))
+        (.customInlineContentParserFactory pb (formula-parser-factory double-dollar-formula))
+        (.customInlineContentParserFactory pb (formula-parser-factory single-dollar-formula))))))
 
 
 (comment

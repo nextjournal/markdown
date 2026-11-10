@@ -929,6 +929,32 @@ $$
 $$\\bigoplus$$
 "))))
 
+(defn- paragraph-content [s]
+  (-> (md/parse s) :content first :content))
+
+(deftest inline-formula-delimiters-test
+  (testing "dollar amounts parse as text"
+    (is (= [{:type :text, :text "costs $5 and $10"}]
+           (paragraph-content "costs $5 and $10")))
+    (is (= [{:type :text, :text "1$ + 2$"}]
+           (paragraph-content "1$ + 2$"))))
+  (testing "a digit after the closing $ cancels the formula"
+    (is (= [{:type :text, :text "$x$1"}]
+           (paragraph-content "$x$1"))))
+  (testing "a space after the opening $ cancels the formula"
+    (is (= [{:type :text, :text "$ a $ and "} {:type :formula, :text "b"}]
+           (paragraph-content "$ a $ and $b$"))))
+  (testing "a $ after a space does not close the formula"
+    (is (= [{:type :formula, :text "a $b"}]
+           (paragraph-content "$a $b$"))))
+  (testing "$$ inside a paragraph delimits one formula"
+    (is (= [{:type :text, :text "the "} {:type :formula, :text "w = z^{2}"} {:type :text, :text " map"}]
+           (paragraph-content "the $$w = z^{2}$$ map"))))
+  #?(:clj
+     (testing "a $ formula spans a line break on the JVM"
+       (is (match? [{:type :text, :text "a "} {:type :formula, :text "x\ny"} {:type :text, :text " b"}]
+                   (paragraph-content "a $x\ny$ b"))))))
+
 (deftest toc-test
   (testing "extracts toc structure"
     (is (match? {:type :toc,

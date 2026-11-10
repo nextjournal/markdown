@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-...
+- Parse `$5 and $10` as text and `$$x$$` inside a paragraph as one inline formula on the JVM [#74](https://github.com/nextjournal/markdown/issues/74)
 
 ## 0.7.228
 

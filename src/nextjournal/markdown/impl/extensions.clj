@@ -3,7 +3,7 @@
             [nextjournal.markdown.impl.types :as t])
   (:import (java.util.regex Matcher Pattern)
            (org.commonmark.parser Parser$ParserExtension Parser$Builder SourceLine)
-           (org.commonmark.parser.beta InlineContentParser InlineContentParserFactory ParsedInline InlineParserState)
+           (org.commonmark.parser.beta InlineContentParser InlineContentParserFactory ParsedInline InlineParserState Position Scanner)
            (org.commonmark.parser.block AbstractBlockParser BlockContinue BlockParserFactory BlockStart ParserState BlockParser)))
 
 (set! *warn-on-reflection* true)
@@ -19,18 +19,54 @@
 (defn block-formula-delimiter-matcher ^Matcher [^ParserState s] (delimiter-matcher block-formula-delimiter-regex s))
 (defn block-toc-delimiter-matcher ^Matcher [^ParserState s] (delimiter-matcher block-toc-delimiter-regex s))
 
+(defn ascii-digit? [c]
+  (<= (int \0) (int c) (int \9)))
+
+(defn space? [c]
+  (let [c (char c)]
+    (or (Character/isWhitespace c) (Character/isSpaceChar c))))
+
+(defn source-since [^Scanner scanner ^Position open]
+  (.getContent (.getSource scanner open (.position scanner))))
+
+(defn formula-end [^Scanner scanner content]
+  (.next scanner)
+  (when-not (ascii-digit? (.peek scanner))
+    (ParsedInline/of (t/->InlineFormula content) (.position scanner))))
+
+(defn double-dollar-formula [^Scanner scanner]
+  (.next scanner)
+  (when (= \$ (.peek scanner))
+    (.next scanner)
+    (let [open (.position scanner)]
+      (when (and (pos? (.find scanner \$))
+                 (not= (int \\) (.peekPreviousCodePoint scanner)))
+        (let [content (source-since scanner open)]
+          (.next scanner)
+          (when (= \$ (.peek scanner))
+            (formula-end scanner content)))))))
+
+(defn single-dollar-formula [^Scanner scanner]
+  (.next scanner)
+  (let [open (.position scanner)]
+    (when-not (space? (.peek scanner))
+      (loop [prev nil]
+        (let [c (.peek scanner)]
+          (cond
+            (= Scanner/END c) nil
+            (and (= \$ c) prev (not (space? prev)) (not= \\ prev)) (formula-end scanner (source-since scanner open))
+            :else (do (.next scanner) (recur c))))))))
+
 (defn inline-formula-parser []
   (proxy [InlineContentParser] []
     (tryParse [^InlineParserState parser-state]
       (let [scanner (.scanner parser-state)
-            ;; move past opening $
-            _ (.next scanner)
-            open-pos (.position scanner)]
-        (if (= -1 (.find scanner \$))
-          (ParsedInline/none)
-          (let [^String content (.getContent (.getSource scanner open-pos (.position scanner)))]
-            (.next scanner)
-            (ParsedInline/of (t/->InlineFormula content) (.position scanner))))))))
+            start (.position scanner)]
+        (or (when-not (ascii-digit? (.peekPreviousCodePoint scanner))
+              (or (double-dollar-formula scanner)
+                  (do (.setPosition scanner start)
+                      (single-dollar-formula scanner))))
+            (ParsedInline/none))))))
 
 (defn close-block-formula? [state !lines]
   ;; we allow 1-liner blocks like A)

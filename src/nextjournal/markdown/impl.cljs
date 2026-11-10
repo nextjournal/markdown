@@ -117,7 +117,7 @@
   (let [c (.-content token)
         i (.-info token)]
     (-> doc
-        (open-node :code {} (assoc (u/parse-fence-info i) :info i))
+        (open-node :code {} (cond-> (u/parse-fence-info i) (seq i) (assoc :info i)))
         (push-node (text-node c))
         close-node)))
 

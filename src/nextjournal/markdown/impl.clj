@@ -146,10 +146,10 @@
 
 (defmethod open-node FencedCodeBlock [ctx ^FencedCodeBlock node]
   (u/update-current-loc ctx (fn [loc]
-                              (u/zopen-node loc (merge {:type :code
-                                                        :info (.getInfo node)
-                                                        :content [{:type :text
-                                                                   :text (.getLiteral node)}]}
+                              (u/zopen-node loc (merge (cond-> {:type :code
+                                                                :content [{:type :text
+                                                                           :text (.getLiteral node)}]}
+                                                         (seq (.getInfo node)) (assoc :info (.getInfo node)))
                                                        (u/parse-fence-info (.getInfo node)))))))
 
 (defmethod open-node Image [ctx ^Image node]

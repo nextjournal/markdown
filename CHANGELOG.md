@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-...
+- Leave out `:info` on fenced code without an info string, as on indented code
 
 ## 0.7.232
 

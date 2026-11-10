@@ -108,7 +108,6 @@ $$\\int_a^bf(t)dt$$
                        :language "clojure"
                        :type :code}
                       {:content [{:text "no language\n" :type :text}]
-                       :info ""
                        :type :code}
                       {:text "\\int_a^bf(t)dt"
                        :type :block-formula}
@@ -1069,7 +1068,7 @@ some text
 back to text") :content second)))
 
     (testing "fenced code blocks"
-      (is (= {:type :code :info ""
+      (is (= {:type :code
               :content [{:type :text :text "and fenced\ncode here\n"}]}
              (-> (md/parse "some text
 ```
@@ -1085,7 +1084,10 @@ back to text") :content second)))
              (-> (md/parse "```clojure id=12345 no-exec
 (this is code)
 ```")
-                 :content first))))))
+                 :content first))))
+
+    (testing "fenced code without an info string parses the same as indented code"
+      (is (= (md/parse "    x") (md/parse "```\nx\n```"))))))
 
 (deftest html-test
   (is (match? [{:type :paragraph}

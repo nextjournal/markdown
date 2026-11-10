@@ -40,7 +40,8 @@
    :jvm-opts ["-Dclojure.main.report=stderr"]
    :extra-deps {nubank/matcher-combinators {:mvn/version "3.9.1"}
                 babashka/fs {:mvn/version "0.5.30"}
-                hiccup/hiccup {:mvn/version "2.0.0-RC5"}}
+                hiccup/hiccup {:mvn/version "2.0.0-RC5"}
+                org.clojure/test.check {:mvn/version "1.1.1"}}
    :exec-fn test-runner/run}
 
   :shadow

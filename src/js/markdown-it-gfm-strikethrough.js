@@ -1,6 +1,6 @@
 // GFM strikethrough: one or two tildes delimit, three or more are text.
 const SINGLE = 0x7E
-const DOUBLE = 0x7E + 0x10000
+const DOUBLE = 0x7E + 0x10000 // not a char code: a separate marker keeps balance_pairs from pairing ~ with ~~
 
 function tokenizer(requireTwoTildes) {
   return function (state, silent) {

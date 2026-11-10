@@ -1,5 +1,6 @@
 let MarkdownIt = require('markdown-it')
 let texmath = require('./markdown-it-texmath.js')
+let strikethrough = require('./markdown-it-gfm-strikethrough.js')
 let blockImage = require("markdown-it-block-image")
 let mdToc = require("markdown-it-toc-done-right")
 let footnotes = require("markdown-it-footnote")
@@ -46,6 +47,7 @@ function todoListPlugin(md, _opts) {
 function MD(opts) {
   var md = new MarkdownIt({html: true, linkify: true, breaks: false})
   md.use(texmath, {delimiters: "dollars", ...opts})
+  md.use(strikethrough, {requireTwoTildes: opts.strikethrough_require_two_tildes})
   md.use(blockImage)
   md.use(mdToc)
   if (!opts.disable_footnotes) {

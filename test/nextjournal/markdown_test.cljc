@@ -214,14 +214,30 @@ $$\\int_a^bf(t)dt$$
     (is (= [:div [:h1 {:id "hello"} "Hello"]] (md/->hiccup (md/parse "# Hello"))))
     (is (= [:div [:h1 {:id "hello"} "Hello"]] (md/->hiccup "# Hello")))))
 
+(defn- strikethrough-content
+  ([s] (strikethrough-content {} s))
+  ([opts s] (-> (md/parse opts s) :content first :content)))
+
 (deftest strikethrough-test
-  (testing "single tilde")
-  ;; Here markdown-it follows Pandoc and uses single ~ for 'sub' (enabled by default https://github.com/markdown-it/markdown-it/tree/master?tab=readme-ov-file#syntax-extensions).
-  ;; It differs from GFM spec https://github.github.com/gfm/#strikethrough-extension- which allows signle tilde syntax
   (testing "double tilde"
     (is (= {:type :paragraph, :content [{:type :text, :text "some "} {:type :strikethrough, :content [{:type :text, :text "not ok"}]} {:type :text, :text " text"}]}
            (-> (md/parse "some ~~not ok~~ text")
-               :content first)))))
+               :content first))))
+  (testing "~x~ parses as strikethrough"
+    (is (= [{:type :text, :text "some "} {:type :strikethrough, :content [{:type :text, :text "not ok"}]} {:type :text, :text " text"}]
+           (strikethrough-content "some ~not ok~ text"))))
+  (testing "~~~x~~~ parses as text"
+    (is (= [{:type :text, :text "This will ~~~not~~~ strike."}]
+           (strikethrough-content "This will ~~~not~~~ strike."))))
+  (testing "~one~~ parses as text"
+    (is (= [{:type :text, :text "~one~~"}]
+           (strikethrough-content "~one~~"))))
+  (testing ":strikethrough-require-two-tildes true parses ~x~ as text"
+    (is (= [{:type :text, :text "see (~/bin) and (~/.config)"}]
+           (strikethrough-content {:strikethrough-require-two-tildes true}
+                                  "see (~/bin) and (~/.config)")))
+    (is (= [{:type :strikethrough, :content [{:type :text, :text "two"}]}]
+           (strikethrough-content {:strikethrough-require-two-tildes true} "~~two~~")))))
 
 (deftest tables-test
   (is (= {:type :doc

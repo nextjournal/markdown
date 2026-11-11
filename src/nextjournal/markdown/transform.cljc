@@ -280,8 +280,13 @@ par two"
        content
        (concat (rest content) [nil])))
 
+(declare emphasis-colors emphasis?)
+
 (defn- inline-markdown [ctx node]
-  (apply str (render-children ctx node)))
+  (let [ctx (cond-> ctx
+              (and (nil? (::emphasis-colors ctx)) (not (emphasis? node)))
+              (assoc ::emphasis-colors (emphasis-colors ctx node)))]
+    (apply str (render-children ctx node))))
 
 (defn- block-markdown
   ([ctx node] (block-markdown "\n\n" ctx node))
@@ -363,7 +368,7 @@ par two"
     (if (indentable? ctx node)
       (prefix-lines "    " "    " text)
       (let [f (if (and info (str/includes? info "`")) (fence "~" 3 text) (fence "`" 3 text))]
-        (str f (when (and info (str/starts-with? info "~")) " ") info "\n" text
+        (str f (when (and info (re-find #"^[`~]" info)) " ") info "\n" text
              (when-not (open-ended? node) f))))))
 
 (defn- tight-list? [{:keys [content]}]
@@ -372,20 +377,22 @@ par two"
 (def ^:private list-family
   {:bullet-list :bullet :todo-list :bullet :numbered-list :numbered})
 
-(defn- adjacent-lists-before [{::keys [parent]} node]
-  (->> (:content parent)
-       (take-while #(not (identical? % node)))
-       reverse
-       (take-while #(= (list-family (:type node)) (list-family (:type %))))
-       count))
+(defn- alternate-marker? [{::keys [parent alternate]} node]
+  (let [item-parent? (#{:list-item :todo-item} (:type parent))]
+    (loop [[sibling & siblings] (:content parent) previous nil previous-alternate false]
+      (let [alternate? (cond
+                         (and (nil? previous) item-parent?) (not alternate)
+                         (and previous (= (list-family (:type sibling)) (list-family (:type previous))))
+                         (not previous-alternate)
+                         :else false)]
+        (if (or (identical? sibling node) (empty? siblings))
+          alternate?
+          (recur siblings sibling alternate?))))))
 
 (defn- list-markdown [marker]
   (fn [ctx {:as node :keys [content]}]
     (let [tight (tight-list? node)
-          starts-item? (and (#{:list-item :todo-item} (:type (::parent ctx))) (nil? (::previous ctx)))
-          alternate? (if starts-item?
-                       (not (::alternate ctx))
-                       (odd? (adjacent-lists-before ctx node)))]
+          alternate? (alternate-marker? ctx node)]
       (->> content
            (map-indexed (fn [i item]
                           (let [m (marker node i alternate?)
@@ -401,7 +408,7 @@ par two"
   (let [{:keys [href title]} attrs]
     (and (nil? title)
          (string? href)
-         (re-matches #"[A-Za-z][A-Za-z0-9+.-]*://[^\s<>\[\]()`\\$~]*[A-Za-z0-9/]" href)
+         (re-matches #"[A-Za-z][A-Za-z0-9+.-]*://[^\s<>()\[\]]*[^\s<>()\[\].,:;!?\"']" href)
          (= [{:type :text :text href}] content)
          (or (nil? next)
              (#{:softbreak :hardbreak} (:type next))
@@ -409,9 +416,9 @@ par two"
 
 (defn- link-destination [url title]
   (str (if (or (= "" url) (re-find #"\s" url))
-         (str "<" (str/replace url #"[\\<>]" #(str "\\" %)) ">")
-         (str/replace url #"[\\()]" #(str "\\" %)))
-       (when title (str " \"" (str/replace title #"[\\\"]" #(str "\\" %)) "\""))))
+         (str "<" (str/replace url #"[\\<>&]" #(str "\\" %)) ">")
+         (str/replace url #"[\\()&]" #(str "\\" %)))
+       (when title (str " \"" (str/replace title #"[\\\"&]" #(str "\\" %)) "\""))))
 
 (defn- table-delimiter [cell]
   (case (:text-align (table-alignment cell))
@@ -430,30 +437,89 @@ par two"
                       (rest rows)))
          (str/join "\n"))))
 
-(defn- adjacent-emphasis-before [{::keys [parent]} node]
-  (->> (:content parent)
-       (take-while #(not (identical? % node)))
-       reverse
-       (take-while (comp #{:em :strong} :type))
-       count))
-
 (def ^:private emphasis? (comp #{:em :strong} :type))
 
-(defn- word-boundary? [ctx neighbor pattern]
-  (or (nil? neighbor)
-      (some? (re-find pattern (->markdown (assoc ctx ::previous nil ::next nil) neighbor)))))
+(defn- word-char? [c]
+  (boolean (and c (re-find #"[\p{L}\p{N}]" c))))
+
+(defn- neighbor-char [ctx node side]
+  (when node
+    (if (emphasis? node)
+      "*"
+      (let [s (->markdown (assoc ctx ::previous nil ::next nil ::emphasis-colors nil) node)]
+        (when (seq s)
+          (if (= :first side) (subs s 0 1) (subs s (dec (count s)))))))))
+
+(defn- emphasis-constraints
+  "Returns {:nodes [node ...] :edges [[i j same?] ...] :intraword #{i ...}} for the emphasis nodes below root."
+  [ctx root]
+  (let [state (volatile! {:nodes [] :edges [] :intraword #{}})
+        add! (fn [k v] (vswap! state update k conj v))
+        walk (fn walk [parent parent-id parent-left parent-right ancestor-ids]
+               (let [content (vec (:content parent))
+                     previous-id (volatile! nil)]
+                 (doseq [i (range (count content))]
+                   (let [child (nth content i)
+                         previous (get content (dec i))
+                         next (get content (inc i))]
+                     (if (emphasis? child)
+                       (let [id (count (:nodes @state))
+                             left (word-char? (neighbor-char ctx previous :last))
+                             right (word-char? (neighbor-char ctx next :first))]
+                         (add! :nodes child)
+                         (when (or left right) (add! :intraword id))
+                         (when (emphasis? previous) (add! :edges [@previous-id id false]))
+                         (vreset! previous-id id)
+                         (when (and parent-id (or (nil? previous) (nil? next)))
+                           (add! :edges [parent-id id (boolean (or (and (nil? previous) parent-left)
+                                                                   (and (nil? next) parent-right)))]))
+                         (when left
+                           (doseq [a ancestor-ids] (add! :edges [a id false])))
+                         (walk child id left right (conj ancestor-ids id)))
+                       (walk child nil false false ancestor-ids))))))]
+    (walk root nil false false [])
+    @state))
+
+(defn- emphasis-cost [colors edges intraword]
+  (+ (* 100 (count (filter #(and (colors %) (intraword %)) (keys colors))))
+     (reduce (fn [cost [a b same?]]
+               (if (and (contains? colors a) (contains? colors b) (not= same? (= (colors a) (colors b))))
+                 (+ cost (if same? 10 1))
+                 cost))
+             0
+             edges)))
+
+(defn- emphasis-components [n edges]
+  (let [neighbors (reduce (fn [m [a b]] (-> m (update a (fnil conj []) b) (update b (fnil conj []) a))) {} edges)]
+    (loop [ids (range n) seen #{} components []]
+      (if-let [[id & ids] (seq ids)]
+        (if (seen id)
+          (recur ids seen components)
+          (let [component (loop [queue [id] component #{id}]
+                            (if-let [[x & queue] (seq queue)]
+                              (let [new (remove component (neighbors x))]
+                                (recur (concat queue new) (into component new)))
+                              component))]
+            (recur ids (into seen component) (conj components (sort component)))))
+        components))))
+
+(defn- emphasis-colors
+  "Returns [[node underscore?] ...] for the emphasis nodes below root."
+  [ctx root]
+  (let [{:keys [nodes edges intraword]} (emphasis-constraints ctx root)
+        best (fn [component]
+               (let [assignments (if (<= (count component) 10)
+                                   (for [bits (range (bit-shift-left 1 (count component)))]
+                                     (zipmap component (map #(bit-test bits %) (range (count component)))))
+                                   [(zipmap component (repeat false))])]
+                 (apply min-key #(emphasis-cost % edges intraword) (reverse assignments))))
+        colors (into {} (map best) (emphasis-components (count nodes) edges))]
+    (mapv (fn [id] [(nth nodes id) (colors id)]) (range (count nodes)))))
 
 (defn- emphasis-markdown [delimiter alternative]
-  (fn [{:as ctx ::keys [parent previous next]} node]
-    (let [underscore-allowed? (and (word-boundary? ctx previous #"(?:^|[^\p{L}\p{N}])$")
-                                   (word-boundary? ctx next #"^(?:$|[^\p{L}\p{N}])"))
-          parent-edge? (and (emphasis? parent) (or (nil? previous) (nil? next)))
-          edge-child? (or (emphasis? (first (:content node))) (emphasis? (last (:content node))))
-          d (cond
-              (and (odd? (adjacent-emphasis-before ctx node)) underscore-allowed?) alternative
-              parent-edge? delimiter
-              (and edge-child? underscore-allowed?) alternative
-              :else delimiter)]
+  (fn [{:as ctx ::keys [emphasis-colors]} node]
+    (let [underscore? (some (fn [[n u]] (when (identical? n node) u)) emphasis-colors)
+          d (if underscore? alternative delimiter)]
       (str d (inline-markdown ctx node) d))))
 
 (defn- bullet-marker [_ _ after-list?]
@@ -472,7 +538,8 @@ par two"
                     text (paragraph-markdown ctx node)]
                 (if (and (str/includes? text "\n") (<= level 2))
                   (str text "\n" (if (= 1 level) "===" "---"))
-                  (str (apply str (repeat level "#")) " " text))))
+                  (str (apply str (repeat level "#")) " "
+                       (str/replace text #"(^|[ \t])(#+[ \t]*)$" "$1\\\\$2")))))
    :paragraph paragraph-markdown
    :plain paragraph-markdown
    :text text-markdown
@@ -510,7 +577,7 @@ par two"
                      (str "^[" (->> (::footnotes ctx)
                                     (filter #(= ref (:ref %)))
                                     first :content
-                                    (map #(inline-markdown ctx %))
+                                    (map #(inline-markdown (dissoc ctx ::emphasis-colors) %))
                                     (str/join " "))
                           "]")
                      (str "[^" (or label (inc ref)) "]")))
@@ -537,7 +604,7 @@ par two"
                   (str f pad text pad f)))
    :link (fn [ctx {:as node :keys [attrs]}]
            (if (bare-url? ctx node)
-             (:href attrs)
+             (escape-text (:href attrs))
              (str "[" (inline-markdown ctx node) "](" (link-destination (:href attrs) (:title attrs)) ")")))
    :internal-link (fn [_ {:keys [text]}] (str "[[" text "]]"))
 

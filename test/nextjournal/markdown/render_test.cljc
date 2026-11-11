@@ -37,10 +37,16 @@
   (and (not-any? #(or (and (= :block-formula (:type %)) (str/includes? (:text %) "$$"))
                       (and (= :table-row (:type %)) (empty? (:content %))))
                  (nodes doc))
-       (not-any? (comp #{:footnote-ref} :type) (mapcat nodes (:footnotes doc)))))
+       (not-any? (comp #{:footnote-ref :plain} :type) (mapcat nodes (:footnotes doc)))))
+
+(defn- unreferenced-footnote? [s]
+  (and (str/includes? s "[^n]:")
+       (= (count (re-seq #"\[\^n\]" s)) (count (re-seq #"\[\^n\]:" s)))))
 
 (def parsable-markdown-text
-  (gen/such-that #(not (re-find #"\[\^n\]: [\s\S]*(\^\[|\[\^n\]:)|\^\[[^\]]*\^\[" %)) markdown-text 100))
+  (gen/such-that #(not (or (re-find #"\[\^n\]: [\s\S]*(\^\[|\[\^n\]:)|\^\[[^\]]*\^\[" %)
+                           (unreferenced-footnote? %)))
+                 markdown-text 100))
 
 (def representable-markdown
   (gen/such-that (fn [[_ doc]] (representable? doc))

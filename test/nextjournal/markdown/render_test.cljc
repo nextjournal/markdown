@@ -42,8 +42,11 @@
 (def parsable-markdown-text
   (gen/such-that #(not (re-find #"\[\^n\]: [\s\S]*(\^\[|\[\^n\]:)|\^\[[^\]]*\^\[" %)) markdown-text 100))
 
+(def representable-markdown
+  (gen/such-that (fn [[_ doc]] (representable? doc))
+                 (gen/fmap (fn [s] [s (md/parse s)]) parsable-markdown-text)
+                 100))
+
 (defspec parse-of-rendered-parse-equals-parse 500
-  (prop/for-all [s parsable-markdown-text]
-    (let [doc (md/parse s)]
-      (or (not (representable? doc))
-          (= doc (md/parse (md.transform/->markdown doc)))))))
+  (prop/for-all [[_ doc] representable-markdown]
+    (= doc (md/parse (md.transform/->markdown doc)))))
